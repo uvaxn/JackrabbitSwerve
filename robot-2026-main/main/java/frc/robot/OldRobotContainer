@@ -1,0 +1,323 @@
+//import frc.robot.subsystems.IntakeShooter;
+
+ 
+
+/* public class intake_balls{
+
+    public static void main(String[] args) {
+
+       
+
+    }
+
+ 
+
+    new InstantCommand(() -> m_LowerFeed.set(-.5));    
+
+    new InstantCommand(() -> m_Intake.set(.5));
+
+}*/
+
+   
+
+        // first line for fuel mechanisms
+
+        // joystick.leftTrigger();
+
+    //     joystick.a()
+    // .toggleOnTrue(
+    //     new InstantCommand(() -> {
+    //         if (m_Intake.get() == 0) {
+    //             MotorMode.setSpeed(m_Intake, -0.7);
+    //         } else {
+    //             MotorMode.setSpeed(m_Intake, 0);
+    //         }
+    //     })
+    // );
+
+    //     joystick.leftBumper()
+    //         .onTrue(
+    //             Commands.startEnd(
+    //                 () -> {
+    //                     MotorMode.setBrake(m_IntakeDrop, v_1);
+    //             if (intakeDropLowerLimit.get()) {
+    //                 m_IntakeDrop.set(-0.1);
+    //             }
+    //             },
+    //         () -> {
+    //             m_IntakeDrop.set(0);
+    //             m_IntakeDrop.setNeutralMode(NeutralModeValue.Coast);   // return to coast
+    //         }
+    //         ).until(() -> !intakeDropLowerLimit.get())
+    //     );
+        
+
+
+    //     joystick.rightBumper()
+    // .onTrue(
+    //     Commands.startEnd(
+    //         () -> {
+    //             m_IntakeDrop.setNeutralMode(NeutralModeValue.Brake);   // engage brake
+    //             if (intakeDropUpperLimit.get()) {
+    //                 m_IntakeDrop.set(0.1);
+    //             }
+    //         },
+    //         () -> {
+    //             m_IntakeDrop.set(0);
+    //             m_IntakeDrop.setNeutralMode(NeutralModeValue.Coast);   // return to coast
+    //         }
+    //     ).until(() -> !intakeDropUpperLimit.get())
+    // );
+
+
+
+            //.onTrue(new InstantCommand(() -> System.out.println("Left Trigger Pressed")));
+
+ 
+        
+// Class variable
+
+
+// joystick.rightTrigger().onTrue(
+//     new SequentialCommandGroup(
+//         new InstantCommand(() -> v_1 = true),
+
+//         new InstantCommand(() -> {
+//             System.out.println("Right Trigger Pressed");
+//             m_ShooterL.set(shooterSpeed);
+//             m_ShooterR.set(-shooterSpeed);
+//         }),
+//         new WaitCommand(0.5),
+
+//         new ConditionalCommand(
+//             new InstantCommand(() -> {
+//                 m_UpperFeed.set(0.8);
+//                 m_LowerFeed.set(-0.8);
+//             }),
+//             new InstantCommand(() -> {}),   // do nothing if false
+//             () -> v_1                      
+//         )
+//     )
+// );
+
+// joystick.rightTrigger().onFalse(
+//     new SequentialCommandGroup(
+//         new InstantCommand(() -> v_1 = false),
+
+//         new InstantCommand(() -> {
+//             m_LowerFeed.set(0);
+//             m_UpperFeed.set(0);
+//             m_ShooterR.set(0);
+//             m_ShooterL.set(0);
+//         })
+//     )
+// );
+
+    //if (joystick.getLeftTriggerAxis() > 0.5) {
+
+ 
+
+        // Set power to 60% when in intake mode, so we don't shoot at the same time
+
+        //double keeperOutput = -1;
+
+    //    m_Intake.set(.5);
+
+    //    m_LowerFeed.set(.5);
+
+    //    //m_UpperFeed.set(keeperOutput);
+
+ 
+
+    //} else {
+
+ 
+
+    //    if (joystick.getRightTriggerAxis() > 0.5) {
+
+ 
+
+            // Set power to 100% when in shooter mode
+
+            //double keeperOutput = 1;
+
+      //      m_ShooterL.set(.5);
+
+      //      m_ShooterR.set(.5);
+
+      //      try {
+
+      //          Thread.sleep(250);
+
+       //     } catch (InterruptedException e) {
+
+         //       e.printStackTrace();
+
+           // }
+
+ 
+
+            //m_LowerFeed.set(.5);
+
+            //m_UpperFeed.set(.5);
+
+            //m_ballKeeper.set(keeperOutput);
+
+   
+
+        //} else {
+
+ 
+
+        //m_Intake.set(0);
+
+        //m_LowerFeed.set(0);
+
+        //m_ShooterL.set(0);
+
+        //m_ShooterR.set(0);
+
+        //m_LowerFeed.set(0);
+
+        //m_UpperFeed.set(0);
+
+ 
+
+        //}
+
+    //}
+     /*
+        final double backupTimeSec  = (kAutoBackupDistanceFeet * 0.3048) / kAutoBackupSpeedMps;
+        final double rotateTimeSec  = Math.toRadians(kAutoRotateDegrees) / kAutoRotateSpeedRps;
+
+        // Left start → rotate CW (negative); right start → rotate CCW (positive)
+
+        // if (this.autoSubscriber.get() == "Left"){
+        //     kAutoStartOnLeft = true;
+        // } else {
+        //     kAutoStartOnLeft = false;
+        // }
+        switch (this.autoSubscriber.get()) {
+            case "Left":
+                kAutoStartOnLeft = true;
+                break;
+            case "Right":
+                kAutoStartOnLeft = false;
+                break;
+            default:
+                kAutoStartOnLeft = false;
+                break;
+        }
+
+        this.autoSubscriber.getTopic().setPersistent(true);
+
+        final double rotateSign     = kAutoStartOnLeft ? -1.0 : 1.0;
+
+ 
+
+        final var idle = new SwerveRequest.Idle();
+
+ 
+
+        return Commands.sequence(
+
+            // 1. Reset field-centric heading to current robot orientation
+
+            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+            
+ 
+
+            // 2. Drive backward
+           
+            Commands.parallel(
+                drivetrain.applyRequest(() -> {
+                    System.out.println("Moving backwards...");
+                    return drive.withVelocityX(-kAutoBackupSpeedMps)
+                    .withVelocityY(0)
+                    .withRotationalRate(0);
+                }).withTimeout(backupTimeSec)
+),
+
+
+ 
+
+            // 3. Rotate ~kAutoRotateDegrees degrees (direction based on start side)
+
+           drivetrain.applyRequest(() -> {
+            System.out.println("Rotating..");
+                return drive.withVelocityX(0)
+                .withVelocityY(0)
+                .withRotationalRate(kAutoRotateSpeedRps * rotateSign);
+            }).withTimeout(rotateTimeSec),
+
+ 
+
+            // 5. Spin up shooters and feeders
+
+            new SequentialCommandGroup(
+            new InstantCommand(() -> v_1 = true),
+            new InstantCommand(() -> {
+                System.out.println("Spinning up shooting motors...");
+                        m_ShooterL.set(shooterSpeed);
+                        m_ShooterR.set(-shooterSpeed);
+                }),
+            new WaitCommand(0.5),
+                new ConditionalCommand(
+                new InstantCommand(() -> {
+                 m_UpperFeed.set(0.8);
+                    m_LowerFeed.set(-0.8);
+                }),
+        new InstantCommand(() -> {}),
+        () -> v_1
+    )
+),
+
+
+            Commands.waitSeconds(5),
+
+ 
+
+            // 6. Stop all shooter and feed motors
+
+            Commands.runOnce(() -> {
+
+                m_ShooterL.set(0);
+
+                m_ShooterR.set(0);
+
+                m_UpperFeed.set(0);
+
+                m_LowerFeed.set(0);
+                
+                System.out.println("Done!");
+            }),
+
+ 
+
+            // 7. Idle for the rest of autonomous
+
+            drivetrain.applyRequest(() -> idle)
+
+        );
+            */
+    
+    // =====================================================================
+
+    // Autonomous Tuning Parameters — edit these to adjust auton behavior
+
+    // =====================================================================
+
+    // private static final double  kAutoBackupDistanceFeet = 7.0;   // feet to back up
+
+    // private static final double  kAutoRotateDegrees      = 35;  // degrees to rotate after backup
+
+    // private static       boolean kAutoStartOnLeft        = false;  // true = left start, false = right start
+
+    // private static final double  kAutoBackupSpeedMps     = 1.0;   // drive speed during backup (m/s)
+
+    // private static final double  kAutoRotateSpeedRps     = 1.0;   // rotation speed (rad/s)
+
+    // =====================================================================
+        //private final MotorController m_shooter = new MotorController(m_ShooterL, m_ShooterR, m_LowerFeed, m_UpperFeed); {
+
+       
