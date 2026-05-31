@@ -16,6 +16,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,6 @@ public class PositionSubsystem extends SubsystemBase {
             .getStructArrayTopic("OdometryTags", Pose2d.struct)
             .publish();
 
-    // Raw vision pose — renamed to avoid conflict with CameraSubsystem's "EstimatedPose"
     private final StructPublisher<Pose3d> rawVisionPosePublisher =
         NetworkTableInstance.getDefault()
             .getStructTopic("Vision/RawPose", Pose3d.struct)
@@ -62,7 +62,7 @@ public class PositionSubsystem extends SubsystemBase {
             swerveDrive.getState().ModulePositions
         );
     }
-
+    
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimate) {
         var targets = estimate.targetsUsed;
         int tagCount = targets.size();
@@ -89,16 +89,16 @@ public class PositionSubsystem extends SubsystemBase {
             swerveDrive.getState().ModulePositions
         );
         odometryPosePublisher.set(new Pose3d(odometry.getPoseMeters()));
-
+        
         // Feed vision into CTRE fused estimator
-        for (EstimatedRobotPose estimate : camera.getEstimatedGlobalPoses()) {
-            rawVisionPosePublisher.set(estimate.estimatedPose);
-            swerveDrive.addVisionMeasurement(
-                estimate.estimatedPose.toPose2d(),
-                estimate.timestampSeconds,
-                getStdDevs(estimate)
-            );
-        }
+        // for (EstimatedRobotPose estimate : camera.getEstimatedGlobalPoses()) {
+        //     rawVisionPosePublisher.set(estimate.estimatedPose);
+        //     swerveDrive.addVisionMeasurement(
+        //         estimate.estimatedPose.toPose2d(),
+        //         estimate.timestampSeconds,
+        //         getStdDevs(estimate)
+        //     );
+        // }
 
         // Publish fused pose
         fusedPosePublisher.set(new Pose3d(swerveDrive.getState().Pose));
@@ -115,8 +115,10 @@ public class PositionSubsystem extends SubsystemBase {
                     .transformBy(robotToCamera)
                     .transformBy(target.getBestCameraToTarget());
                 odometryTagPoses.add(estimatedTagPose.toPose2d());
+                SmartDashboard.putNumber("Vision/Ambiguity", result.getBestTarget().getPoseAmbiguity());
             }
         }
+        
         odometryTagPublisher.set(odometryTagPoses.toArray(new Pose2d[0]));
     }
 }

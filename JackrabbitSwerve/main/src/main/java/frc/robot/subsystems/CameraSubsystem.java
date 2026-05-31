@@ -90,7 +90,7 @@ public Optional<Pose2d> getNearestTagPose(Pose2d robotPose) {
 
     @Override
     public void periodic() {
-        cachedResults = camera.getAllUnreadResults(); // one call, stored for everyone
+        cachedResults = camera.getAllUnreadResults(); 
 
         Optional<EstimatedRobotPose> estimatedPose = getEstimatedGlobalPose();
         if (estimatedPose.isPresent()) {
