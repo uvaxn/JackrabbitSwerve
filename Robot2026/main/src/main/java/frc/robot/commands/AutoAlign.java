@@ -91,7 +91,6 @@ public class AutoAlign extends Command {
     @Override
     public void execute() {
         Optional<Pose2d> possiblePose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
-
         if (possiblePose.isEmpty()) {
             swerveDrive.setControl(
                 request.withVelocityX(forwardSupplier.getAsDouble() * Vars.MaxSpeed)

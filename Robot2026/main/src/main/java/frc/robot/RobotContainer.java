@@ -36,7 +36,6 @@ import frc.robot.commands.AutoAlign;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.PositionSubsystem;
 import frc.robot.controls.EaseofLife;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.controls.Shooters;
@@ -54,7 +53,6 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
-    public final PositionSubsystem positionSubsystem = new PositionSubsystem(drivetrain, cameraSubsystem);
     
     public final AutoAlign AligntoHub = new AutoAlign(drivetrain, cameraSubsystem, () -> -joystick.getLeftY(),  () -> -joystick.getLeftX(),  0.5);
 

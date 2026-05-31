@@ -36,6 +36,8 @@ public class Shooters {
     // spins up shooters and starts timer
     public void shoot() {
         MotorMode.setSpeed(shooterR, -0.8);
+        MotorMode.setSpeed(lowerFeed, -0.8);
+        MotorMode.setSpeed(upperFeed,  0.8);
         shootTimer.reset();
         shootTimer.start();
         isShooting = true;
@@ -44,12 +46,11 @@ public class Shooters {
 
     // kicks in feed after deley
     public void periodic() {
-        if (isShooting && !feedActive && shootTimer.hasElapsed(FEED_DELAY)) {
-            MotorMode.setSpeed(lowerFeed, -0.8);
-            MotorMode.setSpeed(upperFeed,  0.8);
-            feedActive = true;
-            System.out.println("Shooters: feed active");
-        }
+        // if (isShooting && !feedActive && shootTimer.hasElapsed(FEED_DELAY)) {
+
+        //     feedActive = true;
+        //     System.out.println("Shooters: feed active");
+        // }
     }
 
     // stops everything
