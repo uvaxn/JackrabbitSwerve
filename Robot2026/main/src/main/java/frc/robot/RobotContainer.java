@@ -25,9 +25,15 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -55,7 +61,7 @@ public class RobotContainer {
     public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
     
     public final AutoAlign AligntoHub = new AutoAlign(drivetrain, cameraSubsystem, () -> -joystick.getLeftY(),  () -> -joystick.getLeftX(),  0.5);
-
+    double matchTime = DriverStation.getMatchTime();
     // Motors
     public final TalonFX m_ShooterR    = new TalonFX(23);
     public final TalonFX m_ShooterL    = new TalonFX(22);
@@ -69,8 +75,19 @@ public class RobotContainer {
     
     public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed);
     public RobotContainer() {
+    NamedCommands.registerCommand("shoot", 
+        new InstantCommand(() -> shooters.shoot()));
+
+    NamedCommands.registerCommand("stop shoot", 
+        new InstantCommand(() -> shooters.stopShoot()));
+
+    NamedCommands.registerCommand("intake", 
+        new InstantCommand(intakes::requestDown, intakes));
+
+    NamedCommands.registerCommand("intake up", 
+        new InstantCommand(intakes::requestUp, intakes));
         configureBindings();
-        
+        drivetrain.configureAutoBuilder();
     }
     public final IntakeSubsystem intakes = new IntakeSubsystem(
     m_Intake, m_IntakeDrop,
@@ -85,7 +102,7 @@ public class RobotContainer {
                      .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
             )
         );
-
+        
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
@@ -119,6 +136,11 @@ public class RobotContainer {
         }
         
     public Command getAutonomousCommand() {
-        return new InstantCommand(() -> System.out.println("Autonomous disabled."));
+        try {
+            return AutoBuilder.buildAuto("LeftAuto");
+        } catch (Exception e) {
+            DriverStation.reportError("Failed to load auto path: " + e.getMessage(), false);
+            return Commands.none();
+        }
     }
 }
