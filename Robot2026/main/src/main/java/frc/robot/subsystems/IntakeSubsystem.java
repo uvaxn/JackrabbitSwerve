@@ -38,23 +38,22 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // Commands
 
-    /** Trigger pressed arm goes down, intake spins */
     public void requestDown() {
-        if (isAtBottom()) return;
-        // intakeMotor.set(0.8);
+        if (isAtBottom() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
+        System.out.println("going down");
     }
 
-    /** Trigger released intake stops, arm goes back up */
-        public void requestUp() {
-            intakeMotor.stopMotor(); // already uncommented, good
-            if (isAtTop()) {
-                dropMotor.setControl(staticBrake);
-                state = DropState.IDLE;
-                return;
-            }
-            state = DropState.MOVING_UP;
+    public void requestUp() {
+        intakeMotor.stopMotor();
+        if (isAtTop() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
+            dropMotor.setControl(staticBrake);
+            state = DropState.IDLE;
+            return;
         }
+        state = DropState.MOVING_UP;
+        System.out.println("going up");
+    }
 
     // Sensors
 
@@ -85,7 +84,7 @@ public class IntakeSubsystem extends SubsystemBase {
                     dropMotor.setControl(coastOut);
                     intakeMotor.set(0.8); // start intaking when arm reaches bottom
                     state = DropState.IDLE;
-                    System.out.println("IntakeDrop: Reached bottom.");
+                    System.out.println("reached bottom.");
                 } else {
                     dropMotor.set(-DROP_SPEED);
                 }
@@ -94,7 +93,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 if (isAtTop() || pos <= SOFT_LIMIT_UP) {
                     dropMotor.setControl(staticBrake);
                     state = DropState.IDLE;
-                    System.out.println("IntakeDrop: Reached top.");
+                    System.out.println("reached top.");
                 } else {
                     dropMotor.set(LIFT_SPEED);
                 }

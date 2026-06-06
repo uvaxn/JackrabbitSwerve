@@ -7,44 +7,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "LeftBackShoot"
+            "pathName": "FaceHub"
           }
         },
         {
-          "type": "sequential",
+          "type": "wait",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "shoot"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "stop shoot"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "intake"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "intake up"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "shoot"
-                }
-              }
-            ]
+            "waitTime": 5.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "IntakeBalls"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "FaceHubEnd"
           }
         }
       ]

@@ -28,7 +28,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathPlannerPath;
-
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -46,7 +47,7 @@ import frc.robot.controls.EaseofLife;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.controls.Shooters;
 public class RobotContainer {
-    private double MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+    private double MaxSpeed = 0.6 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     private double MaxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond);
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -56,7 +57,7 @@ public class RobotContainer {
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
     private final Telemetry logger = new Telemetry(MaxSpeed);
     private final CommandXboxController joystick = new CommandXboxController(0);
-
+    private SendableChooser<Command> autoChooser;
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
     
@@ -71,29 +72,28 @@ public class RobotContainer {
     public final TalonFX m_UpperFeed   = new TalonFX(24);
 
     EaseofLife MotorMode = new EaseofLife();
-
-    
     public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed);
+
+    public final IntakeSubsystem intakes = new IntakeSubsystem(
+        m_Intake, m_IntakeDrop,
+        new DigitalInput(0),
+        new DigitalInput(1)
+    );
+    
     public RobotContainer() {
-    NamedCommands.registerCommand("shoot", 
-        new InstantCommand(() -> shooters.shoot()));
+        NamedCommands.registerCommand("shoot", new InstantCommand(() -> shooters.shoot()));
+        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stopShoot()));
+        NamedCommands.registerCommand("intake", new InstantCommand(intakes::requestDown, intakes));
+        NamedCommands.registerCommand("intake up", new InstantCommand(intakes::requestUp, intakes));
 
-    NamedCommands.registerCommand("stop shoot", 
-        new InstantCommand(() -> shooters.stopShoot()));
-
-    NamedCommands.registerCommand("intake", 
-        new InstantCommand(intakes::requestDown, intakes));
-
-    NamedCommands.registerCommand("intake up", 
-        new InstantCommand(intakes::requestUp, intakes));
         configureBindings();
         drivetrain.configureAutoBuilder();
+
+        autoChooser = AutoBuilder.buildAutoChooser("LeftAuto");
+        SmartDashboard.putData("Auto Chooser", autoChooser);
+        
     }
-    public final IntakeSubsystem intakes = new IntakeSubsystem(
-    m_Intake, m_IntakeDrop,
-    new DigitalInput(0),  // upper limit
-    new DigitalInput(1)   // lower limit
-    );
+    
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
@@ -136,11 +136,9 @@ public class RobotContainer {
         }
         
     public Command getAutonomousCommand() {
-        try {
-            return AutoBuilder.buildAuto("LeftAuto");
-        } catch (Exception e) {
-            DriverStation.reportError("Failed to load auto path: " + e.getMessage(), false);
-            return Commands.none();
-        }
+        Command selected = autoChooser.getSelected();
+        System.out.println("auto: " + autoChooser.getSelected().getName());
+        if (selected == null) return Commands.none();
+        return selected;
     }
 }

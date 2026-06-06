@@ -41,17 +41,9 @@ public class Shooters {
         shootTimer.reset();
         shootTimer.start();
         isShooting = true;
-        System.out.println("Shooters: spinning up, feed in " + FEED_DELAY + "s");
+        System.out.println("shooting");
     }
-
-    // kicks in feed after deley
-    public void periodic() {
-        // if (isShooting && !feedActive && shootTimer.hasElapsed(FEED_DELAY)) {
-
-        //     feedActive = true;
-        //     System.out.println("Shooters: feed active");
-        // }
-    }
+    
 
     // stops everything
     public void stopShoot() {
@@ -62,6 +54,6 @@ public class Shooters {
         shootTimer.reset();
         isShooting = false;
         feedActive = false; // reset this too
-        System.out.println("Shooters: stopped");
+        System.out.println("shooting stopped");
     }
 }
