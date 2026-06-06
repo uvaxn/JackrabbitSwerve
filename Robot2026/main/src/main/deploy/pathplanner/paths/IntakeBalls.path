@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.0616457960644006,
-        "y": 6.022611806797853
+        "x": 3.2401252236135947,
+        "y": 5.535849731663685
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.607728571428572,
-        "y": 5.926742857142857
+        "x": 2.786207998977766,
+        "y": 5.439980782008689
       },
       "isLocked": false,
       "linkedName": "EndFaceHub"
@@ -87,7 +87,7 @@
   "folder": "LeftPaths",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -61.504361381754954
+    "rotation": -47.573359463176836
   },
   "useDefaultConstraints": true
 }

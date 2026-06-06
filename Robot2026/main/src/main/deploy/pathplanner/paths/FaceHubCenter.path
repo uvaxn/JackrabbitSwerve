@@ -3,37 +3,48 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.475857142857143,
-        "y": 6.5875571428571424
+        "x": 3.547314521075597,
+        "y": 6.627732632949719
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.2800016170306048,
-        "y": 6.432184645280479
+        "x": 3.3019901241629466,
+        "y": 6.346797635926963
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.2401252236135947,
-        "y": 5.535849731663685
+        "x": 2.996744186045967,
+        "y": 6.022611806805042
       },
       "prevControl": {
-        "x": 3.1132622302634894,
-        "y": 5.751269742150759
+        "x": 2.747103303025221,
+        "y": 6.0092166761740184
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "EndFaceHub"
+      "linkedName": "EndFaceHubLeftAlt"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
-  "pointTowardsZones": [],
+  "pointTowardsZones": [
+    {
+      "fieldPosition": {
+        "x": 4.6,
+        "y": 4.0
+      },
+      "rotationOffset": 0.0,
+      "minWaypointRelativePos": 0.83139534883721,
+      "maxWaypointRelativePos": 1.0,
+      "name": "Point Towards Zone"
+    }
+  ],
   "eventMarkers": [
     {
-      "name": "Shoot",
+      "name": "shoot",
       "waypointRelativePos": 1.0,
       "endWaypointRelativePos": null,
       "command": {
@@ -54,10 +65,10 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -47.573359463176836
+    "rotation": -50.37970159914936
   },
   "reversed": false,
-  "folder": "LeftPaths",
+  "folder": "AltLeftPaths",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 0.0

@@ -5,6 +5,7 @@
   "pathFolders": [
     "CenterPaths",
     "LeftPaths",
+    "AltLeftPaths",
     "RightPaths"
   ],
   "autoFolders": [],

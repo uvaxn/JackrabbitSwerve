@@ -89,7 +89,7 @@ public class RobotContainer {
         configureBindings();
         drivetrain.configureAutoBuilder();
 
-        autoChooser = AutoBuilder.buildAutoChooser("CenterAuto");
+        autoChooser = AutoBuilder.buildAutoChooser("AlternateLeftAuto");
         SmartDashboard.putData("Auto Chooser", autoChooser);
         
     }
