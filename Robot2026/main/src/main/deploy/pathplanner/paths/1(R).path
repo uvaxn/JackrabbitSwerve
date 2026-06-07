@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.547314521075597,
-        "y": 6.627732632949719
+        "x": 3.5159570661896247,
+        "y": 1.4308228980321998
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.3019901241629466,
-        "y": 6.346797635926963
+        "x": 3.1492392611106146,
+        "y": 1.45143998236862
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.996744186045967,
-        "y": 6.022611806805042
+        "x": 2.922891567152381,
+        "y": 2.041912227477054
       },
       "prevControl": {
-        "x": 2.747103303025221,
-        "y": 6.0092166761740184
+        "x": 3.0606684243443487,
+        "y": 1.6187404518160098
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "EndFaceHubLeftAlt"
+      "linkedName": "1(R) End"
     }
   ],
   "rotationTargets": [],
@@ -33,11 +33,11 @@
   "pointTowardsZones": [
     {
       "fieldPosition": {
-        "x": 4.6,
-        "y": 4.0
+        "x": 4.64,
+        "y": 4.05
       },
       "rotationOffset": 0.0,
-      "minWaypointRelativePos": 0.83139534883721,
+      "minWaypointRelativePos": 0.8953488372093024,
       "maxWaypointRelativePos": 1.0,
       "name": "Point Towards Zone"
     }
@@ -65,10 +65,10 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -50.37970159914936
+    "rotation": 42.79598685448689
   },
   "reversed": false,
-  "folder": "AltLeftPaths",
+  "folder": "rightpath",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 0.0

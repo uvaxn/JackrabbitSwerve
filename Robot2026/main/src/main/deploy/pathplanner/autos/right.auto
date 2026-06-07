@@ -7,25 +7,31 @@
         {
           "type": "path",
           "data": {
-            "pathName": "FaceHub"
+            "pathName": "1(R)"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 5.0
+            "waitTime": 3.5
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "IntakeBalls"
+            "pathName": "2(R)"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "FaceHubEnd"
+            "pathName": "3(R)"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
           }
         }
       ]

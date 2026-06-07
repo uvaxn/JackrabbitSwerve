@@ -7,25 +7,31 @@
         {
           "type": "path",
           "data": {
-            "pathName": "FaceHubCenter"
+            "pathName": "1(C)"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
+            "waitTime": 3.5
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "GoToNeutral"
+            "pathName": "2(C)"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "GoHome"
+            "pathName": "3(C)"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
           }
         }
       ]

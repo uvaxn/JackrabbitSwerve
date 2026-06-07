@@ -9,15 +9,19 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StringPublisher;
 
 public class EaseofLife {
 
     private final BooleanPublisher isHubActivePublisher;
     public  final ShiftManager     shifts = new ShiftManager();
-
+    public StringPublisher autoStatePublisher;
     public EaseofLife() {
         isHubActivePublisher = NetworkTableInstance.getDefault()
             .getBooleanTopic("EaseofLife/IsHubActive")
+            .publish();
+        autoStatePublisher = NetworkTableInstance.getDefault()
+            .getStringTopic("EaseofLife/autoState")
             .publish();
     }
 
