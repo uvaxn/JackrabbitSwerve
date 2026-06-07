@@ -3,8 +3,9 @@
   "robotLength": 0.9,
   "holonomicMode": true,
   "pathFolders": [
-    "centerrightpath",
+    "leftaltpath",
     "centerleftpath",
+    "centerrightpath",
     "leftpath",
     "rightpath"
   ],
