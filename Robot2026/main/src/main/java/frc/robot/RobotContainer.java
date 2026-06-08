@@ -57,9 +57,9 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
     private SendableChooser<Command> autoChooser;
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
+    public final CameraSubsystem cameraSubsystem = new CameraSubsystem();
     
-    public final AutoAlign AligntoHub = new AutoAlign(drivetrain, cameraSubsystem, () -> joystick.getLeftY(),  () -> joystick.getLeftX(),  0.5);
+    public final AutoAlign AligntoHub = new AutoAlign(drivetrain, cameraSubsystem, () -> joystick.getLeftY(),  () -> joystick.getLeftX());
     double matchTime = DriverStation.getMatchTime();
     // Motors
     public final TalonFX m_ShooterR    = new TalonFX(23);
