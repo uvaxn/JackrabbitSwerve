@@ -13,9 +13,13 @@ public class Vars {
     public static final double AlignToHubP = 0.35;
     public static final double AlignToHubI = 0.07;
     public static final double AlignToHubD = 0.1;
-    public static final SlewRateLimiter xLimiter   = new SlewRateLimiter(8.0, -20.0, 0);
-    public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(8.0, -20.0, 0);
+    // controller stoff
+    public static final SlewRateLimiter xLimiter   = new SlewRateLimiter(20.0, -20.0, 0);
+    public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(20.0, -20.0, 0);
+    public static double lastLimitedX = 0;
+    public static double lastLimitedY = 0;
+    // no more controller stuph
     public static final double airTimeScalarSeconds = 1.0;
     public static final double MaxAngularRate = 1;
-
+    public static final double AutoAlignMaxSpeed = 0.6 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 }

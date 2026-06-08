@@ -59,7 +59,7 @@ public class RobotContainer {
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
     
-    public final AutoAlign AligntoHub = new AutoAlign(drivetrain, cameraSubsystem, () -> -joystick.getLeftY(),  () -> -joystick.getLeftX(),  0.5);
+    public final AutoAlign AligntoHub = new AutoAlign(drivetrain, cameraSubsystem, () -> joystick.getLeftY(),  () -> joystick.getLeftX(),  0.5);
     double matchTime = DriverStation.getMatchTime();
     // Motors
     public final TalonFX m_ShooterR    = new TalonFX(23);
@@ -96,22 +96,14 @@ public class RobotContainer {
                 double controller_x = joystick.getLeftY();
                 double controller_y = joystick.getLeftX();
                 double controller_rot = -joystick.getRightX();
-                controller_x = Math.copySign(controller_x * controller_x, controller_x);
-                controller_y = Math.copySign(controller_y * controller_y, controller_y);
+                double limitedX = Vars.xLimiter.calculate(controller_x * MaxSpeed);
+                double limitedY = Vars.yLimiter.calculate(controller_y * MaxSpeed);
+                Vars.lastLimitedX = limitedX;
+                Vars.lastLimitedY = limitedY;
                 return drive
-                    .withVelocityX(
-                        Vars.xLimiter.calculate(
-                            controller_x * MaxSpeed
-                        )
-                    )
-                    .withVelocityY(
-                        Vars.yLimiter.calculate(
-                            controller_y * MaxSpeed
-                        )
-                    )
-                    .withRotationalRate(
-                        controller_rot * MaxAngularRate
-                    );
+                    .withVelocityX(limitedX)
+                    .withVelocityY(limitedY)
+                    .withRotationalRate(controller_rot * MaxAngularRate);
             })
         );
         

@@ -41,6 +41,20 @@ public class CameraSubsystem extends SubsystemBase {
         SmartDashboard.putData("Field", field);
         photonEstimator = new PhotonPoseEstimator(aprilTagLayout, PoseStrategy.LOWEST_AMBIGUITY, Constants.kcamToRobot);
         EstimatedPosition = NetworkTableInstance.getDefault().getStructTopic("EstimatedPose", Pose3d.struct).publish();
+        // move tag poses here
+        field.getObject("tags").setPoses(
+            aprilTagLayout.getTags().stream()
+                .map(t -> t.pose.toPose2d())
+                .collect(java.util.stream.Collectors.toList())
+        );
+        Thread visionThread = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                cachedResults = camera.getAllUnreadResults();
+                try { Thread.sleep(20); } catch (InterruptedException e) { break; }
+            }
+        });
+        visionThread.setDaemon(true);
+        visionThread.start();
     }
     public Optional<Pose2d> getTagPose2d(int id) {
         var tag = aprilTagLayout.getTagPose(id);
@@ -81,34 +95,20 @@ public class CameraSubsystem extends SubsystemBase {
         return nearest;
     }
     @Override
-
     public void periodic() {
-        cachedResults = camera.getAllUnreadResults();
-
         for (PhotonPipelineResult result : cachedResults) {
             photonEstimator.update(result).ifPresent(est -> {
                 Pose2d estimatedPose2d = est.estimatedPose.toPose2d();
-
-                // Reject if too far from current odometry (bad solve)
                 if (swerveDrive.getState().Pose.getTranslation()
                         .getDistance(estimatedPose2d.getTranslation()) > 1.0) return;
-
                 swerveDrive.addVisionMeasurement(
                     estimatedPose2d,
                     est.timestampSeconds,
-                    VecBuilder.fill(0.3, 0.3, 9999999)  // trust X/Y, never trust rotation
+                    VecBuilder.fill(0.3, 0.3, 9999999)
                 );
-
                 EstimatedPosition.set(est.estimatedPose);
                 field.setRobotPose(estimatedPose2d);
             });
         }
-
-        // Update tag poses on field (only needs to happen once, could move to constructor)
-        field.getObject("tags").setPoses(
-            aprilTagLayout.getTags().stream()
-                .map(t -> t.pose.toPose2d())
-                .collect(java.util.stream.Collectors.toList())
-        );
     }
 }
