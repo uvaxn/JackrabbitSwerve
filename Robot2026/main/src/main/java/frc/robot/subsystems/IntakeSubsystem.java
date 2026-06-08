@@ -5,6 +5,7 @@ import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.controls.EaseofLife;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -12,7 +13,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private final TalonFX dropMotor;
     private final DigitalInput upperSensor;
     private final DigitalInput lowerSensor;
-
+    EaseofLife MotorMode = new EaseofLife();
     // TODO: tune these in motor rotations
     private static final double DROP_SPEED       = 0.15;
     private static final double LIFT_SPEED       = 0.15;
@@ -41,7 +42,7 @@ public class IntakeSubsystem extends SubsystemBase {
     public void requestDown() {
         if (isAtBottom() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
-        System.out.println("going down");
+        MotorMode.setAutoState("going down");
     }
 
     public void requestUp() {
@@ -52,7 +53,7 @@ public class IntakeSubsystem extends SubsystemBase {
             return;
         }
         state = DropState.MOVING_UP;
-        System.out.println("going up");
+        MotorMode.setAutoState("going up");
     }
 
     // Sensors

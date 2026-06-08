@@ -27,7 +27,6 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -43,15 +42,14 @@ import frc.robot.commands.AutoAlign;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.controls.EaseofLife;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.controls.Shooters;
 public class RobotContainer {
     private double MaxSpeed = 0.6 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-    private double MaxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond);
-
+    private double MaxAngularRate = RotationsPerSecond.of(Vars.MaxAngularRate).in(RadiansPerSecond);
+    
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.3).withRotationalDeadband(MaxAngularRate * 0.3)
+            .withDeadband(MaxSpeed * 0.03).withRotationalDeadband(MaxAngularRate * 0.03)
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
@@ -71,7 +69,7 @@ public class RobotContainer {
     public final TalonFX m_LowerFeed   = new TalonFX(21);
     public final TalonFX m_UpperFeed   = new TalonFX(24);
 
-    EaseofLife MotorMode = new EaseofLife();
+
     public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed);
 
     public final IntakeSubsystem intakes = new IntakeSubsystem(
@@ -85,7 +83,6 @@ public class RobotContainer {
         NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stopShoot()));
         NamedCommands.registerCommand("intake", new InstantCommand(intakes::requestDown, intakes));
         NamedCommands.registerCommand("intake up", new InstantCommand(intakes::requestUp, intakes));
-
         configureBindings();
         drivetrain.configureAutoBuilder();
 
@@ -93,14 +90,29 @@ public class RobotContainer {
         SmartDashboard.putData("Auto", autoChooser);
         
     }
-    
     private void configureBindings() {
         drivetrain.setDefaultCommand(
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(joystick.getLeftY() * MaxSpeed)
-                     .withVelocityY(joystick.getLeftX() * MaxSpeed)
-                     .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
-            )
+            drivetrain.applyRequest(() -> {
+                double controller_x = joystick.getLeftY();
+                double controller_y = joystick.getLeftX();
+                double controller_rot = -joystick.getRightX();
+                controller_x = Math.copySign(controller_x * controller_x, controller_x);
+                controller_y = Math.copySign(controller_y * controller_y, controller_y);
+                return drive
+                    .withVelocityX(
+                        Vars.xLimiter.calculate(
+                            controller_x * MaxSpeed
+                        )
+                    )
+                    .withVelocityY(
+                        Vars.yLimiter.calculate(
+                            controller_y * MaxSpeed
+                        )
+                    )
+                    .withRotationalRate(
+                        controller_rot * MaxAngularRate
+                    );
+            })
         );
         
         final var idle = new SwerveRequest.Idle();
@@ -137,8 +149,9 @@ public class RobotContainer {
         
     public Command getAutonomousCommand() {
         Command selected = autoChooser.getSelected();
-        System.out.println("auto: " + autoChooser.getSelected().getName());
+       
         if (selected == null) return Commands.none();
+        System.out.println("auto: " + autoChooser.getSelected().getName());
         return selected;
     }
 }

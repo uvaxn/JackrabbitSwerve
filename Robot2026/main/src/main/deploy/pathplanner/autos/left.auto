@@ -33,6 +33,18 @@
           "data": {
             "name": "shoot"
           }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.5
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "4(L)"
+          }
         }
       ]
     }

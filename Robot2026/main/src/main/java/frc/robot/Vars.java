@@ -1,5 +1,6 @@
 package frc.robot;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
@@ -12,8 +13,9 @@ public class Vars {
     public static final double AlignToHubP = 0.35;
     public static final double AlignToHubI = 0.07;
     public static final double AlignToHubD = 0.1;
-
+    public static final SlewRateLimiter xLimiter   = new SlewRateLimiter(8.0, -20.0, 0);
+    public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(8.0, -20.0, 0);
     public static final double airTimeScalarSeconds = 1.0;
-    public static final double MaxAngularRate = 3;
+    public static final double MaxAngularRate = 1;
 
 }

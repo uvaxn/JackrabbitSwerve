@@ -10,8 +10,8 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
-
-public class EaseofLife {
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+public class EaseofLife extends SubsystemBase {
 
     private final BooleanPublisher isHubActivePublisher;
     public  final ShiftManager     shifts = new ShiftManager();
@@ -24,7 +24,9 @@ public class EaseofLife {
             .getStringTopic("EaseofLife/autoState")
             .publish();
     }
-
+    public void setAutoState(String state) {
+        autoStatePublisher.set(state);
+    }
     public void teleopInit() {
         shifts.teleopInit();
     }

@@ -132,7 +132,7 @@ public class AutoAlign extends Command {
      * When the command ends, it is important to stop all moters.
      * The owner of this command can overwrite this function if this behavior is not desired.
      */
-    swerveDrive.applyRequest(()-> new SwerveRequest.Idle());
+    swerveDrive.setControl(new SwerveRequest.Idle());
   }
 
   // Returns true when the command should end.

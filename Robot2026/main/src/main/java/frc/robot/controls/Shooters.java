@@ -41,7 +41,7 @@ public class Shooters {
         shootTimer.reset();
         shootTimer.start();
         isShooting = true;
-        System.out.println("shooting");
+        MotorMode.setAutoState("shooting");
     }
     
 
@@ -54,6 +54,6 @@ public class Shooters {
         shootTimer.reset();
         isShooting = false;
         feedActive = false; // reset this too
-        System.out.println("shooting stopped");
+        MotorMode.setAutoState("shooting stopped");
     }
 }
