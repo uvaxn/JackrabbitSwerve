@@ -23,7 +23,7 @@ public class CameraSubsystem extends SubsystemBase {
     private final PhotonPoseEstimator poseEstimator = new PhotonPoseEstimator(
         fieldLayout,
         PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        Constants.kcamToRobot  // pulled from Constants, not hardcoded
+        Constants.kcamToRobot  
     );
 
     private Optional<EstimatedRobotPose> latestEstimate = Optional.empty();
