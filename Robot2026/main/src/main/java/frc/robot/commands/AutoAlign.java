@@ -10,40 +10,46 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Vars;
+import frc.robot.controls.EaseofLife;
+import frc.robot.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.CameraSubsystem;
 
 public class AutoAlign extends Command {
 
-    // Cap translation speed during alignment so the robot doesn't outrun its vision
     private final SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
-        .withDeadband(Vars.AutoAlignMaxSpeed * 0.1)
+        .withDeadband(Vars.MaxSpeed * 0.1)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final CommandSwerveDrivetrain swerveDrive;
-    private final CameraSubsystem cameraSubsystem;
+    
+    EaseofLife easeofLife = new EaseofLife();
     private final ProfiledPIDController rotationPID;
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
 
     /**
-     * rotates the robot to face the nearest AprilTag
+     * Rotates the robot to face the nearest AprilTag while allowing the driver
+     * to still control forward/lateral movement.
+     *
      * @param swerveDrive     the drivetrain subsystem
      * @param cameraSubsystem the vision subsystem
      * @param forwardSupplier field-centric percent max speed (forward)
      * @param leftSupplier    field-centric percent max speed (left)
      */
+
     public AutoAlign(
         CommandSwerveDrivetrain swerveDrive,
-        CameraSubsystem cameraSubsystem,
+        EaseofLife easeOfLife,
         DoubleSupplier forwardSupplier,
         DoubleSupplier leftSupplier) {
 
         this.swerveDrive = swerveDrive;
-        this.cameraSubsystem = cameraSubsystem;
+        this.easeofLife = easeOfLife;
         this.forwardSupplier = forwardSupplier;
         this.leftSupplier = leftSupplier;
 
@@ -67,23 +73,30 @@ public class AutoAlign extends Command {
     public void execute() {
         Optional<Pose2d> possiblePose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
 
-        double velocityX = forwardSupplier.getAsDouble() * Vars.AutoAlignMaxSpeed;
-        double velocityY = leftSupplier.getAsDouble() * Vars.AutoAlignMaxSpeed;
+        double velocityX = forwardSupplier.getAsDouble();
+        double velocityY = leftSupplier.getAsDouble();
         double rotationalRate = 0;
 
         if (possiblePose.isPresent()) {
+            
+            rotationPID.setPID(
+                easeofLife.getAlignP(),
+                easeofLife.getAlignI(),
+                easeofLife.getAlignD()
+            );
             Pose2d robotPose = possiblePose.get();
-            Optional<Pose2d> nearestTagPose = cameraSubsystem.getNearestTagPose(robotPose);
 
-            if (nearestTagPose.isPresent()) {
-                Translation2d toTag = nearestTagPose.get().getTranslation()
-                    .minus(robotPose.getTranslation());
-                double targetAngle = Math.atan2(toTag.getY(), toTag.getX());
+            // Pick hub based on alliance
+            Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+                ? Constants.redHubPosition
+                : Constants.blueHubPosition;
 
-                rotationPID.setGoal(targetAngle);
-                rotationalRate = rotationPID.calculate(robotPose.getRotation().getRadians())
-                    * Vars.MaxAngularRate;
-            }
+            Translation2d toHub = hubTarget.minus(robotPose.getTranslation());
+            double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
+
+            rotationPID.setGoal(targetAngle);
+            rotationalRate = rotationPID.calculate(robotPose.getRotation().getRadians())
+                * Vars.MaxAngularRate;
         }
 
         swerveDrive.setControl(

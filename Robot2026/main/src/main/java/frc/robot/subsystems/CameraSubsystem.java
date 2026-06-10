@@ -2,7 +2,7 @@ package frc.robot.subsystems;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.EstimatedRobotPose;
 
 import java.util.Optional;
@@ -10,50 +10,57 @@ import java.util.Optional;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
+import frc.robot.Vars;
 
 public class CameraSubsystem extends SubsystemBase {
+    private final CommandSwerveDrivetrain swerveDrive;
 
     private final PhotonCamera camera = new PhotonCamera("Limelight");
-
-    private final AprilTagFieldLayout fieldLayout =
-        AprilTagFields.k2026RebuiltAndymark.loadAprilTagLayoutField();
-
-    private final PhotonPoseEstimator poseEstimator = new PhotonPoseEstimator(
-        fieldLayout,
-        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        Constants.kcamToRobot  
-    );
+    private final Transform3d robotToCamera = Vars.kcamToRobot;
+    private final AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
+    private final PhotonPoseEstimator poseEstimator = new PhotonPoseEstimator(fieldLayout, robotToCamera);
 
     private Optional<EstimatedRobotPose> latestEstimate = Optional.empty();
+    private PhotonPipelineResult latestResult = null;
+
+    public CameraSubsystem(CommandSwerveDrivetrain swerveDrive) {
+        this.swerveDrive = swerveDrive;
+    }
 
     @Override
     public void periodic() {
-        latestEstimate = poseEstimator.update(camera.getLatestResult());
+        var results = camera.getAllUnreadResults();
+        if (!results.isEmpty()) {
+            latestResult = results.get(results.size() - 1);
+            latestEstimate = poseEstimator.estimateLowestAmbiguityPose(latestResult);
+
+            latestEstimate.ifPresent(est ->
+                swerveDrive.addVisionMeasurement(
+                    est.estimatedPose.toPose2d(),
+                    est.timestampSeconds
+                )
+            );
+        }
     }
 
-    /** Returns the latest estimated robot pose from PhotonVision. */
     public Optional<EstimatedRobotPose> getEstimatedPose() {
         return latestEstimate;
     }
 
-    /**
-     * Returns the pose of the nearest visible AprilTag to the given robot pose,
-     * or empty if no tags are currently detected.
-     */
     public Optional<Pose2d> getNearestTagPose(Pose2d robotPose) {
-        var result = camera.getLatestResult();
-        if (!result.hasTargets()) return Optional.empty();
+        if (latestResult == null || !latestResult.hasTargets()) return Optional.empty();
 
-        return result.getTargets().stream()
+        return latestResult.getTargets().stream()
             .map(target -> fieldLayout.getTagPose(target.getFiducialId()))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .map(tagPose3d -> tagPose3d.toPose2d())
-            .min((a, b) -> Double.compare(
-                a.getTranslation().getDistance(robotPose.getTranslation()),
-                b.getTranslation().getDistance(robotPose.getTranslation())
-            ));
+            .min((a, b) -> {
+                double distA = a.getTranslation().getDistance(robotPose.getTranslation());
+                double distB = b.getTranslation().getDistance(robotPose.getTranslation());
+                return Double.compare(distA, distB);
+            });
     }
 }

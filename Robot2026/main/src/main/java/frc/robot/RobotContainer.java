@@ -54,9 +54,9 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     private SendableChooser<Command> autoChooser;
-
+    
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    public final CameraSubsystem cameraSubsystem = new CameraSubsystem();
+    public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
 
     // Motors
     public final TalonFX m_ShooterR   = new TalonFX(23);
@@ -74,18 +74,11 @@ public class RobotContainer {
     );
 
     // Commands
-    public final AutoAlign alignToHub = new AutoAlign(
-        drivetrain,
-        cameraSubsystem,
-        joystick::getLeftY,
-        joystick::getLeftX
-    );
-
     public RobotContainer() {
         NamedCommands.registerCommand("shoot",      new InstantCommand(() -> shooters.shoot()));
         NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stopShoot()));
-        NamedCommands.registerCommand("intake",     new InstantCommand(intakes::requestDown, intakes));
-        NamedCommands.registerCommand("intake up",  new InstantCommand(intakes::requestUp,   intakes));
+        NamedCommands.registerCommand("intake",     new InstantCommand(intakes::startIntake, intakes));
+        NamedCommands.registerCommand("intake up",  new InstantCommand(intakes::stopIntake,  intakes));
 
         drivetrain.configureAutoBuilder();
         configureBindings();
@@ -127,12 +120,17 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         // Auto-align to nearest AprilTag
-        joystick.x().whileTrue(alignToHub);
+        joystick.x().whileTrue(new AutoAlign(
+            drivetrain,
+            easeOfLife,
+            () -> Vars.xLimiter.calculate(joystick.getLeftY() * Vars.MaxSpeed),
+            () -> Vars.yLimiter.calculate(joystick.getLeftX() * Vars.MaxSpeed)
+        ));
 
         // Intake
         joystick.leftTrigger()
-            .onTrue(new InstantCommand(intakes::requestDown, intakes))
-            .onFalse(new InstantCommand(intakes::requestUp,  intakes));
+            .onTrue(new InstantCommand(intakes::startIntake, intakes))
+            .onFalse(new InstantCommand(intakes::stopIntake,  intakes));
 
         // Shooter
         joystick.rightTrigger()

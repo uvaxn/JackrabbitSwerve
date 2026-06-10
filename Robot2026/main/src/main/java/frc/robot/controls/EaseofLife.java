@@ -9,15 +9,19 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.networktables.BooleanPublisher;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Vars;
+import edu.wpi.first.networktables.DoubleSubscriber;
+
 
 public class EaseofLife extends SubsystemBase {
 
     private final BooleanPublisher isHubActivePublisher;
-
+    private final DoubleSubscriber alignP;
+    private final DoubleSubscriber alignI;
+    private final DoubleSubscriber alignD;
     public final ShiftManager shifts = new ShiftManager();
     public StringPublisher autoStatePublisher;
 
@@ -29,7 +33,14 @@ public class EaseofLife extends SubsystemBase {
         autoStatePublisher = NetworkTableInstance.getDefault()
             .getStringTopic("EaseofLife/autoState")
             .publish();
+    NetworkTableInstance nt = NetworkTableInstance.getDefault();
+        nt.getDoubleTopic("EaseofLife/AlignToHubP").publish().set(Vars.AlignToHubP);
+        nt.getDoubleTopic("EaseofLife/AlignToHubI").publish().set(Vars.AlignToHubI);
+        nt.getDoubleTopic("EaseofLife/AlignToHubD").publish().set(Vars.AlignToHubD);
 
+        alignP = nt.getDoubleTopic("EaseofLife/AlignToHubP").subscribe(Vars.AlignToHubP);
+        alignI = nt.getDoubleTopic("EaseofLife/AlignToHubI").subscribe(Vars.AlignToHubI);
+        alignD = nt.getDoubleTopic("EaseofLife/AlignToHubD").subscribe(Vars.AlignToHubD);
     }
     public void setAutoState(String state) {
         autoStatePublisher.set(state);
@@ -58,7 +69,9 @@ public class EaseofLife extends SubsystemBase {
     public boolean isSensorTripped(DigitalInput sensor) {
         return !sensor.get();
     }
-
+    public double getAlignP() { return alignP.get(); }
+    public double getAlignI() { return alignI.get(); }
+    public double getAlignD() { return alignD.get(); }
     public boolean isHubActive() {
         Optional<Alliance> alliance = DriverStation.getAlliance();
         if (alliance.isEmpty())                  return false;
