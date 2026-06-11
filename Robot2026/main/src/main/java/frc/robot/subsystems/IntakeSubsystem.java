@@ -14,7 +14,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private final TalonFX dropMotor;
     private final DigitalInput upperSensor;
     private final DigitalInput lowerSensor;
-    EaseofLife MotorMode = new EaseofLife();
+    EaseofLife MotorMode;
 
     private static final double DROP_SPEED      = 0.15;
     private static final double LIFT_SPEED      = 0.15;
@@ -30,17 +30,18 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private enum DropState { IDLE, MOVING_DOWN, MOVING_UP }
     private DropState state = DropState.IDLE;
-
+    // what "Seeded" means in these variables is basically has it set off the top sensor (it stores that) 
     private boolean hasSeededTop    = false;
+    // same thing except for it's the bottom sensor
     private boolean hasSeededBottom = false;
 
     public IntakeSubsystem(TalonFX intakeMotor, TalonFX dropMotor,
-                           DigitalInput upperSensor, DigitalInput lowerSensor) {
+                        DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife easeOfLife) {
         this.intakeMotor = intakeMotor;
         this.dropMotor   = dropMotor;
         this.upperSensor = upperSensor;
         this.lowerSensor = lowerSensor;
-
+        this.MotorMode = easeOfLife;     
         dropMotor.setPosition(0.0);
         dropMotor.setControl(staticBrake);
 

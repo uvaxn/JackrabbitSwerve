@@ -45,7 +45,7 @@ public class RobotContainer {
     private final double MaxAngularRate = RotationsPerSecond.of(Vars.MaxAngularRate).in(RadiansPerSecond);
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-        .withDeadband(Vars.MaxSpeed * 0.03)
+        .withDeadband(Vars.MaxSpeed * 0.01)
         .withRotationalDeadband(MaxAngularRate * 0.003)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
@@ -65,12 +65,14 @@ public class RobotContainer {
     public final TalonFX m_IntakeDrop = new TalonFX(20);
     public final TalonFX m_LowerFeed  = new TalonFX(21);
     public final TalonFX m_UpperFeed  = new TalonFX(24);
-    public final EaseofLife easeOfLife = new EaseofLife();
-    public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed);
+
+    public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
+    public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed, easeOfLife);
     public final IntakeSubsystem intakes = new IntakeSubsystem(
         m_Intake, m_IntakeDrop,
         new DigitalInput(0),
-        new DigitalInput(1)
+        new DigitalInput(1),
+        easeOfLife
     );
 
     // Commands
@@ -120,7 +122,8 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         // Auto-align to nearest AprilTag
-        joystick.x().whileTrue(new AutoAlign(
+        joystick.x()
+        .whileTrue(new AutoAlign(
             drivetrain,
             easeOfLife,
             () -> Vars.xLimiter.calculate(joystick.getLeftY() * Vars.MaxSpeed),

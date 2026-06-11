@@ -28,7 +28,7 @@ public class AutoAlign extends Command {
 
     private final CommandSwerveDrivetrain swerveDrive;
     
-    EaseofLife easeofLife = new EaseofLife();
+    EaseofLife easeofLife;
     private final ProfiledPIDController rotationPID;
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
@@ -78,11 +78,14 @@ public class AutoAlign extends Command {
         double velocityY = leftSupplier.getAsDouble();
         double rotationalRate = 0;
 
+        if (possiblePose.isEmpty()) return;
         Pose2d robotPose = possiblePose.get();
         rotationPID.setPID(
+            // more P and D, minimize I as much as you can
             easeofLife.getAlignP(),
             easeofLife.getAlignI(),
             easeofLife.getAlignD()
+            //  TODO: -------------->>>>>>>>>>>>>> adjust PID for AutoAlign!!!!! <<<<<<<<<<<<--------------------
         );
         // Pick hub based on alliance
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
