@@ -12,10 +12,8 @@ public class Shooters extends SubsystemBase {
     private final TalonFX upperFeed;
     EaseofLife MotorMode;
     CameraSubsystem cam;
-    private boolean isShooting = false;
     private double SHOOTER_SPEED = 0.8;
     private static final double FEED_SPEED = 0.8;
-    private boolean feedActive = false;
     // avoid duplicate instantiation
     public Shooters(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem camerasubsystem) {
         this.shooterR  = shooterR;
@@ -31,7 +29,6 @@ public class Shooters extends SubsystemBase {
         MotorMode.setSpeed(shooterR, -SHOOTER_SPEED);
         MotorMode.setSpeed(lowerFeed, -FEED_SPEED);
         MotorMode.setSpeed(upperFeed,  0.8);
-        isShooting = true;
         MotorMode.setAutoState("shooting");
     }
     
@@ -41,8 +38,6 @@ public class Shooters extends SubsystemBase {
         MotorMode.setSpeed(shooterR,  0);
         MotorMode.setSpeed(lowerFeed, 0);
         MotorMode.setSpeed(upperFeed, 0);
-        isShooting = false;
-        feedActive = false; 
         MotorMode.setAutoState("shooting stopped");
     }
     public double calculateShooterSpeed(double dist) {
