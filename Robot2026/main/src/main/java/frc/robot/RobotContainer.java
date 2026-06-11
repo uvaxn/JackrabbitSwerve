@@ -46,7 +46,7 @@ public class RobotContainer {
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
         .withDeadband(Vars.MaxSpeed * 0.03)
-        .withRotationalDeadband(MaxAngularRate * 0.03)
+        .withRotationalDeadband(MaxAngularRate * 0.003)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();

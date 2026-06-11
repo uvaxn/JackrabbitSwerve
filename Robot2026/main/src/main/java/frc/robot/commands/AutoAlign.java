@@ -18,7 +18,8 @@ import frc.robot.Vars;
 import frc.robot.controls.EaseofLife;
 import frc.robot.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.util.Units;
 public class AutoAlign extends Command {
 
     private final SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
@@ -77,27 +78,36 @@ public class AutoAlign extends Command {
         double velocityY = leftSupplier.getAsDouble();
         double rotationalRate = 0;
 
-        if (possiblePose.isPresent()) {
-            
-            rotationPID.setPID(
-                easeofLife.getAlignP(),
-                easeofLife.getAlignI(),
-                easeofLife.getAlignD()
-            );
-            Pose2d robotPose = possiblePose.get();
+        Pose2d robotPose = possiblePose.get();
+        rotationPID.setPID(
+            easeofLife.getAlignP(),
+            easeofLife.getAlignI(),
+            easeofLife.getAlignD()
+        );
+        // Pick hub based on alliance
+        Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+            ? Constants.redHubPosition
+            : Constants.blueHubPosition;
 
-            // Pick hub based on alliance
-            Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-                ? Constants.redHubPosition
-                : Constants.blueHubPosition;
+        Translation2d toHub = hubTarget.minus(robotPose.getTranslation());
+        double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
 
-            Translation2d toHub = hubTarget.minus(robotPose.getTranslation());
-            double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
+        // Publish angles
+        SmartDashboard.putNumber(
+            "AutoAlign/TargetAngleDeg",
+            Units.radiansToDegrees(targetAngle)
+        );
 
-            rotationPID.setGoal(targetAngle);
-            rotationalRate = rotationPID.calculate(robotPose.getRotation().getRadians())
-                * Vars.MaxAngularRate;
-        }
+        SmartDashboard.putNumber(
+            "AutoAlign/RobotAngleDeg",
+            robotPose.getRotation().getDegrees()
+        );
+
+        rotationPID.setGoal(targetAngle);
+
+        rotationalRate = rotationPID.calculate(
+            robotPose.getRotation().getRadians()
+        ) * Vars.MaxAngularRate;
 
         swerveDrive.setControl(
             request
