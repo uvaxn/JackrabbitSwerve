@@ -3,28 +3,26 @@ package frc.robot.controls;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.CameraSubsystem;
 public class Shooters extends SubsystemBase {
     private final TalonFX shooterR;
 
-    private final TalonFX shooterL;
     private final TalonFX lowerFeed;
     private final TalonFX upperFeed;
     EaseofLife MotorMode;
-
-    private final Timer shootTimer = new Timer();
+    CameraSubsystem cam;
     private boolean isShooting = false;
     private double SHOOTER_SPEED = 0.8;
     private static final double FEED_SPEED = 0.8;
     private boolean feedActive = false;
     // avoid duplicate instantiation
-    public Shooters(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife) {
+    public Shooters(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem camerasubsystem) {
         this.shooterR  = shooterR;
-        this.shooterL  = shooterL;
         this.lowerFeed = lowerFeed;
         this.upperFeed = upperFeed;
-        this.MotorMode = easeOfLife; 
+        this.MotorMode = easeOfLife;
+        this.cam = camerasubsystem; 
         shooterL.setControl(new Follower(shooterR.getDeviceID(), MotorAlignmentValue.Opposed));
     }
 
@@ -61,6 +59,6 @@ public class Shooters extends SubsystemBase {
         return MIN_SPEED + Math.pow(doobiescootcanoe, EXPONENT) * (MAX_SPEED - MIN_SPEED);
     }
     public void periodic() {
-
+        SHOOTER_SPEED = calculateShooterSpeed(MotorMode.getDistToHub());
     }
 }

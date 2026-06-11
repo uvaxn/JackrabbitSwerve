@@ -84,7 +84,10 @@ public class EaseofLife extends SubsystemBase {
     public double getAlignI() { return alignI.get(); }
     public double getAlignD() { return alignD.get(); }
     
-    public void setDistToHub(double dist) {
+    public double getDistToHub() {
+        return cam.getDistanceToHub();
+    }
+    public void setDistToHub() {
         distToHubPublisher.set(cam.getDistanceToHub());
     }
     public boolean isHubActive() {
