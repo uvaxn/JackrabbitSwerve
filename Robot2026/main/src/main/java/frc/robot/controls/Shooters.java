@@ -31,7 +31,6 @@ public class Shooters extends SubsystemBase {
         MotorMode.setSpeed(upperFeed,  0.8);
         MotorMode.setAutoState("shooting");
     }
-    
 
     // stops everything
     public void stopShoot() {
@@ -42,15 +41,15 @@ public class Shooters extends SubsystemBase {
     }
     public double calculateShooterSpeed(double dist) {
         // TODO: ⚠️⚠️⚠️⚠️⚠️\ adjust this please!!!!!!!!!!!!!!! ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-        final double MIN_DIST = 1.0;
+        final double MIN_DIST = 0;
         final double MAX_DIST = 4.5;
         final double MIN_SPEED = 0.5;
         final double MAX_SPEED = 1.0;
-        final double EXPONENT = 1.5; // increase for steeper curve
+        final double EXPONENT = 2; // increase for steeper curve
 
-        dist = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
+        final double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
 
-        double doobiescootcanoe = (dist - MIN_DIST) / (MAX_DIST - MIN_DIST); // 0 to 1
+        double doobiescootcanoe = (Distance - MIN_DIST) / (MAX_DIST - MIN_DIST); // 0 to 1
         return MIN_SPEED + Math.pow(doobiescootcanoe, EXPONENT) * (MAX_SPEED - MIN_SPEED);
     }
     public void periodic() {

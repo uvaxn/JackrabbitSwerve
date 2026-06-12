@@ -36,15 +36,26 @@ public class CameraSubsystem extends SubsystemBase {
     }
     public double getDistanceToHub() {
         Optional<Pose2d> pose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
-        if (pose.isEmpty() ) return 3; // returns a default distance of 3 meters TODO: add the field's coordinates just so that it doesn't return a distance of 92536 meters or something
+        if (pose.isEmpty()) return 3;
+
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
             ? Constants.redHubPosition
             : Constants.blueHubPosition;
+
         Pose2d robotPose = pose.get();
-        double toHub = hubTarget.minus(robotPose.getTranslation()).getNorm();
-        return toHub;
+        Translation2d t = robotPose.getTranslation();
+
+        // filter out garbage poses outside field bounds
+        if (t.getX() < 0 || t.getX() > 16.54 ||
+            t.getY() < 0 || t.getY() > 8.21) {
+            DriverStation.reportWarning("WARNING: getDistanceToHub() has reported an OUT OF BOUNDS POSE (x " + t.getX() +"), (y " + t.getY() + ").", true);
+            return 3;
+        }
+
+        return hubTarget.minus(t).getNorm();
     }
     @Override
+    
     public void periodic() {
         var results = camera.getAllUnreadResults();
         if (!results.isEmpty()) {
