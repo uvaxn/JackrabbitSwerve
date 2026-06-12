@@ -3,25 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.1536763017062586,
-        "y": 5.0330173440749615
+        "x": 1.3255277280858673,
+        "y": 4.903059033989266
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.153676301706258,
-        "y": 5.0330173440749615
+        "x": 1.6141622929423969,
+        "y": 5.4841176848187265
       },
       "isLocked": false,
       "linkedName": "Alt 2(L) End"
     },
     {
       "anchor": {
-        "x": 2.8466107163567984,
-        "y": 6.6046356460946605
+        "x": 2.1607187647780512,
+        "y": 5.692805627585546
       },
       "prevControl": {
-        "x": 1.8466107163567984,
-        "y": 6.6046356460946605
+        "x": 1.9128186619814955,
+        "y": 5.660470831568606
+      },
+      "nextControl": {
+        "x": 2.4086188675746083,
+        "y": 5.725140423602486
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 3.223899821109123,
+        "y": 5.795456171735241
+      },
+      "prevControl": {
+        "x": 2.9745351461514393,
+        "y": 5.777644409238263
       },
       "nextControl": null,
       "isLocked": false,
@@ -29,9 +45,57 @@
     }
   ],
   "rotationTargets": [],
-  "constraintZones": [],
-  "pointTowardsZones": [],
-  "eventMarkers": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.216949152542373,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 0.5,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [
+    {
+      "fieldPosition": {
+        "x": 4.6,
+        "y": 4.1
+      },
+      "rotationOffset": 0.0,
+      "minWaypointRelativePos": 0.0,
+      "maxWaypointRelativePos": 1.9322033898305084,
+      "name": "Point Towards Zone"
+    }
+  ],
+  "eventMarkers": [
+    {
+      "name": "shoot",
+      "waypointRelativePos": 0.07457627118644067,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "shoot"
+        }
+      }
+    },
+    {
+      "name": "stop shoot",
+      "waypointRelativePos": 2.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "stop shoot"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -42,13 +106,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -50.680890817965945
+    "rotation": -59.03624346792647
   },
   "reversed": false,
   "folder": "leftaltpath",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 4.621958179749343
+    "rotation": -16.149074362148525
   },
   "useDefaultConstraints": true
 }

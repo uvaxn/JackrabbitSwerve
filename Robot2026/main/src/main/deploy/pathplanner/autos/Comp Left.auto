@@ -11,12 +11,6 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 3.5
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "Alt 2(L)"
@@ -29,9 +23,15 @@
           }
         },
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "shoot"
+            "pathName": "Alt 4(L)"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Alt 5(L)"
           }
         }
       ]
