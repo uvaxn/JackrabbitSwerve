@@ -16,20 +16,50 @@
     },
     {
       "anchor": {
-        "x": 3.3050268336372484,
-        "y": 5.73055456171104
+        "x": 2.8466107163567984,
+        "y": 6.6046356460946605
       },
       "prevControl": {
-        "x": 3.0749370164104155,
-        "y": 5.8283230433834206
+        "x": 3.171370451166437,
+        "y": 6.579900965857843
+      },
+      "nextControl": {
+        "x": 2.5218509815471597,
+        "y": 6.629370326331478
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.1752929546412443,
+        "y": 7.12231963626983
+      },
+      "prevControl": {
+        "x": 0.9288258010670469,
+        "y": 7.164199729500778
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "1(L) End"
+      "linkedName": "1(Alt L) End"
     }
   ],
   "rotationTargets": [],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 1.0711864406779674,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 1.0,
+        "maxAcceleration": 0.1,
+        "maxAngularVelocity": 50.0,
+        "maxAngularAcceleration": 50.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [
     {
       "fieldPosition": {
@@ -37,8 +67,8 @@
         "y": 4.032
       },
       "rotationOffset": 0.0,
-      "minWaypointRelativePos": 0.9098837209302324,
-      "maxWaypointRelativePos": 1.0,
+      "minWaypointRelativePos": 1.077966101694917,
+      "maxWaypointRelativePos": 2.0,
       "name": "Hub"
     }
   ],
