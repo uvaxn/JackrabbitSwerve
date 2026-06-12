@@ -5,6 +5,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CameraSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
+
 public class Shooters extends SubsystemBase {
     private final TalonFX shooterR;
 
@@ -14,12 +16,14 @@ public class Shooters extends SubsystemBase {
     CameraSubsystem cam;
     private double SHOOTER_SPEED = 0.8;
     private static final double FEED_SPEED = 0.8;
+    private final IntakeSubsystem intakes;
     // avoid duplicate instantiation
-    public Shooters(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem camerasubsystem) {
+    public Shooters(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem camerasubsystem, IntakeSubsystem intakeSubsystem) {
         this.shooterR  = shooterR;
         this.lowerFeed = lowerFeed;
         this.upperFeed = upperFeed;
         this.MotorMode = easeOfLife;
+        this.intakes = intakeSubsystem;
         this.cam = camerasubsystem; 
         shooterL.setControl(new Follower(shooterR.getDeviceID(), MotorAlignmentValue.Opposed));
     }
@@ -28,15 +32,17 @@ public class Shooters extends SubsystemBase {
     public void shoot() {
         MotorMode.setSpeed(shooterR, -SHOOTER_SPEED);
         MotorMode.setSpeed(lowerFeed, -FEED_SPEED);
-        MotorMode.setSpeed(upperFeed,  0.8);
+        MotorMode.setSpeed(upperFeed, 0.8);
+        intakes.startFeeding();
         MotorMode.setAutoState("shooting");
     }
 
     // stops everything
     public void stopShoot() {
-        MotorMode.setSpeed(shooterR,  0);
+        MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(lowerFeed, 0);
         MotorMode.setSpeed(upperFeed, 0);
+        intakes.stopFeeding();
         MotorMode.setAutoState("shooting stopped");
     }
     public double calculateShooterSpeed(double dist) {

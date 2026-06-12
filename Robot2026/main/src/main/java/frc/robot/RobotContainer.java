@@ -67,14 +67,14 @@ public class RobotContainer {
     public final TalonFX m_UpperFeed  = new TalonFX(24);
 
     public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
-    public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed, easeOfLife, cameraSubsystem);
+    
     public final IntakeSubsystem intakes = new IntakeSubsystem(
         m_Intake, m_IntakeDrop,
         new DigitalInput(0),
         new DigitalInput(1),
         easeOfLife
     );
-
+    public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed, easeOfLife, cameraSubsystem, intakes);
     // Commands
     public RobotContainer() {
         NamedCommands.registerCommand("shoot",      new InstantCommand(() -> shooters.shoot()));
