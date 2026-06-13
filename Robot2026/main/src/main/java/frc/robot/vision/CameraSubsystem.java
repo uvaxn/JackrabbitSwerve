@@ -70,8 +70,6 @@ public class CameraSubsystem extends SubsystemBase {
             VecBuilder.fill(stdDev, stdDev, 9999999)
         );
     }
-
-    // Unchanged from your original
     public double getDistanceToHub() {
         Optional<Pose2d> pose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
         if (pose.isEmpty()) return 3;
