@@ -14,7 +14,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
-import frc.robot.subsystems.CameraSubsystem;
+import frc.robot.vision.CameraSubsystem;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 

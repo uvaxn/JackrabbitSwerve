@@ -16,8 +16,8 @@ public class IntakeSubsystem extends SubsystemBase {
     private final DigitalInput lowerSensor;
     EaseofLife MotorMode;
 
-    private static final double DROP_SPEED      = 0.15;
-    private static final double LIFT_SPEED      = 0.1;
+    private double DROP_SPEED      = 0.15;
+    private double LIFT_SPEED      = 0.1;
     private static final double SOFT_LIMIT_DOWN = 50.0;
     private static final double SOFT_LIMIT_UP   = 2.0;
 

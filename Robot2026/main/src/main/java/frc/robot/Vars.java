@@ -19,6 +19,6 @@ public class Vars {
     public static double lastLimitedX = 0;
     public static double lastLimitedY = 0;
     // no more controller stuph
-    public static final double airTimeScalarSeconds = 1.0;
+    public static final double airTimeScalarSeconds = 5.629; // higher number = less predicition
     public static final double MaxAngularRate = 1;
 }

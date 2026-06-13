@@ -36,9 +36,9 @@ import frc.robot.commands.AutoAlign;
 import frc.robot.controls.EaseofLife;
 import frc.robot.controls.Shooters;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.vision.CameraSubsystem;
 
 public class RobotContainer {
 
@@ -57,7 +57,7 @@ public class RobotContainer {
     
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
-
+    public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
     // Motors
     public final TalonFX m_ShooterR   = new TalonFX(23);
     public final TalonFX m_ShooterL   = new TalonFX(22);
@@ -66,7 +66,7 @@ public class RobotContainer {
     public final TalonFX m_LowerFeed  = new TalonFX(21);
     public final TalonFX m_UpperFeed  = new TalonFX(24);
 
-    public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
+    
     
     public final IntakeSubsystem intakes = new IntakeSubsystem(
         m_Intake, m_IntakeDrop,

@@ -1,4 +1,8 @@
-package frc.robot.subsystems;
+// Note, While photon vision is the OS currently being used, i do plan on switching over to Limelight OS simply because
+// of the IMU and elevated hardware capabilities with the Limelight 4 that I am not taking advantage of with photon vision.
+// Megatag2 is also pretty good.
+
+package frc.robot.vision;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -9,6 +13,7 @@ import java.util.Optional;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -18,6 +23,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Vars;
+import frc.robot.controls.EaseofLife;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class CameraSubsystem extends SubsystemBase {
     private final CommandSwerveDrivetrain swerveDrive;
@@ -48,7 +55,9 @@ public class CameraSubsystem extends SubsystemBase {
         // filter out garbage poses outside field bounds
         if (t.getX() < 0 || t.getX() > 16.54 ||
             t.getY() < 0 || t.getY() > 8.21) {
-            DriverStation.reportWarning("WARNING: getDistanceToHub() has reported an OUT OF BOUNDS POSE (x " + t.getX() +"), (y " + t.getY() + ").", true);
+                DriverStation.reportWarning(
+        "getDistanceToHub() OUT OF BOUNDS POSE (x=" + String.format("%.2f", t.getX()) + 
+        " y=" + String.format("%.2f", t.getY()) + ")", false);
             return 3;
         }
 
@@ -61,11 +70,14 @@ public class CameraSubsystem extends SubsystemBase {
         if (!results.isEmpty()) {
             latestResult = results.get(results.size() - 1); // because why not
             latestEstimate = poseEstimator.estimateLowestAmbiguityPose(latestResult);
+            double dist = getDistanceToHub();
+            double stdDev = 0.5 * dist * dist; // scales trust down exponentially with distance
             // TODO: do the thing that enables multi tag in photon settings
             latestEstimate.ifPresent(est ->
                 swerveDrive.addVisionMeasurement(
                     est.estimatedPose.toPose2d(),
-                    est.timestampSeconds
+                    est.timestampSeconds,
+                    VecBuilder.fill(stdDev, stdDev, 9999999)
                 )
             );
         }
