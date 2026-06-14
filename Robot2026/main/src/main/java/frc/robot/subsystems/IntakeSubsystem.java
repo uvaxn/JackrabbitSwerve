@@ -6,6 +6,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.controls.EaseofLife;
+import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class IntakeSubsystem extends SubsystemBase {
@@ -52,12 +53,14 @@ public class IntakeSubsystem extends SubsystemBase {
     public void requestDown() {
         if (isAtBottom() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
-        MotorMode.setAutoState("going down");
+        nt.putRobotState("going down");
     }
     public void startIntake() {
         MotorMode.setSpeed(dropMotor, INTAKE_COLLECT_SPEED);
+        nt.putRobotState("intaking");
     }
     public void stopIntake() {
+        nt.putRobotState("stop intaking");
         MotorMode.setSpeed(dropMotor, 0);
     }
     public void startFeeding() {
@@ -68,14 +71,14 @@ public class IntakeSubsystem extends SubsystemBase {
             return;
         }
         state = DropState.MOVING_UP;
-        MotorMode.setAutoState("going up");
+        nt.putRobotState("going up");
     }
 
     public void stopFeeding() {
         intakeMotor.stopMotor();
         dropMotor.setControl(staticBrake);
         state = DropState.IDLE;
-        MotorMode.setAutoState("idle");
+        nt.putRobotState("going down");
     }
 
     /** @return true when the arm is not moving useful for command isFinished() checks */
@@ -117,7 +120,6 @@ public class IntakeSubsystem extends SubsystemBase {
                     dropMotor.setControl(coastOut);
                     intakeMotor.set(INTAKE_COLLECT_SPEED); // start collecting at bottom
                     state = DropState.IDLE;
-                    System.out.println("Intake: reached bottom, now collecting.");
                 } else {
                     dropMotor.set(-DROP_SPEED);
                 }
@@ -127,7 +129,6 @@ public class IntakeSubsystem extends SubsystemBase {
                     dropMotor.setControl(staticBrake);
                     // NOTE: intake motor keeps spinning (set by startFeeding) until stopFeeding() is called
                     state = DropState.IDLE;
-                    System.out.println("Intake: reached top.");
                 } else {
                     dropMotor.set(LIFT_SPEED);
                 }

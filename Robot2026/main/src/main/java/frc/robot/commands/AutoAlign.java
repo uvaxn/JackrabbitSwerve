@@ -18,6 +18,7 @@ import frc.robot.Vars;
 import frc.robot.controls.EaseofLife;
 import frc.robot.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.util.Units;
 public class AutoAlign extends Command {
@@ -48,7 +49,7 @@ public class AutoAlign extends Command {
         EaseofLife easeOfLife,
         DoubleSupplier forwardSupplier,
         DoubleSupplier leftSupplier) {
-
+            
         this.swerveDrive = swerveDrive;
         this.easeofLife = easeOfLife;
         this.forwardSupplier = forwardSupplier;
@@ -108,10 +109,7 @@ public class AutoAlign extends Command {
 
         double targetAngle = Math.atan2(toHubPredicted.getY(), toHubPredicted.getX());
 
-        SmartDashboard.putNumber(
-            "AutoAlign/TargetAngleDeg",
-            Units.radiansToDegrees(targetAngle)
-        );
+        nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
         SmartDashboard.putNumberArray("Pose/predictedRobotPos", new double[]{
             predictedRobotPos.getX(),
             predictedRobotPos.getY(),

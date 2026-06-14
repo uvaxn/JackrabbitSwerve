@@ -26,12 +26,13 @@ public class CameraSubsystem extends SubsystemBase {
 
     public CameraSubsystem(CommandSwerveDrivetrain swerveDrive) {
         this.swerveDrive = swerveDrive;
+        LimelightHelpers.SetIMUMode("limelight", 1);
     }
 
     @Override
     public void periodic() {
-        // Feed heading to Limelight every loop (required for MegaTag2)
-        LimelightHelpers.SetIMUMode("limelight", 1);
+        // feed heading (rotation ) to Limelight every loop 
+        
         LimelightHelpers.SetRobotOrientation(
             "limelight",
             swerveDrive.getState().Pose.getRotation().getDegrees(),
@@ -40,15 +41,13 @@ public class CameraSubsystem extends SubsystemBase {
 
         LimelightHelpers.PoseEstimate mt2 =
             LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
-
-        // Same empty-check pattern as your original results.isEmpty()
         if (mt2 == null || mt2.tagCount == 0) return;
 
         latestEstimate = Optional.of(mt2.pose);
 
         Translation2d t = mt2.pose.getTranslation();
 
-        // Same bounds check as your original
+        // bounds check
         if (t.getX() < 0 || t.getX() > 16.54 ||
             t.getY() < 0 || t.getY() > 8.21) {
             DriverStation.reportWarning(
@@ -57,10 +56,10 @@ public class CameraSubsystem extends SubsystemBase {
             return;
         }
 
-        // Reject if spinning too fast, same spirit as ambiguity filtering in PV
+        // reject if spinning too fast (megatag 2 no likey that)
         if (Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond) > Vars.maxYawRateForVision) return;
 
-        // Distance-scaled std devs (replaces estimateLowestAmbiguityPose trust logic)
+        // Distance scaled stddevs
         double dist = getDistanceToHub();
         double stdDev = 0.5 * dist * dist;
 
@@ -74,9 +73,9 @@ public class CameraSubsystem extends SubsystemBase {
         Optional<Pose2d> pose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
         if (pose.isEmpty()) return 3;
 
-        Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-            ? Constants.redHubPosition
-            : Constants.blueHubPosition;
+    Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+        ? Constants.redHubPosition
+        : Constants.blueHubPosition;
 
         Pose2d robotPose = pose.get();
         Translation2d t = robotPose.getTranslation();
@@ -92,7 +91,7 @@ public class CameraSubsystem extends SubsystemBase {
         return hubTarget.minus(t).getNorm();
     }
 
-    // Same signature as your original, just Pose2d instead of EstimatedRobotPose
+    // but now in a pose2d format!
     public Optional<Pose2d> getEstimatedPose() {
         return latestEstimate;
     }

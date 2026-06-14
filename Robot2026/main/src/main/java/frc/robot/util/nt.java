@@ -1,44 +1,58 @@
 package frc.robot.util;
-/*
-    StructPublisher<Pose2d>        pose    = table.getStructTopic("Pose", Pose2d.struct).publish();
-    StructPublisher<Pose3d>        pose3d  = table.getStructTopic("Pose3d", Pose3d.struct).publish();
-    StructPublisher<Translation2d> trans   = table.getStructTopic("Trans", Translation2d.struct).publish();
-    StructPublisher<Rotation2d>    rot     = table.getStructTopic("Rot", Rotation2d.struct).publish();
-    StructPublisher<ChassisSpeeds> speeds  = table.getStructTopic("Speeds", ChassisSpeeds.struct).publish();
-    DoublePublisher       // double
-    FloatPublisher        // float
-    IntegerPublisher      // long
-    BooleanPublisher      // boolean
-    StringPublisher       // String
-    Array versions
-    DoubleArrayPublisher  // double[]
-    FloatArrayPublisher   // float[]
-    IntegerArrayPublisher // long[]
-    BooleanArrayPublisher // boolean[]
-    StringArrayPublisher  // String[]
-    StructArrayPublisher<Pose2d>   poses   = table.getStructArrayTopic("Poses", Pose2d.struct).publish();
-*/
+
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructArrayPublisher;
-import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.networktables.StringPublisher;
+import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.DoubleSubscriber;
+import frc.robot.Vars;
 
 public class nt {
-    private static final NetworkTableInstance nt = NetworkTableInstance.getDefault();
+    private static final NetworkTableInstance ntInst = NetworkTableInstance.getDefault();
+    private static final NetworkTable rbtTable = ntInst.getTable("Robot");
+    private static final NetworkTable infoTable = ntInst.getTable("Info");
 
-    private static final NetworkTable table = nt.getTable("Robot");
+    // robot
+    private static final StringPublisher robotState = rbtTable.getStringTopic("State").publish();
 
-    // key
-    private static final DoublePublisher targetAngle     = table.getDoubleTopic("AutoAlign/TargetAngleDeg").publish();
-    // These use the struct publisher pattern
+    // autoalign
+    private static final DoublePublisher targetAngle = rbtTable.getDoubleTopic("AutoAlign/TargetAngleDeg").publish();
 
-    public static void putTargetAngle(double deg)            { targetAngle.set(deg); }
-    // just copy this over and over ig
+    // ease of life
+    private static final StringPublisher currentShift = infoTable.getStringTopic("EaseofLife/CurrentShift").publish();
+    private static final DoublePublisher shiftTimeRemaining = infoTable.getDoubleTopic("EaseofLife/ShiftTimeRemaining").publish();
+    private static final BooleanPublisher isHubActive = infoTable.getBooleanTopic("EaseofLife/IsHubActive").publish();
+    private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
+    private static final DoublePublisher shooterSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterSpeed").publish();
+
+    // PID publishers (initial values)
+    private static final DoublePublisher AligntoHubP = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").publish();
+    private static final DoublePublisher AligntoHubI = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").publish();
+    private static final DoublePublisher AligntoHubD = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").publish();
+
+
+    // PID subscribers (for live tuning from dashboard)
+    private static final DoubleSubscriber alignPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").subscribe(Vars.AlignToHubP);
+    private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Vars.AlignToHubI);
+    private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Vars.AlignToHubD);
+
+    
+
+    public static void putTargetAngle(double deg)   { targetAngle.set(deg); }
+    public static void putCurrentShift(String shift){ currentShift.set(shift); }
+    public static void putShiftTime(double time)    { shiftTimeRemaining.set(time); }
+    public static void isHubActive(boolean active)  { isHubActive.set(active); }
+    public static void putRobotState(String state)  { robotState.set(state); }
+    public static void putDisttoHub(double dist)    { distToHubPublisher.set(dist); }
+    public static void putShooterspeed(double speed){ shooterSpeed.set(speed); }
+    // PID setters
+    public static void putP(double P) { AligntoHubP.set(P); }
+    public static void putI(double I) { AligntoHubI.set(I); }
+    public static void putD(double D) { AligntoHubD.set(D); }
+
+    // PID getters (reads live value from dashboard)
+    public static double getAlignP() { return alignPSub.get(); }
+    public static double getAlignI() { return alignISub.get(); }
+    public static double getAlignD() { return alignDSub.get(); }
 }

@@ -4,9 +4,6 @@ import com.ctre.phoenix6.HootAutoReplay;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.networktables.NT4Publisher;
-import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends TimedRobot {
 
@@ -20,17 +17,6 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         m_robotContainer = new RobotContainer();
-
-            Logger.recordMetadata("ProjectName", "MyRobot");
-
-        if (isReal()) {
-            Logger.addDataReceiver(new WPILOGWriter()); // logs to USB stick
-            Logger.addDataReceiver(new NT4Publisher()); // live in Advantage Scope
-        } else {
-            Logger.addDataReceiver(new NT4Publisher()); // sim only
-        }
-
-        Logger.start();
     }
 
     @Override

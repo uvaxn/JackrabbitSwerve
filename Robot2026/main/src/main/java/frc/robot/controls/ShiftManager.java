@@ -1,12 +1,8 @@
 package frc.robot.controls;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.StringPublisher;
-import edu.wpi.first.networktables.NetworkTableInstance;
-
+import frc.robot.util.nt;
 public class ShiftManager {
-
     public enum Shift {
         TRANSITION, SHIFT_1, SHIFT_2, SHIFT_3, SHIFT_4, ENDGAME, UNKNOWN
     }
@@ -17,8 +13,7 @@ public class ShiftManager {
     public static final double SHIFT3_END     =  55.0;
     public static final double ENDGAME_START  =  30.0;
 
-    private final StringPublisher  currentShiftPublisher;
-    private final DoublePublisher  shiftTimeRemainingPublisher;
+
 
     private boolean shift1Triggered  = false;
     private boolean shift2Triggered  = false;
@@ -26,11 +21,7 @@ public class ShiftManager {
     private boolean shift4Triggered  = false;
     private boolean endgameTriggered = false;
 
-    public ShiftManager() {
-        var nt = NetworkTableInstance.getDefault();
-        currentShiftPublisher       = nt.getStringTopic("EaseofLife/CurrentShift").publish();
-        shiftTimeRemainingPublisher = nt.getDoubleTopic("EaseofLife/ShiftTimeRemaining").publish();
-    }
+    public ShiftManager() {}
 
     public void teleopInit() {
         shift1Triggered  = false;
@@ -41,8 +32,8 @@ public class ShiftManager {
     }
 
     public void periodic() {
-        currentShiftPublisher.set(getCurrentShift().name());
-        shiftTimeRemainingPublisher.set(getShiftTimeRemaining());
+        nt.putCurrentShift(getCurrentShift().name());
+        nt.putShiftTime(getShiftTimeRemaining());
     }
 
     public Shift getCurrentShift() {
