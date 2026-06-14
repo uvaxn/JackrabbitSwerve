@@ -15,10 +15,10 @@ public class Vars {
     public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(7.0, -7.0, 0);
     public static double lastLimitedX = 0;
     public static double lastLimitedY = 0;
-    // no more controller stuph
+    // no more controller stuph 
 
     // intake
-
+    
     // shooters
     public static double SHOOTER_SPEED = 0.8;
     public static double FEED_SPEED = 0.8;

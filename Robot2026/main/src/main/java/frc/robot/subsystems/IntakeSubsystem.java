@@ -24,7 +24,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // TODO: motor speeds tune these
     private static final double INTAKE_COLLECT_SPEED = -0.6; // collecting from ground
-    private static final double INTAKE_FEED_SPEED    =  0.6; // feeding up into shooter
+    private static final double INTAKE_FEED_SPEED    =  0.2; // feeding up into shooter
 
     private final CoastOut    coastOut    = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
@@ -56,15 +56,15 @@ public class IntakeSubsystem extends SubsystemBase {
         nt.putRobotState("going down");
     }
     public void startIntake() {
-        MotorMode.setSpeed(dropMotor, INTAKE_COLLECT_SPEED);
+        MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
         nt.putRobotState("intaking");
     }
     public void stopIntake() {
         nt.putRobotState("stop intaking");
-        MotorMode.setSpeed(dropMotor, 0);
+        MotorMode.setSpeed(intakeMotor, 0);
     }
     public void startFeeding() {
-        intakeMotor.set(INTAKE_FEED_SPEED); // feed balls toward shooter
+        intakeMotor.set(-INTAKE_FEED_SPEED); // feed balls toward shooter
         if (isAtTop() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
             dropMotor.setControl(staticBrake);
             state = DropState.IDLE;
@@ -118,7 +118,6 @@ public class IntakeSubsystem extends SubsystemBase {
             case MOVING_DOWN -> {
                 if (isAtBottom() || pos >= SOFT_LIMIT_DOWN) {
                     dropMotor.setControl(coastOut);
-                    intakeMotor.set(INTAKE_COLLECT_SPEED); // start collecting at bottom
                     state = DropState.IDLE;
                 } else {
                     dropMotor.set(-DROP_SPEED);
