@@ -31,8 +31,8 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
-import frc.robot.commands.AutoAlign;
+import frc.robot.commands.AutoAlign.AlignToAllianceWall;
+import frc.robot.commands.AutoAlign.AlignToHub;
 import frc.robot.controls.EaseofLife;
 import frc.robot.controls.Shooters;
 import frc.robot.generated.TunerConstants;
@@ -123,13 +123,20 @@ public class RobotContainer {
 
         // Auto-align to nearest AprilTag
         joystick.x()
-        .whileTrue(new AutoAlign(
+        .whileTrue(new AlignToHub(
             drivetrain,
             easeOfLife,
             () -> Vars.xLimiter.calculate(joystick.getLeftY() * Vars.MaxSpeed),
             () -> Vars.yLimiter.calculate(joystick.getLeftX() * Vars.MaxSpeed)
         ));
-
+        // align to alliance wall is the exact same thing btw, just toward your alliance wall ^
+        joystick.y()
+        .whileTrue(new AlignToAllianceWall(
+            drivetrain, 
+            easeOfLife,             
+            () -> Vars.xLimiter.calculate(joystick.getLeftY() * Vars.MaxSpeed),
+            () -> Vars.yLimiter.calculate(joystick.getLeftX() * Vars.MaxSpeed)
+        ));
         // Intake
         joystick.leftTrigger()
             .onTrue(new InstantCommand(intakes::startIntake, intakes))

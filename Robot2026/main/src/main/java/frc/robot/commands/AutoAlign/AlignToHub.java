@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.commands.AutoAlign;
 
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
@@ -21,7 +21,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.util.Units;
-public class AutoAlign extends Command {
+public class AlignToHub extends Command {
 
     private final SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
         .withDeadband(Vars.MaxSpeed * 0.1)
@@ -44,7 +44,7 @@ public class AutoAlign extends Command {
      * @param leftSupplier    field-centric percent max speed (left)
      */
 
-    public AutoAlign(
+    public AlignToHub(
         CommandSwerveDrivetrain swerveDrive,
         EaseofLife easeOfLife,
         DoubleSupplier forwardSupplier,
