@@ -9,7 +9,8 @@ package frc.robot;
  * Right Trigger  -- Shoot
  * Left Bumper    -- Reset field-centric heading
  * X Button       -- Auto-align to nearest AprilTag
- * Y Button       -- Point wheels at joystick direction
+ * Y Button       -- Auto-align to alliance Wall
+ * A Button       -- Points wheels based on joystick direction
  */
 
 import static edu.wpi.first.units.Units.*;
@@ -108,7 +109,7 @@ public class RobotContainer {
         );
 
         // Wheel point mode
-        joystick.y().whileTrue(drivetrain.applyRequest(() ->
+        joystick.a().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
 
