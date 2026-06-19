@@ -15,8 +15,11 @@ public class Vars {
     public static final double AlignToAllianceWallI = 10.0;
     public static final double AlignToAllianceWallD = 0.0;
     // controller stoff
-    public static final SlewRateLimiter xLimiter   = new SlewRateLimiter(7.0, -7.0, 0);
-    public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(7.0, -7.0, 0);
+    private static final double controllerSRL = 3; // change this ---- lower = more smooth, higher = less smooth
+
+
+    public static final SlewRateLimiter xLimiter   = new SlewRateLimiter(controllerSRL, -controllerSRL, 0);
+    public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(controllerSRL, -controllerSRL, 0);
     public static double lastLimitedX = 0;
     public static double lastLimitedY = 0;
     // no more controller stuph 

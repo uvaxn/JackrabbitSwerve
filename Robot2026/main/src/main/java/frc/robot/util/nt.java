@@ -25,6 +25,7 @@ public class nt {
     private static final BooleanPublisher isHubActive = infoTable.getBooleanTopic("EaseofLife/IsHubActive").publish();
     private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
     private static final DoublePublisher shooterSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterSpeed").publish();
+    private static final DoublePublisher shooterActualSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterActualSpeedRPS").publish();
 
     // PID publishers (initial values)
     private static final DoublePublisher AligntoHubP = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").publish();
@@ -45,7 +46,8 @@ public class nt {
     public static void isHubActive(boolean active)  { isHubActive.set(active); }
     public static void putRobotState(String state)  { robotState.set(state); }
     public static void putDisttoHub(double dist)    { distToHubPublisher.set(dist); }
-    public static void putShooterspeed(double speed){ shooterSpeed.set(speed); }
+    public static void putTargetShooterSpeed(double speed){ shooterSpeed.set(speed); }
+    public static void putShooterSpeed(double rps){ shooterActualSpeed.set(rps); }
     // PID setters
     public static void putP(double P) { AligntoHubP.set(P); }
     public static void putI(double I) { AligntoHubI.set(I); }

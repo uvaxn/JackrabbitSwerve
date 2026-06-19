@@ -1,5 +1,6 @@
 package frc.robot.controls;
 
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -25,11 +26,20 @@ public class Shooters extends SubsystemBase {
         this.intakes = intakeSubsystem;
         this.cam = camerasubsystem; 
         shooterL.setControl(new Follower(shooterR.getDeviceID(), MotorAlignmentValue.Opposed));
+
+        // TODO: tune these on the actual robot — these are placeholder starting points
+        Slot0Configs shooterGains = new Slot0Configs();
+        shooterGains.kS = 0.1;  // volts to overcome static friction, start small
+        shooterGains.kV = 0.12; // volts per rotation-per-second, the main "hold speed" term
+        shooterGains.kP = 0.11; // volts per rps of error, corrects sag/disturbance
+        shooterGains.kI = 0.0;  // leave at 0 to start
+        shooterGains.kD = 0.0;  // usually unnecessary for a flywheel
+        shooterR.getConfigurator().apply(shooterGains);
     }
 
     // spins up shooters and starts timer
     public void shoot() {
-        MotorMode.setSpeed(shooterR, -Vars.SHOOTER_SPEED);
+        MotorMode.setVelocity(shooterR, -20);
         MotorMode.setSpeed(lowerFeed, -Vars.FEED_SPEED);
         MotorMode.setSpeed(upperFeed, Vars.FEED_SPEED);
         intakes.startFeeding();
@@ -45,21 +55,23 @@ public class Shooters extends SubsystemBase {
         nt.putRobotState("stop shooting");
     }
     public double calculateShooterSpeed(double dist) {
-        // TODO: ⚠️⚠️⚠️⚠️⚠️\ adjust this please!!!!!!!!!!!!!!! ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+        // TODO: ⚠️⚠️⚠️⚠️⚠️\ MEASURE these on the real shooter and adjust!!!!!!!!!!!!!!! ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
         final double MIN_DIST = 0;
         final double MAX_DIST = 4.5;
-        final double MIN_SPEED = 0.5;
-        final double MAX_SPEED = 0.95;
+        final double MIN_SPEED_RPS = 20; // placeholder
+        final double MAX_SPEED_RPS = 40; // placeholder
         final double EXPONENT = 1.5; // increase for steeper curve
-
+ 
         final double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
-
+ 
         double doobiescootcanoe = (Distance - MIN_DIST) / (MAX_DIST - MIN_DIST); // 0 to 1
-        return MIN_SPEED + Math.pow(doobiescootcanoe, EXPONENT) * (MAX_SPEED - MIN_SPEED);
+        return MIN_SPEED_RPS + Math.pow(doobiescootcanoe, EXPONENT) * (MAX_SPEED_RPS - MIN_SPEED_RPS);
     }
+
     
     public void periodic() {
         Vars.SHOOTER_SPEED = calculateShooterSpeed(MotorMode.getDistToHub());
-        nt.putShooterspeed(Vars.SHOOTER_SPEED);
+        nt.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
+        nt.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
     }
 }
