@@ -87,8 +87,7 @@ public class AlignToAllianceWall extends Command {
         nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
         SmartDashboard.putNumber("AutoAlign/WallTargetAngleDeg", Units.radiansToDegrees(targetAngle));
         SmartDashboard.putNumber("AutoAlign/RobotAngleDeg", robotPose.getRotation().getDegrees());
-        SmartDashboard.putNumber("AutoAlign/HeadingErrorDeg",
-            Units.radiansToDegrees(targetAngle - robotPose.getRotation().getRadians()));
+        SmartDashboard.putNumber("AutoAlign/HeadingErrorDeg", Units.radiansToDegrees(targetAngle - robotPose.getRotation().getRadians()));
 
         rotationPID.setGoal(targetAngle);
 

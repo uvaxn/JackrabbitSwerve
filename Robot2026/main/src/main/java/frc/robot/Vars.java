@@ -27,8 +27,8 @@ public class Vars {
     // intake
     
     // shooters
-    public static double SHOOTER_SPEED = 0.8;
-    public static double FEED_SPEED = 0.8;
+    public static double SHOOTER_SPEED = 20; // in rps
+    public static double FEED_SPEED = 0.8; // in percentage
     //
     public static final double airTimeScalarSeconds = 7.629; // higher number = less predicition
     public static final double MaxAngularRate = 1;
