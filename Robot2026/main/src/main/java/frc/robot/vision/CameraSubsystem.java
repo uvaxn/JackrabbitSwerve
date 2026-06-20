@@ -59,35 +59,42 @@ public class CameraSubsystem extends SubsystemBase {
         // reject if spinning too fast (megatag 2 no likey that)
         if (Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond) > Vars.maxYawRateForVision) return;
 
-        // Distance scaled stddevs
-        double dist = getDistanceToHub();
-        double stdDev = 0.5 * dist * dist;
-
+        // Distance-scaled stddevs based on the actual tag(s) used, not the hub
+        double tagDist = mt2.avgTagDist;
+        double stdDev = 0.1 + 0.5 * tagDist * tagDist; // small floor so close-up reads aren't treated as perfect
+        if (mt2.tagCount > 1) {
+            stdDev *= 0.5; // multi-tag solves are more trustworthy
+        }
         swerveDrive.addVisionMeasurement(
             mt2.pose,
             mt2.timestampSeconds,
             VecBuilder.fill(stdDev, stdDev, 9999999)
         );
     }
+    private boolean reportedOOB = false;
+
     public double getDistanceToHub() {
         Optional<Pose2d> pose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
         if (pose.isEmpty()) return 3;
 
-    Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-        ? Constants.redHubPosition
-        : Constants.blueHubPosition;
+        Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+            ? Constants.redHubPosition
+            : Constants.blueHubPosition;
 
-        Pose2d robotPose = pose.get();
-        Translation2d t = robotPose.getTranslation();
+        Translation2d t = pose.get().getTranslation();
+        boolean outOfBounds = t.getX() < 0 || t.getX() > 16.54 ||
+                            t.getY() < 0 || t.getY() > 8.21;
 
-        if (t.getX() < 0 || t.getX() > 16.54 ||
-            t.getY() < 0 || t.getY() > 8.21) {
-            DriverStation.reportWarning(
-                "getDistanceToHub() OUT OF BOUNDS POSE (x=" + String.format("%.2f", t.getX()) +
-                " y=" + String.format("%.2f", t.getY()) + ")", false);
+        if (outOfBounds) {
+            if (!reportedOOB) {
+                DriverStation.reportWarning(
+                    "getDistanceToHub() OUT OF BOUNDS POSE (x=" + String.format("%.2f", t.getX()) +
+                    " y=" + String.format("%.2f", t.getY()) + ")", false);
+                reportedOOB = true; // only logs once, until it recovers
+            }
             return 3;
         }
-
+        reportedOOB = false;
         return hubTarget.minus(t).getNorm();
     }
 

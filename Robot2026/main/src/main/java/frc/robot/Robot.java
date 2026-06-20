@@ -4,6 +4,7 @@ import com.ctre.phoenix6.HootAutoReplay;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.vision.LimelightHelpers;
 
 public class Robot extends TimedRobot {
 
@@ -39,8 +40,11 @@ public class Robot extends TimedRobot {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
         m_robotContainer.easeOfLife.teleopInit();
+        LimelightHelpers.SetIMUMode("limelight", 4); // use the ll4 imu, and the pigeon gyro
     }
-    @Override public void disabledInit() {}
+    @Override public void disabledInit() {
+        LimelightHelpers.SetIMUMode("limelight", 1); // re-seed 
+    }
     @Override public void disabledPeriodic() {}
     @Override public void disabledExit() {}
     @Override public void autonomousPeriodic() {}
