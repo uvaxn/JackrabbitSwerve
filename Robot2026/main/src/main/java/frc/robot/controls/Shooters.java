@@ -27,7 +27,7 @@ public class Shooters extends SubsystemBase {
         this.cam = camerasubsystem; 
         shooterL.setControl(new Follower(shooterR.getDeviceID(), MotorAlignmentValue.Opposed));
 
-        // TODO: tune these on the actual robot — these are placeholder starting points
+        // TODO: these are placeholder starting points for the shootergains SVPID
         Slot0Configs shooterGains = new Slot0Configs();
         shooterGains.kS = 0.1;  // volts to overcome static friction, start small
         shooterGains.kV = 0.12; // volts per rotation-per-second, the main "hold speed" term
@@ -54,6 +54,9 @@ public class Shooters extends SubsystemBase {
         intakes.stopFeeding();
         nt.putRobotState("stop shooting");
     }
+    public void simpleShoot() { // to be removed, only use for testing when pressing down on the d-pad.
+        MotorMode.setVelocity(shooterR, -20);
+    }
     public double calculateShooterSpeed(double dist) {
         // TODO: ⚠️⚠️⚠️⚠️⚠️\ MEASURE these on the real shooter and adjust!!!!!!!!!!!!!!! ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
         final double MIN_DIST = 0;
@@ -62,9 +65,9 @@ public class Shooters extends SubsystemBase {
         final double MAX_SPEED_RPS = 40; // placeholder
         final double EXPONENT = 1.5; // increase for steeper curve
  
-        final double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
+        double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
  
-        double doobiescootcanoe = (Distance - MIN_DIST) / (MAX_DIST - MIN_DIST); // 0 to 1
+        double doobiescootcanoe = (Distance - MIN_DIST) / (MAX_DIST - MIN_DIST); 
         return MIN_SPEED_RPS + Math.pow(doobiescootcanoe, EXPONENT) * (MAX_SPEED_RPS - MIN_SPEED_RPS);
     }
 

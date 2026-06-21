@@ -146,7 +146,9 @@ public class RobotContainer {
         joystick.rightTrigger()
             .onTrue(new InstantCommand(() -> shooters.shoot()))
             .onFalse(new InstantCommand(() -> shooters.stopShoot()));
-
+        joystick.pov(180)
+            .onTrue(new InstantCommand(() -> shooters.simpleShoot()))
+            .onFalse(new InstantCommand(() -> shooters.stopShoot()));
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 

@@ -32,5 +32,5 @@ public class Vars {
     //
     public static final double airTimeScalarSeconds = 7.629; // higher number = less predicition
     public static final double MaxAngularRate = 1;
-    public static final double maxYawRateForVision = 0;
+    public static final double maxYawRateForVision = 1;
 }

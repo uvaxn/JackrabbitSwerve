@@ -37,14 +37,15 @@ public class EaseofLife extends SubsystemBase {
     }
  
     public void setSpeed(TalonFX motor, double output) {
+        //  prevents any value higher than 1.0 or lower than -1.0 from being passed into set.
         motor.set(MathUtil.clamp(output, -1.0, 1.0));
     }
  
     // one request object, reused for every call to avoid allocating on every periodic() tick
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
  
-    // closed-loop velocity control, in rotations per second.
-    // motor's Slot0Configs (kP/kI/kD/kS/kV) must already be applied see Shooters constructor.
+    // closed loop velocity control, in rotations per second.
+    // motor's Slot0Configs must already be applied see Shooters constructor.
     public void setVelocity(TalonFX motor, double targetRotationsPerSecond) {
         motor.setControl(velocityRequest.withVelocity(targetRotationsPerSecond));
     }
@@ -53,7 +54,7 @@ public class EaseofLife extends SubsystemBase {
         motor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
     }
  
-    // These now read live values from dashboard
+    //  read live values from dashboard
     public double getAlignP() { return nt.getAlignP(); }
     public double getAlignI() { return nt.getAlignI(); }
     public double getAlignD() { return nt.getAlignD(); }
@@ -67,7 +68,7 @@ public class EaseofLife extends SubsystemBase {
         if (!DriverStation.isTeleopEnabled())    return false;
         double matchTime = DriverStation.getMatchTime();
         String gameData  = DriverStation.getGameSpecificMessage();
-        if (gameData.isEmpty()) return true;
+        if (gameData.isEmpty()) return false;
         boolean redInactiveFirst = switch (gameData.charAt(0)) {
             case 'R' -> true;
             case 'B' -> false;
