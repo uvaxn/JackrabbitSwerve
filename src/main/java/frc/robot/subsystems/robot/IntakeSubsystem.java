@@ -46,14 +46,16 @@ public class IntakeSubsystem extends SubsystemBase {
         dropMotor.setPosition(0.0);
         dropMotor.setControl(staticBrake);
 
-        // Drop intake on init so it's ready to collect immediately
-        requestDown();
     }
-    /** Called automatically on init. Drops arm to collecting position. */
     public void requestDown() {
         if (isAtBottom() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
         nt.putRobotState("going down");
+    }
+    public void requestUp() {
+        if (isAtTop() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
+        state = DropState.MOVING_UP;
+        nt.putRobotState("going up");
     }
     public void startIntake() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);

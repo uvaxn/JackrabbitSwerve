@@ -1,24 +1,15 @@
-// this file's sole purpose is to handle the calculations made for the controller.
-// if something needs to be smoothed, i.e literally the point of this file,
-// then put it in here.
-// Otherwise, use the commandXboxController import, or the XboxController import.
-
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
+
 import java.util.function.DoubleSupplier;
 
 public class DriveInputs extends SubsystemBase {
     private final DoubleSupplier rawXSupplier;
     private final DoubleSupplier rawYSupplier;
 
-    private final SlewRateLimiter speedLimiter =
-        new SlewRateLimiter(Vars.maxAccel, -Vars.maxDecel, 0);
-
-    private double lastAngle = 0;
     private double limitedX = 0;
     private double limitedY = 0;
 
@@ -29,33 +20,21 @@ public class DriveInputs extends SubsystemBase {
 
     @Override
     public void periodic() {
-        double rawX = rawXSupplier.getAsDouble();
-        double rawY = rawYSupplier.getAsDouble();
-        double stickMag = Math.hypot(rawX, rawY);
+        double rawX = MathUtil.applyDeadband(
+            rawXSupplier.getAsDouble(), 0.08);
 
-        double speed;
-        if (stickMag < 0.05) {
-            speed = speedLimiter.calculate(0);
-        } else {
-            double desiredSpeed = stickMag * Vars.MaxSpeed;
-            double angle = Math.atan2(rawY, rawX);
-            double angleDiff = Math.abs(MathUtil.angleModulus(angle - lastAngle));
+        double rawY = MathUtil.applyDeadband(
+            rawYSupplier.getAsDouble(), 0.08);
 
-            if (angleDiff > Math.toRadians(150)) {
-                speed = speedLimiter.calculate(0);
-                if (Math.abs(speed) < 0.05) {
-                    lastAngle = angle;
-                }
-            } else {
-                speed = speedLimiter.calculate(desiredSpeed);
-                lastAngle = angle;
-            }
-        }
-
-        limitedX = speed * Math.cos(lastAngle);
-        limitedY = speed * Math.sin(lastAngle);
+        limitedX = Vars.xLimiter.calculate(rawX);
+        limitedY = Vars.yLimiter.calculate(rawY);
     }
 
-    public double getX() { return limitedX; }
-    public double getY() { return limitedY; }
+    public double getX() {
+        return limitedX * Vars.MaxSpeed;
+    }
+
+    public double getY() {
+        return limitedY * Vars.MaxSpeed;
+    }
 }

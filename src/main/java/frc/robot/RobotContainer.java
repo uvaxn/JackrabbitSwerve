@@ -46,7 +46,7 @@ public class RobotContainer {
     private final double MaxAngularRate = RotationsPerSecond.of(Vars.MaxAngularRate).in(RadiansPerSecond);
     
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-        .withDeadband(Vars.MaxSpeed * 0.01)
+        // .withDeadband(Vars.MaxSpeed * 0.03) -- this has 3 percent deadband
         .withRotationalDeadband(MaxAngularRate * 0.003)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
@@ -145,9 +145,13 @@ public class RobotContainer {
         joystick.rightTrigger()
             .onTrue(new InstantCommand(() -> shooters.shoot()))
             .onFalse(new InstantCommand(() -> shooters.stopShoot()));
-        joystick.pov(180)
+        joystick.povLeft()
             .onTrue(new InstantCommand(() -> shooters.simpleShoot()))
             .onFalse(new InstantCommand(() -> shooters.stopShoot()));
+        joystick.povDown()
+            .onTrue(new InstantCommand(intakes::requestDown, intakes));
+        joystick.povUp()
+            .onTrue(new InstantCommand(intakes::requestUp, intakes));
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 

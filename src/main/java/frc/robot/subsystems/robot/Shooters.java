@@ -55,6 +55,7 @@ public class Shooters extends SubsystemBase {
         nt.putRobotState("stop shooting");
     }
     public void simpleShoot() { // to be removed, only use for testing when pressing down on the d-pad.
+        nt.putRobotState("shooting");
         MotorMode.setVelocity(shooterR, -20);
     }
     public double calculateShooterSpeed(double dist) {
