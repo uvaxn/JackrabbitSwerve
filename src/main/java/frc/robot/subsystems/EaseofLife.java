@@ -1,4 +1,4 @@
-package frc.robot.controls;
+package frc.robot.subsystems;
  
 import java.util.Optional;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -8,6 +8,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.controls.ShiftManager;
 import frc.robot.util.nt;
 import frc.robot.vision.CameraSubsystem;
  

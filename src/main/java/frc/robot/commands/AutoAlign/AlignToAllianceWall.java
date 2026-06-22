@@ -15,8 +15,8 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Vars;
-import frc.robot.controls.EaseofLife;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.EaseofLife;
+import frc.robot.subsystems.robot.CommandSwerveDrivetrain;
 import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 

@@ -33,17 +33,18 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AutoAlign.AlignToAllianceWall;
 import frc.robot.commands.AutoAlign.AlignToHub;
-import frc.robot.controls.EaseofLife;
-import frc.robot.controls.Shooters;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.DriveInputs;
+import frc.robot.subsystems.EaseofLife;
+import frc.robot.subsystems.robot.CommandSwerveDrivetrain;
+import frc.robot.subsystems.robot.IntakeSubsystem;
+import frc.robot.subsystems.robot.Shooters;
 import frc.robot.vision.CameraSubsystem;
 
 public class RobotContainer {
 
     private final double MaxAngularRate = RotationsPerSecond.of(Vars.MaxAngularRate).in(RadiansPerSecond);
-
+    
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
         .withDeadband(Vars.MaxSpeed * 0.01)
         .withRotationalDeadband(MaxAngularRate * 0.003)
@@ -53,6 +54,10 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(Vars.MaxSpeed);
     private final CommandXboxController joystick = new CommandXboxController(0);
 
+    public final DriveInputs driveInputs = new DriveInputs(
+        () -> joystick.getLeftY(),
+        () -> joystick.getLeftX()
+    );
     private SendableChooser<Command> autoChooser;
     
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
@@ -90,17 +95,13 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        drivetrain.setDefaultCommand(
-            drivetrain.applyRequest(() -> {
-                double limitedX = Vars.xLimiter.calculate(joystick.getLeftY()  * Vars.MaxSpeed);
-                double limitedY = Vars.yLimiter.calculate(joystick.getLeftX()  * Vars.MaxSpeed);
-                Vars.lastLimitedX = limitedX;
-                Vars.lastLimitedY = limitedY;
-                return drive
-                    .withVelocityX(limitedX)
-                    .withVelocityY(limitedY)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
-            })
+
+        drivetrain.setDefaultCommand( // reminder that this chunk of code basically controls the movement of the robot
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(driveInputs.getX())
+                    .withVelocityY(driveInputs.getY())
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
+            )
         );
 
         RobotModeTriggers.disabled().whileTrue(
@@ -118,24 +119,22 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // Reset field-centric heading
+        // Reset field centric heading, odometry points toward alliance wall.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // Auto-align to nearest AprilTag
-        joystick.x()
-        .whileTrue(new AlignToHub(
+        // autoalign to nearest AprilTag
+        joystick.x().whileTrue(new AlignToHub(
             drivetrain,
             easeOfLife,
-            () -> Vars.xLimiter.calculate(joystick.getLeftY() * Vars.MaxSpeed),
-            () -> Vars.yLimiter.calculate(joystick.getLeftX() * Vars.MaxSpeed)
+            driveInputs::getX,
+            driveInputs::getY
         ));
         // align to alliance wall is the exact same thing btw, just toward your alliance wall ^
-        joystick.y()
-        .whileTrue(new AlignToAllianceWall(
-            drivetrain, 
-            easeOfLife,             
-            () -> Vars.xLimiter.calculate(joystick.getLeftY() * Vars.MaxSpeed),
-            () -> Vars.yLimiter.calculate(joystick.getLeftX() * Vars.MaxSpeed)
+        joystick.y().whileTrue(new AlignToAllianceWall(
+            drivetrain,
+            easeOfLife,
+            driveInputs::getX,
+            driveInputs::getY
         ));
         // Intake
         joystick.leftTrigger()

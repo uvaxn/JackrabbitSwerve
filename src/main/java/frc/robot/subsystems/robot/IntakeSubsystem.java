@@ -1,11 +1,11 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.robot;
 
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.controls.EaseofLife;
+import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 

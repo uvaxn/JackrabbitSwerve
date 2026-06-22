@@ -1,4 +1,4 @@
-package frc.robot.controls;
+package frc.robot.subsystems.robot;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
@@ -6,7 +6,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
-import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
 import frc.robot.vision.CameraSubsystem;
 

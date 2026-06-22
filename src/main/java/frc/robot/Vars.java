@@ -15,16 +15,12 @@ public class Vars {
     public static final double AlignToAllianceWallI = 10.0;
     public static final double AlignToAllianceWallD = 0.0;
     // controller stoff
-    private static final double controllerSRL = 3; // change this ---- lower = more smooth, higher = less smooth
 
-
-    public static final SlewRateLimiter xLimiter   = new SlewRateLimiter(controllerSRL, -controllerSRL, 0);
-    public static final SlewRateLimiter yLimiter   = new SlewRateLimiter(controllerSRL, -controllerSRL, 0);
-    public static double lastLimitedX = 0;
-    public static double lastLimitedY = 0;
+    public static final double maxAccel = 3.0;  // m/s ^2 
+    public static final double maxDecel = 10.0; // m/s ^2
+    public static final SlewRateLimiter speedLimiter = new SlewRateLimiter(maxAccel, -maxDecel, 0);
+    public static double lastDriveAngle = 0;
     // no more controller stuph 
-
-    // intake
     
     // shooters
     public static double SHOOTER_SPEED = 20; // in rps

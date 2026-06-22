@@ -1,4 +1,9 @@
-package frc.robot.controls;
+// this file's sole purpose is to handle the calculations made for the controller.
+// if something needs to be smoothed, i.e literally the point of this file,
+// then put it in here.
+// Otherwise, use the commandXboxController import, or the XboxController import.
+
+package frc.robot.subsystems;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
