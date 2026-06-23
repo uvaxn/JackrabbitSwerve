@@ -29,17 +29,17 @@ public class Shooters extends SubsystemBase {
 
         // TODO: these are placeholder starting points for the shootergains SVPID
         Slot0Configs shooterGains = new Slot0Configs();
-        shooterGains.kS = 0.1;  // volts to overcome static friction, start small
+        shooterGains.kS = 0.5;  // volts to overcome static friction, start small
         shooterGains.kV = 0.12; // volts per rotation-per-second, the main "hold speed" term
-        shooterGains.kP = 0.11; // volts per rps of error, corrects sag/disturbance
-        shooterGains.kI = 0.0;  // leave at 0 to start
+        shooterGains.kP = 0.09; // volts per rps of error, corrects sag/disturbance
+        shooterGains.kI = 0.01;  // leave at 0 to start
         shooterGains.kD = 0.0;  // usually unnecessary for a flywheel
         shooterR.getConfigurator().apply(shooterGains);
     }
 
     // spins up shooters and starts timer
-    public void shoot() {
-        MotorMode.setVelocity(shooterR, -20);
+    public void shoot() {   
+        MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
         MotorMode.setSpeed(lowerFeed, -Vars.FEED_SPEED);
         MotorMode.setSpeed(upperFeed, Vars.FEED_SPEED);
         intakes.startFeeding();
@@ -62,8 +62,8 @@ public class Shooters extends SubsystemBase {
         // TODO: ⚠️⚠️⚠️⚠️⚠️\ MEASURE these on the real shooter and adjust!!!!!!!!!!!!!!! ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
         final double MIN_DIST = 0;
         final double MAX_DIST = 4.5;
-        final double MIN_SPEED_RPS = 20; // placeholder
-        final double MAX_SPEED_RPS = 40; // placeholder
+        final double MIN_SPEED_RPS = 25; // placeholder
+        final double MAX_SPEED_RPS = 65; // placeholder
         final double EXPONENT = 1.5; // increase for steeper curve
  
         double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
