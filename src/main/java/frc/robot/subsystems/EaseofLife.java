@@ -20,9 +20,9 @@ public class EaseofLife extends SubsystemBase {
     public EaseofLife(CameraSubsystem cameraSubsystem) {
         this.cam = cameraSubsystem;
         // publish initial PID values to dashboard
-        nt.putP(nt.getAlignP());
-        nt.putI(nt.getAlignI());
-        nt.putD(nt.getAlignD());
+        nt.putAlignP(nt.getAlignP());
+        nt.putAlignI(nt.getAlignI());
+        nt.putAlignD(nt.getAlignD());
         nt.putDisttoHub(0);
     }
  

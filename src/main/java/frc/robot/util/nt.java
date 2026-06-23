@@ -32,13 +32,12 @@ public class nt {
     private static final DoublePublisher AligntoHubI = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").publish();
     private static final DoublePublisher AligntoHubD = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").publish();
 
-
     // PID subscribers (for live tuning from dashboard)
     private static final DoubleSubscriber alignPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").subscribe(Vars.AlignToHubP);
     private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Vars.AlignToHubI);
     private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Vars.AlignToHubD);
 
-    
+
 
     public static void putTargetAngle(double deg)   { targetAngle.set(deg); }
     public static void putCurrentShift(String shift){ currentShift.set(shift); }
@@ -49,9 +48,9 @@ public class nt {
     public static void putTargetShooterSpeed(double speed){ shooterSpeed.set(speed); }
     public static void putShooterSpeed(double rps){ shooterActualSpeed.set(rps); }
     // PID setters
-    public static void putP(double P) { AligntoHubP.set(P); }
-    public static void putI(double I) { AligntoHubI.set(I); }
-    public static void putD(double D) { AligntoHubD.set(D); }
+    public static void putAlignP(double P) { AligntoHubP.set(P); }
+    public static void putAlignI(double I) { AligntoHubI.set(I); }
+    public static void putAlignD(double D) { AligntoHubD.set(D); }
 
     // PID getters (reads live value from dashboard)
     public static double getAlignP() { return alignPSub.get(); }

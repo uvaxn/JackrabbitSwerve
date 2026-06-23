@@ -59,6 +59,9 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     public void startIntake() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
+        if (!isFullyUp() && hasSeededTop) {
+            requestDown();
+        }
         nt.putRobotState("intaking");
     }
     public void stopIntake() {
@@ -140,8 +143,5 @@ public class IntakeSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("IntakeDrop/Rotation",  dropMotor.getPosition().getValueAsDouble());
         SmartDashboard.putNumber("IntakeDrop/Velocity",  dropMotor.getVelocity().getValueAsDouble());
         SmartDashboard.putString("IntakeDrop/State",     state.toString());
-        SmartDashboard.putBoolean("IntakeDrop/AtTop",    isAtTop());
-        SmartDashboard.putBoolean("IntakeDrop/AtBottom", isAtBottom());
-        SmartDashboard.putBoolean("IntakeDrop/IsIdle",   isIdle());
     }
 }
