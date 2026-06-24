@@ -59,7 +59,7 @@ public class CameraSubsystem extends SubsystemBase {
         // reject if spinning too fast (megatag 2 no likey that)
         if (Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond) > Vars.maxYawRateForVision) return;
 
-        // Distance-scaled stddevs based on the actual tag(s) used, not the hub
+        // Distance scaled stddevs based on tagsd
         double tagDist = mt2.avgTagDist;
         double stdDev = 0.1 + 0.5 * tagDist * tagDist; // small floor so close-up reads aren't treated as perfect
         if (mt2.tagCount > 1) {

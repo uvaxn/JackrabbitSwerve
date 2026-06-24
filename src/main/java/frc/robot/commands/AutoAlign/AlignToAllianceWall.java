@@ -51,12 +51,11 @@ public class AlignToAllianceWall extends Command {
         this.leftSupplier = leftSupplier;
 
         rotationPID = new ProfiledPIDController(
-            Vars.AlignToHubP,
-            Vars.AlignToHubI,
-            Vars.AlignToHubD,
+            Vars.AlignToAllianceWallP,
+            Vars.AlignToAllianceWallI,
+            Vars.AlignToAllianceWallD,
             new TrapezoidProfile.Constraints(Math.PI / 2, Math.PI));
         rotationPID.enableContinuousInput(-Math.PI, Math.PI);
-
         addRequirements(swerveDrive);
     }
 
@@ -79,7 +78,7 @@ public class AlignToAllianceWall extends Command {
             Vars.AlignToAllianceWallD
         );
 
-        // Blue faces 0° (positive X), Red faces 180° (negative X / their wall)
+        // Blue faces 0° (positive X), Red faces 180° (negative X / their wall) Measured in Radians 
         double targetAngle = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
             ? 0
             : Math.PI;
