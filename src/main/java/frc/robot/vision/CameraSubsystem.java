@@ -1,9 +1,5 @@
 package frc.robot.vision;
-/* 
-TODO: alot of things, first off flash LimeLightOS 4 onto the camera, set the translation in the settings 
-found inside constants, Set the correct field map upload the AndyMark fmap,  Tune maxYawRateForVision in 
-Vars, and ensure you have a good name for the limelight.
- */ 
+// reminder to press / hold the config button on the limelight GENTLY!
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;

@@ -33,7 +33,7 @@ public class Shooters extends SubsystemBase {
         shooterGains.kV = 0.12; // volts per rotation-per-second, the main "hold speed" term
         shooterGains.kP = 0.09; // volts per rps of error, corrects sag/disturbance
         shooterGains.kI = 0.01;  // leave at 0 to start
-        shooterGains.kD = 0.0;  // not needed
+        shooterGains.kD = 0.0;  // leave at 0, or veryvery low value
         shooterR.getConfigurator().apply(shooterGains);
     }
 
