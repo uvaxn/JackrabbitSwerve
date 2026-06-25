@@ -83,7 +83,7 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeMotor.stopMotor();
         dropMotor.setControl(staticBrake);
         state = DropState.IDLE;
-        nt.putRobotState("going down");
+        nt.putRobotState("idle");
     }
 
     /** @return true when the arm is not moving useful for command isFinished() checks */
@@ -131,7 +131,6 @@ public class IntakeSubsystem extends SubsystemBase {
             case MOVING_UP -> {
                 if (isAtTop() || pos <= SOFT_LIMIT_UP) {
                     dropMotor.setControl(staticBrake);
-                    // NOTE: intake motor keeps spinning (set by startFeeding) until stopFeeding() is called
                     state = DropState.IDLE;
                 } else {
                     dropMotor.set(LIFT_SPEED);
