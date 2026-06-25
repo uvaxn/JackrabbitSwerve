@@ -47,7 +47,9 @@ public class Robot extends TimedRobot {
     }
     @Override public void disabledPeriodic() {}
     @Override public void disabledExit() {}
-    @Override public void autonomousPeriodic() {}
+    @Override public void autonomousPeriodic() {
+        LimelightHelpers.SetIMUMode("limelight", 4); // use the ll4 imu, and the pigeon gyro
+    }
     @Override public void autonomousExit() {}
     @Override public void teleopPeriodic() {}
     @Override public void teleopExit() {}
