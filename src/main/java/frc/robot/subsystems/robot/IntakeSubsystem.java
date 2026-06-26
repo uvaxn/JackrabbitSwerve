@@ -22,7 +22,6 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double SOFT_LIMIT_DOWN = 50.0;
     private static final double SOFT_LIMIT_UP   = 2.0;
 
-    // TODO: motor speeds tune these
     private static final double INTAKE_COLLECT_SPEED = -0.6; // collecting from ground
     private static final double INTAKE_FEED_SPEED    =  0.2; // feeding up into shooter
 
