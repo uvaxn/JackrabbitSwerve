@@ -93,8 +93,9 @@ public class RobotContainer {
         NamedCommands.registerCommand("shoot",      new InstantCommand(() -> shooters.shoot()));
         NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stopShoot()));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::startIntake, intakes));
-        NamedCommands.registerCommand("intake up",  new InstantCommand(intakes::stopIntake,  intakes));
-
+        NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stopIntake,  intakes));
+        NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
+        NamedCommands.registerCommand("requestDown", new InstantCommand(intakes::requestDown));
         drivetrain.configureAutoBuilder();
         configureBindings();
 

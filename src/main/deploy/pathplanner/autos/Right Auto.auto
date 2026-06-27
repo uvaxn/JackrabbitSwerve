@@ -7,25 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "1(L)"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 3.5
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "2(L)"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "3(L)"
+            "pathName": "1 (R)"
           }
         },
         {
@@ -37,13 +19,13 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.5
+            "waitTime": 2.5
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "4(L)"
+            "name": "stop shoot"
           }
         }
       ]

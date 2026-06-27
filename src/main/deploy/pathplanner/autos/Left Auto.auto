@@ -7,13 +7,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "1 R"
+            "pathName": "1 (L)"
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "2 R"
+            "name": "shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stop shoot"
           }
         }
       ]
