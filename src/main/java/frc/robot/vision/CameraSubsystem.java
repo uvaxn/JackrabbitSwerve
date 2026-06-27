@@ -15,8 +15,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Vars;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-
 import java.util.Optional;
+
+import com.ctre.phoenix6.SignalLogger;
 
 public class CameraSubsystem extends SubsystemBase {
 
@@ -24,7 +25,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     private static final Field2d CAM_FIELD2D = new Field2d(); // for debugging
 
-    private static final String LL_NAME = "limelight";
+    private static final String LL_NAME = Constants.LL_NAME;
 
     private Optional<Pose2d> latestEstimate = Optional.empty();
 
@@ -49,8 +50,20 @@ public class CameraSubsystem extends SubsystemBase {
         );
 
         LimelightHelpers.PoseEstimate mt2 =
-            LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(LL_NAME);
-        if (mt2 == null || mt2.tagCount == 0) return;
+        LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(LL_NAME);
+
+    int tagCount = (mt2 == null) ? 0 : mt2.tagCount;
+    SignalLogger.writeDouble("Vision/TagCount", tagCount);
+
+    if (mt2 != null && mt2.rawFiducials != null && mt2.rawFiducials.length > 0) {
+        double[] seenIds = new double[mt2.rawFiducials.length];
+        for (int i = 0; i < mt2.rawFiducials.length; i++) {
+            seenIds[i] = mt2.rawFiducials[i].id;
+        }
+        SignalLogger.writeDoubleArray("Vision/TagIDs", seenIds);
+    }
+
+    if (mt2 == null || mt2.tagCount == 0) return;
 
         
         
@@ -75,7 +88,7 @@ public class CameraSubsystem extends SubsystemBase {
         double tagDist = mt2.avgTagDist;
         double stdDev = 0.8 + tagDist * tagDist; // small floor so close up reads aren't treated as perfect
         if (mt2.tagCount > 1) {
-            stdDev *= 0.5; // multi tag solves are more trustworthy
+            stdDev *= 0.5; 
         }
         swerveDrive.addVisionMeasurement(
             mt2.pose,
@@ -84,6 +97,14 @@ public class CameraSubsystem extends SubsystemBase {
         );
     }
     private boolean reportedOOB = false;
+
+    public void setLEDBlink() {
+    LimelightHelpers.setLEDMode_ForceBlink(LL_NAME);
+    }
+
+    public void setLEDNormal() {
+        LimelightHelpers.setLEDMode_PipelineControl(LL_NAME);
+    }
 
     public double getDistanceToHub() {
         Optional<Pose2d> pose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());

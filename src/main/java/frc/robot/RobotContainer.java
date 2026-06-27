@@ -6,11 +6,19 @@ package frc.robot;
  * Left Joystick  -- Moves robot
  * Right Joystick -- Rotates robot
  * Left Trigger   -- Intake (drops down and intakes)
- * Right Trigger  -- Shoot
+ * Right Trigger  -- Shoot (lifts intake and shoots)
  * Left Bumper    -- Reset field-centric heading
  * X Button       -- Auto-align to nearest AprilTag
  * Y Button       -- Auto-align to alliance Wall
  * A Button       -- Points wheels based on joystick direction
+ * 
+ * 
+ * *TESTING*
+ * 
+ * d-pad UP       -- lift intake
+ * d-pad DOWN     -- drop intake
+ * d-pad LEFT     -- spin ONLY shooters
+ * d-pad RIGHT    -- blink limelight camera
  */
 
 import static edu.wpi.first.units.Units.*;
@@ -152,7 +160,12 @@ public class RobotContainer {
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
             .onTrue(new InstantCommand(intakes::requestUp, intakes));
+        joystick.povRight()
+            .onTrue(new InstantCommand(cameraSubsystem::setLEDBlink))
+            .onFalse(new InstantCommand(cameraSubsystem::setLEDNormal));
+        
         drivetrain.registerTelemetry(logger::telemeterize);
+        
     }
 
     public Command getAutonomousCommand() {
