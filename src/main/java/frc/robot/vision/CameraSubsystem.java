@@ -4,8 +4,12 @@ package frc.robot.vision;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -18,11 +22,20 @@ public class CameraSubsystem extends SubsystemBase {
 
     private final CommandSwerveDrivetrain swerveDrive;
 
+    private static final Field2d CAM_FIELD2D = new Field2d(); // for debugging
+
+    private static final String LL_NAME = "limelight";
+
     private Optional<Pose2d> latestEstimate = Optional.empty();
+
+    private final DoubleArrayPublisher visionPosePub =
+        NetworkTableInstance.getDefault().getTable("Pose")
+            .getDoubleArrayTopic("VisionEstimate").publish();
 
     public CameraSubsystem(CommandSwerveDrivetrain swerveDrive) {
         this.swerveDrive = swerveDrive;
-        LimelightHelpers.SetIMUMode("limelight", 1);
+        LimelightHelpers.SetIMUMode(LL_NAME, 1);
+        SmartDashboard.putData("CameraField2d", CAM_FIELD2D);
     }
 
     @Override
@@ -30,19 +43,19 @@ public class CameraSubsystem extends SubsystemBase {
         // feed heading (rotation ) to Limelight every loop 
         
         LimelightHelpers.SetRobotOrientation(
-            "limelight",
+            LL_NAME,
             swerveDrive.getState().Pose.getRotation().getDegrees(),
             0, 0, 0, 0, 0
         );
 
         LimelightHelpers.PoseEstimate mt2 =
-            LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+            LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(LL_NAME);
         if (mt2 == null || mt2.tagCount == 0) return;
 
-        latestEstimate = Optional.of(mt2.pose);
-
+        
+        
         Translation2d t = mt2.pose.getTranslation();
-
+        CAM_FIELD2D.setRobotPose(mt2.pose);
         // bounds check
         if (t.getX() < 0 || t.getX() > 16.54 ||
             t.getY() < 0 || t.getY() > 8.21) {
@@ -54,12 +67,15 @@ public class CameraSubsystem extends SubsystemBase {
 
         // reject if spinning too fast (megatag 2 no likey that)
         if (Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond) > Vars.maxYawRateForVision) return;
-
+        latestEstimate = Optional.of(mt2.pose);
+        visionPosePub.set(new double[] {
+            mt2.pose.getX(), mt2.pose.getY(), mt2.pose.getRotation().getDegrees()
+        });
         // Distance scaled stddevs based on tagsd
         double tagDist = mt2.avgTagDist;
-        double stdDev = 0.1 + 0.5 * tagDist * tagDist; // small floor so close-up reads aren't treated as perfect
+        double stdDev = 0.8 + tagDist * tagDist; // small floor so close up reads aren't treated as perfect
         if (mt2.tagCount > 1) {
-            stdDev *= 0.5; // multi-tag solves are more trustworthy
+            stdDev *= 0.5; // multi tag solves are more trustworthy
         }
         swerveDrive.addVisionMeasurement(
             mt2.pose,

@@ -34,8 +34,8 @@ public class Shooters extends SubsystemBase {
 
         Slot0Configs shooterGains = new Slot0Configs();
         shooterGains.kS = 0.5;
-        shooterGains.kV = 0.12;
-        shooterGains.kP = 0.09;
+        shooterGains.kV = 0.11;
+        shooterGains.kP = 0.1;
         shooterGains.kI = 0.01;
         shooterGains.kD = 0.0;
         shooterR.getConfigurator().apply(shooterGains);
@@ -62,15 +62,15 @@ public class Shooters extends SubsystemBase {
 
     public void simpleShoot() { // to be removed, only use for testing when pressing down on the d-pad.
         nt.putRobotState("shooting");
-        MotorMode.setVelocity(shooterR, -20);
+        MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
     }
 
     public double calculateShooterSpeed(double dist) {
         final double MIN_DIST = 0;
         final double MAX_DIST = 4.5;
-        final double MIN_SPEED_RPS = 30;
-        final double MAX_SPEED_RPS = 65;
-        final double EXPONENT = 1.5;
+        final double MIN_SPEED_RPS = 65;
+        final double MAX_SPEED_RPS = 80;
+        final double EXPONENT = 1.4;
 
         double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
         double doobiescootcanoe = (Distance - MIN_DIST) / (MAX_DIST - MIN_DIST);
