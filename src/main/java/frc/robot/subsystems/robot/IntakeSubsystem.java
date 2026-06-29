@@ -29,9 +29,10 @@ public class IntakeSubsystem extends SubsystemBase {
     private final StaticBrake staticBrake = new StaticBrake();
 
     private enum DropState { IDLE, MOVING_DOWN, MOVING_UP }
+
     private DropState state = DropState.IDLE;
     // what "Seeded" means in these variables is basically has it set off the top sensor (it stores that) 
-    private boolean hasSeededTop    = false;
+    private boolean hasSeededTop    = true; // the nail is somewhat bent at the top, so it wont set off the top sensor too well. Best to leave this true.
     // same thing except for it's the bottom sensor
     private boolean hasSeededBottom = false;
 

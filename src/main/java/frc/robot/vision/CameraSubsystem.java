@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.Vars;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import java.util.Optional;
 
@@ -41,7 +40,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // feed heading (rotation ) to Limelight every loop 
+        // feed heading (rotation ) to Limelight every loop
         
         LimelightHelpers.SetRobotOrientation(
             LL_NAME,
@@ -79,7 +78,6 @@ public class CameraSubsystem extends SubsystemBase {
         }
 
         // reject if spinning too fast (megatag 2 no likey that)
-        if (Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond) > Vars.maxYawRateForVision) return;
         latestEstimate = Optional.of(mt2.pose);
         visionPosePub.set(new double[] {
             mt2.pose.getX(), mt2.pose.getY(), mt2.pose.getRotation().getDegrees()

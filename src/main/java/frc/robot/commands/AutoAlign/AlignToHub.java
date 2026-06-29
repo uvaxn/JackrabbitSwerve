@@ -74,10 +74,7 @@ public class AlignToHub extends Command {
     @Override
     public void execute() {
         Optional<Pose2d> possiblePose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
-        Translation2d robotVelocity = new Translation2d(
-            swerveDrive.getState().Speeds.vxMetersPerSecond,
-            swerveDrive.getState().Speeds.vyMetersPerSecond
-        );
+
         double velocityX = forwardSupplier.getAsDouble();
         double velocityY = leftSupplier.getAsDouble();
         double rotationalRate = 0;
@@ -95,24 +92,17 @@ public class AlignToHub extends Command {
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
             ? Constants.redHubPosition
             : Constants.blueHubPosition;
-
-        Translation2d toHub = hubTarget.minus(robotPose.getTranslation());
-
-        double dist = toHub.getNorm();
-
-        double flightTime = dist / Vars.airTimeScalarSeconds;
         // Publish angles
-        Translation2d predictedRobotPos = robotPose.getTranslation()
-            .plus(robotVelocity.times(flightTime));
+        Translation2d RobotPos = robotPose.getTranslation();
 
-        Translation2d toHubPredicted = hubTarget.minus(predictedRobotPos);
+        Translation2d toHubPredicted = hubTarget.minus(RobotPos);
 
         double targetAngle = Math.atan2(toHubPredicted.getY(), toHubPredicted.getX());
 
         nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
         SmartDashboard.putNumberArray("Pose/predictedRobotPos", new double[]{
-            predictedRobotPos.getX(),
-            predictedRobotPos.getY(),
+            RobotPos.getX(),
+            RobotPos.getY(),
             robotPose.getRotation().getDegrees()
         });
         SmartDashboard.putNumberArray("Pose/hubTarget", new double[]{

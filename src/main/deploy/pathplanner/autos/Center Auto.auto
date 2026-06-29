@@ -27,6 +27,18 @@
           "data": {
             "name": "stop shoot"
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "2 (C)"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "3 (C)"
+          }
         }
       ]
     }
