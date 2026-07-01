@@ -59,9 +59,6 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     public void startIntake() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
-        if (isFullyUp() && hasSeededTop) {
-            requestDown();
-        }
         nt.putRobotState("intaking");
     }
     public void stopIntake() {

@@ -11,6 +11,12 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "2 (L)"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "shoot"
@@ -19,13 +25,55 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 2.5
+            "waitTime": 3.0
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stop shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "requestDown"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stop shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "3 (L)"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "requestUp"
           }
         }
       ]
