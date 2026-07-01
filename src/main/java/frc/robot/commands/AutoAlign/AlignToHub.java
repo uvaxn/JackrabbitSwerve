@@ -35,7 +35,7 @@ public class AlignToHub extends Command {
     private final DoubleSupplier leftSupplier;
 
     /**
-     * Rotates the robot to face the nearest AprilTag while allowing the driver
+     * Rotates the robot to face the Hub while allowing the driver
      * to still control forward/lateral movement.
      *
      * @param swerveDrive     the drivetrain subsystem

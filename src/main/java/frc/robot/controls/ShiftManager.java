@@ -35,7 +35,11 @@ public class ShiftManager {
         nt.putCurrentShift(getCurrentShift().name());
         nt.putShiftTime(getShiftTimeRemaining());
     }
-
+    /**
+     * Returns the current shift. Does not account for which alliance side you are on.
+     *
+     * @return "TRANSITION" if in transition, "SHIFT_X" where X is the shift number, or "ENDGAME" if it is endgame.
+     */
     public Shift getCurrentShift() {
         if (!DriverStation.isTeleopEnabled()) return Shift.UNKNOWN;
         double t = DriverStation.getMatchTime();

@@ -23,7 +23,7 @@ public class Vars {
     public static double SHOOTER_SPEED = 30;
     //
     public static final double airTimeScalarSeconds = 1;
-    public static final double MaxAngularRate = 1;
+    public static final double MaxAngularRate = 1.32;
 
     public static final double maxYawRateForVision = 6;
 }
