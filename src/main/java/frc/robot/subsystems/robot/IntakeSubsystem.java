@@ -1,10 +1,14 @@
 package frc.robot.subsystems.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Vars;
+import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -60,10 +64,12 @@ public class IntakeSubsystem extends SubsystemBase {
     public void startIntake() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
         nt.putRobotState("intaking");
+        Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     }
     public void stopIntake() {
         nt.putRobotState("stop intaking");
         MotorMode.setSpeed(intakeMotor, 0);
+        Vars.MaxSpeed = 0.7 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     }
     public void startFeeding() {
         intakeMotor.set(-INTAKE_FEED_SPEED); // feed balls toward shooter

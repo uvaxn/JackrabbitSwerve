@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 2.2360013748872736,
-        "y": 4.025353318557004
+        "x": 2.2591671297688127,
+        "y": 4.021613365207875
       },
       "prevControl": {
-        "x": 3.096200075791204,
-        "y": 4.03392719899182
+        "x": 3.119365830672743,
+        "y": 4.030187245642691
       },
       "nextControl": null,
       "isLocked": false,
@@ -36,7 +36,12 @@
       "name": "requestDown",
       "waypointRelativePos": 0.4000000000000001,
       "endWaypointRelativePos": null,
-      "command": null
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "requestDown"
+        }
+      }
     }
   ],
   "globalConstraints": {

@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.2360013748872736,
-        "y": 4.025353318557004
+        "x": 2.2591671297688127,
+        "y": 4.021613365207875
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.252123770409728,
-        "y": 2.4245857128481303
+        "x": 2.2752895252912673,
+        "y": 2.4208457594990014
       },
       "isLocked": false,
       "linkedName": "1 (C) End"
@@ -111,13 +111,23 @@
       "name": "intake",
       "waypointRelativePos": 2.013559322033907,
       "endWaypointRelativePos": null,
-      "command": null
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "intake"
+        }
+      }
     },
     {
       "name": "stop intake",
       "waypointRelativePos": 3.0,
       "endWaypointRelativePos": null,
-      "command": null
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "stop intake"
+        }
+      }
     }
   ],
   "globalConstraints": {

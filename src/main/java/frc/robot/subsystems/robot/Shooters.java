@@ -69,7 +69,7 @@ public class Shooters extends SubsystemBase {
         final double MIN_DIST = 0;
         final double MAX_DIST = 4.5;
         final double MIN_SPEED_RPS = 65;
-        final double MAX_SPEED_RPS = 80;
+        final double MAX_SPEED_RPS = 95;
         final double EXPONENT = 1.4;
 
         double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
