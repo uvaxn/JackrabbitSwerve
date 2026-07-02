@@ -27,7 +27,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double SOFT_LIMIT_UP   = 2.0;
 
     private static final double INTAKE_COLLECT_SPEED = -0.6; // collecting from ground
-    private static final double INTAKE_FEED_SPEED    =  0.2; // feeding up into shooter
+    private static final double INTAKE_FEED_SPEED    =  -0.2; // feeding up into shooter
 
     private final CoastOut    coastOut    = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
@@ -72,7 +72,7 @@ public class IntakeSubsystem extends SubsystemBase {
         Vars.MaxSpeed = 0.7 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     }
     public void startFeeding() {
-        intakeMotor.set(-INTAKE_FEED_SPEED); // feed balls toward shooter
+        MotorMode.setSpeed(intakeMotor, INTAKE_FEED_SPEED);
         if (isAtTop() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) {
             dropMotor.setControl(staticBrake);
             state = DropState.IDLE;
