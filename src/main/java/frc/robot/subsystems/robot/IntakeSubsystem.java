@@ -6,6 +6,7 @@ import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.generated.TunerConstants;
@@ -67,7 +68,7 @@ public class IntakeSubsystem extends SubsystemBase {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
         nt.putRobotState("intaking");
         Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-        driveInputs.rumbleWithDuration(1, 0.2);
+        
     }
     public void stopIntake() {
         nt.putRobotState("stop intaking");
@@ -118,6 +119,7 @@ public class IntakeSubsystem extends SubsystemBase {
             dropMotor.setPosition(0.0);
             hasSeededTop    = true;
             hasSeededBottom = false;
+            CommandScheduler.getInstance().schedule(driveInputs.rumbleWithDuration(0.2, 0.5));
         }
         if (isAtBottom() && !hasSeededBottom) {
             dropMotor.setPosition(SOFT_LIMIT_DOWN);
