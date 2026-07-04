@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -20,7 +21,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private final DigitalInput upperSensor;
     private final DigitalInput lowerSensor;
     EaseofLife MotorMode;
-
+    private final DriveInputs driveInputs;
     private double DROP_SPEED      = 0.15;
     private double LIFT_SPEED      = 0.1;
     private static final double SOFT_LIMIT_DOWN = 50.0;
@@ -41,12 +42,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private boolean hasSeededBottom = false;
 
     public IntakeSubsystem(TalonFX intakeMotor, TalonFX dropMotor,
-                        DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife easeOfLife) {
+                        DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife easeOfLife, DriveInputs DriveInputs) {
         this.intakeMotor = intakeMotor;
         this.dropMotor   = dropMotor;
         this.upperSensor = upperSensor;
         this.lowerSensor = lowerSensor;
         this.MotorMode = easeOfLife;     
+        this.driveInputs = DriveInputs;
         dropMotor.setPosition(0.0);
         dropMotor.setControl(staticBrake);
 
@@ -65,6 +67,7 @@ public class IntakeSubsystem extends SubsystemBase {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
         nt.putRobotState("intaking");
         Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        driveInputs.rumbleWithDuration(1, 0.2);
     }
     public void stopIntake() {
         nt.putRobotState("stop intaking");
@@ -121,12 +124,13 @@ public class IntakeSubsystem extends SubsystemBase {
             hasSeededBottom = true;
             hasSeededTop    = false;
         }
-
+        
         switch (state) {
             case MOVING_DOWN -> {
                 if (isAtBottom() || pos >= SOFT_LIMIT_DOWN) {
                     dropMotor.setControl(coastOut);
                     state = DropState.IDLE;
+                    
                 } else {
                     dropMotor.set(-DROP_SPEED);
                 }
@@ -135,6 +139,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 if (isAtTop() || pos <= SOFT_LIMIT_UP) {
                     dropMotor.setControl(staticBrake);
                     state = DropState.IDLE;
+                    
                 } else {
                     dropMotor.set(LIFT_SPEED);
                 }

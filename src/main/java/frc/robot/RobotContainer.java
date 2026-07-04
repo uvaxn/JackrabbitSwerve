@@ -64,7 +64,8 @@ public class RobotContainer {
 
     public final DriveInputs driveInputs = new DriveInputs(
         () -> joystick.getLeftY(),
-        () -> joystick.getLeftX()
+        () -> joystick.getLeftX(), 
+        joystick
     );
     private SendableChooser<Command> autoChooser;
     
@@ -85,7 +86,8 @@ public class RobotContainer {
         m_Intake, m_IntakeDrop,
         new DigitalInput(0),
         new DigitalInput(1),
-        easeOfLife
+        easeOfLife, 
+        driveInputs
     );
     public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed, easeOfLife, cameraSubsystem, intakes);
     // Commands
