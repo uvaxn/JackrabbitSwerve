@@ -55,16 +55,18 @@ public class Robot extends TimedRobot {
         m_robotContainer.easeOfLife.teleopInit();
         LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and the pigeon gyro
     }
-    @Override public void disabledInit() {
+    @Override public void disabledInit() {}
+    @Override public void disabledPeriodic() {
         LimelightHelpers.SetIMUMode(LL_NAME, 1); // re-seed 
     }
-    @Override public void disabledPeriodic() {}
     @Override public void disabledExit() {}
     @Override public void autonomousPeriodic() {
         LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and the pigeon gyro
     }
     @Override public void autonomousExit() {}
-    @Override public void teleopPeriodic() {}
+    @Override public void teleopPeriodic() {
+        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and the pigeon gyro
+    }
     @Override public void teleopExit() {}
     @Override public void testInit() { CommandScheduler.getInstance().cancelAll(); }
     @Override public void testPeriodic() {}
