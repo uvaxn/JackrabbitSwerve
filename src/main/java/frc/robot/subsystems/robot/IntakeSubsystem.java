@@ -13,7 +13,6 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -150,9 +149,5 @@ public class IntakeSubsystem extends SubsystemBase {
             }
             case IDLE -> {}
         }
-
-        SmartDashboard.putNumber("IntakeDrop/Rotation",  dropMotor.getPosition().getValueAsDouble());
-        SmartDashboard.putNumber("IntakeDrop/Velocity",  dropMotor.getVelocity().getValueAsDouble());
-        SmartDashboard.putString("IntakeDrop/State",     state.toString());
     }
 }

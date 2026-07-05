@@ -1,6 +1,5 @@
 package frc.robot.commands.AutoAlign;
 
-import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -12,7 +11,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Vars;
 import frc.robot.Constants;
@@ -20,7 +18,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
 import frc.robot.vision.CameraSubsystem;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import edu.wpi.first.math.util.Units;
 public class AlignToHub extends Command {
 
@@ -85,11 +83,9 @@ public class AlignToHub extends Command {
         
 
         rotationPID.setPID(
-            // more P and D, minimize I as much as you can
             easeofLife.getAlignP(),
             easeofLife.getAlignI(),
             easeofLife.getAlignD()
-            //  TODO: -------------->>>>>>>>>>>>>> adjust PID for AutoAlign!!!!! <<<<<<<<<<<<--------------------
         );
         // Pick hub based on alliance
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
@@ -103,20 +99,6 @@ public class AlignToHub extends Command {
         double targetAngle = Math.atan2(toHubPredicted.getY(), toHubPredicted.getX());
 
         nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
-        SmartDashboard.putNumberArray("Pose/predictedRobotPos", new double[]{
-            RobotPos.getX(),
-            RobotPos.getY(),
-            robotPose.getRotation().getDegrees()
-        });
-        SmartDashboard.putNumberArray("Pose/hubTarget", new double[]{
-            hubTarget.getX(),
-            hubTarget.getY(),
-            0.0
-        });
-        SmartDashboard.putNumber(
-            "AutoAlign/RobotAngleDeg",
-            robotPose.getRotation().getDegrees()
-        );
 
         rotationPID.setGoal(targetAngle);
 

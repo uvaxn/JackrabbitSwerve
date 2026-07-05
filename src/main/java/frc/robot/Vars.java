@@ -21,7 +21,7 @@ public class Vars {
     // no more controller stuph 
     public static double FEED_SPEED = 0.6; // in percentage (0.8 == 80%)
     public static double SHOOTER_SPEED = 30;
-    //
+
     public static final double airTimeScalarSeconds = 1;
     public static final double MaxAngularRate = 1.5;
 

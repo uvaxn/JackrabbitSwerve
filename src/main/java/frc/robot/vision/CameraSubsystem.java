@@ -8,9 +8,6 @@ import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -21,8 +18,6 @@ import com.ctre.phoenix6.SignalLogger;
 public class CameraSubsystem extends SubsystemBase {
 
     private final CommandSwerveDrivetrain swerveDrive;
-
-    private static final Field2d CAM_FIELD2D = new Field2d(); // for debugging
 
     private static final String LL_NAME = Constants.LL_NAME;
 
@@ -35,7 +30,6 @@ public class CameraSubsystem extends SubsystemBase {
     public CameraSubsystem(CommandSwerveDrivetrain swerveDrive) {
         this.swerveDrive = swerveDrive;
         LimelightHelpers.SetIMUMode(LL_NAME, 1);
-        SmartDashboard.putData("CameraField2d", CAM_FIELD2D);
     }
 
     @Override
@@ -63,11 +57,7 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     if (mt2 == null || mt2.tagCount == 0) return;
-
-        
-        
         Translation2d t = mt2.pose.getTranslation();
-        CAM_FIELD2D.setRobotPose(mt2.pose);
         // bounds check
         if (t.getX() < 0 || t.getX() > 16.54 ||
             t.getY() < 0 || t.getY() > 8.21) {
@@ -105,7 +95,7 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     public double getDistanceToHub() {
-        Optional<Pose2d> pose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
+        Optional<Pose2d> pose = getEstimatedPose();
         if (pose.isEmpty()) return 3;
 
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
