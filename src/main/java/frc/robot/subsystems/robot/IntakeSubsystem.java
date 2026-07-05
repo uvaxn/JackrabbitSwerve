@@ -68,6 +68,8 @@ public class IntakeSubsystem extends SubsystemBase {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
         nt.putRobotState("intaking");
         Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+
+    CommandScheduler.getInstance().schedule(driveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
         
     }
     public void stopIntake() {
@@ -119,7 +121,7 @@ public class IntakeSubsystem extends SubsystemBase {
             dropMotor.setPosition(0.0);
             hasSeededTop    = true;
             hasSeededBottom = false;
-            CommandScheduler.getInstance().schedule(driveInputs.rumbleWithDuration(0.2, 0.5));
+            
         }
         if (isAtBottom() && !hasSeededBottom) {
             dropMotor.setPosition(SOFT_LIMIT_DOWN);

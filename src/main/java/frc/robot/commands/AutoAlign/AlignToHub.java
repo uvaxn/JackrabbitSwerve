@@ -19,6 +19,7 @@ import frc.robot.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
+import frc.robot.vision.CameraSubsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.util.Units;
 public class AlignToHub extends Command {
@@ -27,8 +28,8 @@ public class AlignToHub extends Command {
         .withDeadband(Vars.MaxSpeed * 0.1)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
+    private final CameraSubsystem camSubsystem;
     private final CommandSwerveDrivetrain swerveDrive;
-    
     EaseofLife easeofLife;
     private final ProfiledPIDController rotationPID;
     private final DoubleSupplier forwardSupplier;
@@ -45,12 +46,14 @@ public class AlignToHub extends Command {
      */
 
     public AlignToHub(
-        CommandSwerveDrivetrain swerveDrive,
+        CameraSubsystem camsub,
         EaseofLife easeOfLife,
+        CommandSwerveDrivetrain swerveDrivetrain,
         DoubleSupplier forwardSupplier,
         DoubleSupplier leftSupplier) {
-            
-        this.swerveDrive = swerveDrive;
+        
+        this.swerveDrive = swerveDrivetrain;
+        this.camSubsystem = camsub;
         this.easeofLife = easeOfLife;
         this.forwardSupplier = forwardSupplier;
         this.leftSupplier = leftSupplier;
@@ -61,26 +64,26 @@ public class AlignToHub extends Command {
             Vars.AlignToHubD,
             new TrapezoidProfile.Constraints(Math.PI / 2, Math.PI));
         rotationPID.enableContinuousInput(-Math.PI, Math.PI);
-
-        addRequirements(swerveDrive);
     }
 
     @Override
     public void initialize() {
-        swerveDrive.samplePoseAt(Timer.getFPGATimestamp())
-            .ifPresent(pose -> rotationPID.reset(pose.getRotation().getRadians()));
+        Pose2d startPose = camSubsystem.getEstimatedPose()
+            .orElse(swerveDrive.getState().Pose);
+        rotationPID.reset(startPose.getRotation().getRadians());
     }
 
     @Override
     public void execute() {
-        Optional<Pose2d> possiblePose = swerveDrive.samplePoseAt(Timer.getFPGATimestamp());
+        // falls back to odometry if no cam pose is present 
+        Pose2d robotPose = camSubsystem.getEstimatedPose()
+            .orElse(swerveDrive.getState().Pose);
 
         double velocityX = forwardSupplier.getAsDouble();
         double velocityY = leftSupplier.getAsDouble();
         double rotationalRate = 0;
         
-        if (possiblePose.isEmpty()) return;
-        Pose2d robotPose = possiblePose.get();
+
         rotationPID.setPID(
             // more P and D, minimize I as much as you can
             easeofLife.getAlignP(),

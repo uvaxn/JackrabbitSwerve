@@ -137,8 +137,9 @@ public class RobotContainer {
 
         // autoalign to nearest AprilTag
         joystick.x().whileTrue(new AlignToHub(
-            drivetrain,
+            cameraSubsystem,
             easeOfLife,
+            drivetrain,
             driveInputs::getX,
             driveInputs::getY
         ));

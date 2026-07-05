@@ -46,13 +46,27 @@ public class DriveInputs extends SubsystemBase {
         return limitedY * Vars.MaxSpeed;
     }
     
-    public Command rumbleWithDuration(double seconds, double amount) {
-        return new SequentialCommandGroup(
-            new InstantCommand(() ->
-                controller.getHID().setRumble(RumbleType.kBothRumble, amount)),
-            new WaitCommand(seconds),
-            new InstantCommand(() ->
-                controller.getHID().setRumble(RumbleType.kBothRumble, 0))
-        );
+
+    public Command rumblePulse(int pulses, double pulseLength, double timeBetweenPulses, double amount) {
+        SequentialCommandGroup command = new SequentialCommandGroup();
+
+        
+
+        for (int i = 0; i < pulses; i++) {
+            command.addCommands(
+                new InstantCommand(() ->
+                    controller.getHID().setRumble(RumbleType.kBothRumble, amount)
+                ),
+                new WaitCommand(pulseLength),
+                new InstantCommand(() ->
+                    controller.getHID().setRumble(RumbleType.kBothRumble, 0)
+                )
+            );
+            if (i < pulses - 1) {
+                command.addCommands(new WaitCommand(timeBetweenPulses));
+            }
+        }
+
+        return command;
     }
 }
