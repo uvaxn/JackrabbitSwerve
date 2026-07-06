@@ -15,7 +15,6 @@ public class nt {
 
     // robot
     private static final StringPublisher robotState = rbtTable.getStringTopic("State").publish();
-
     // autoalign
     private static final DoublePublisher targetAngle = rbtTable.getDoubleTopic("AutoAlign/TargetAngleDeg").publish();
 
@@ -36,8 +35,22 @@ public class nt {
     private static final DoubleSubscriber alignPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").subscribe(Vars.AlignToHubP);
     private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Vars.AlignToHubI);
     private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Vars.AlignToHubD);
+    
+    private static final DoubleSubscriber shooterSpeedSub = rbtTable.getDoubleTopic("EaseofLife/ShooterSpeed").subscribe(Vars.SHOOTER_SPEED);
+    
+    private static final DoublePublisher shooterMinSpeedPub =
+        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MinSpeedRPS").publish();
+    private static final DoublePublisher shooterMaxSpeedPub =
+        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MaxSpeedRPS").publish();
+    private static final DoublePublisher shooterExponentPub =
+        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/Exponent").publish();
 
-
+    private static final DoubleSubscriber shooterMinSpeedSub =
+        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MinSpeedRPS").subscribe(65.0);
+    private static final DoubleSubscriber shooterMaxSpeedSub =
+        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MaxSpeedRPS").subscribe(95.0);
+    private static final DoubleSubscriber shooterExponentSub =
+        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/Exponent").subscribe(1.4);
     /**
      * Puts the target angle for AlignToHub
      * @param deg (Degrees)
@@ -55,8 +68,34 @@ public class nt {
     public static void putAlignI(double I) { AligntoHubI.set(I); }
     public static void putAlignD(double D) { AligntoHubD.set(D); }
 
+    public static void putShooterMinSpeed(double speed) {
+        shooterMinSpeedPub.set(speed);
+    }
+
+    public static void putShooterMaxSpeed(double speed) {
+        shooterMaxSpeedPub.set(speed);
+    }
+
+    public static void putShooterExponent(double exponent) {
+        shooterExponentPub.set(exponent);
+    }
+    
     // PID getters (reads live value from dashboard)
     public static double getAlignP() { return alignPSub.get(); }
     public static double getAlignI() { return alignISub.get(); }
     public static double getAlignD() { return alignDSub.get(); }
+
+    public static double getShooterMinSpeed() {
+        return shooterMinSpeedSub.get();
+    }
+
+    public static double getShooterMaxSpeed() {
+        return shooterMaxSpeedSub.get();
+    }
+
+    public static double getShooterExponent() {
+        return shooterExponentSub.get();
+    }
+
+    public static double getShooterSpeed() { return shooterSpeedSub.get(); }
 }

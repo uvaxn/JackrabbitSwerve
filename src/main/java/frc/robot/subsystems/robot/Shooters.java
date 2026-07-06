@@ -44,7 +44,10 @@ public class Shooters extends SubsystemBase {
     public void shoot() {
         isShooting = true;
         shooterUpdateTimer.restart();
-        MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
+        /*  MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
+         *  remeber to UNCOMMENT this once you are done tuning.
+         */ 
+        MotorMode.setVelocity(shooterR, nt.getShooterSpeed());
         MotorMode.setSpeed(lowerFeed, -Vars.FEED_SPEED);
         MotorMode.setSpeed(upperFeed, Vars.FEED_SPEED);
         intakes.startFeeding();
@@ -68,13 +71,17 @@ public class Shooters extends SubsystemBase {
     public double calculateShooterSpeed(double dist) {
         final double MIN_DIST = 0;
         final double MAX_DIST = 4.5;
-        final double MIN_SPEED_RPS = 65;
-        final double MAX_SPEED_RPS = 95;
-        final double EXPONENT = 1.4;
 
-        double Distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
-        double doobiescootcanoe = (Distance - MIN_DIST) / (MAX_DIST - MIN_DIST);
-        return MIN_SPEED_RPS + Math.pow(doobiescootcanoe, EXPONENT) * (MAX_SPEED_RPS - MIN_SPEED_RPS);
+        double minSpeed = nt.getShooterMinSpeed();
+        double maxSpeed = nt.getShooterMaxSpeed();
+        double exponent = nt.getShooterExponent();
+
+        double distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
+        double normalized = (distance - MIN_DIST) / (MAX_DIST - MIN_DIST);
+
+        return minSpeed
+            + Math.pow(normalized, exponent)
+            * (maxSpeed - minSpeed);
     }
 
     public void periodic() {
