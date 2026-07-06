@@ -16,28 +16,19 @@
     },
     {
       "anchor": {
-        "x": 0.7716239313371889,
-        "y": 5.9758014410190095
+        "x": 0.8078412979399132,
+        "y": 5.963242892325488
       },
       "prevControl": {
-        "x": 2.2215488417671345,
-        "y": 5.995036134589148
+        "x": 2.257766208369858,
+        "y": 5.9824775858956265
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "Test 3 End"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.4144385026737971,
-      "rotationDegrees": -75.90366818345505
-    },
-    {
-      "waypointRelativePos": 0.7566844919786104,
-      "rotationDegrees": 180.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [
     {
       "name": "Constraints Zone",
@@ -99,13 +90,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -179.0303577196618
+    "rotation": 179.38161672216128
   },
   "reversed": false,
   "folder": "test center",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "useDefaultConstraints": false
 }

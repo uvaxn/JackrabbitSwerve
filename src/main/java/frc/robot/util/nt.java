@@ -38,7 +38,10 @@ public class nt {
     private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Vars.AlignToHubD);
 
 
-
+    /**
+     * Puts the target angle for AlignToHub
+     * @param deg (Degrees)
+     */
     public static void putTargetAngle(double deg)   { targetAngle.set(deg); }
     public static void putCurrentShift(String shift){ currentShift.set(shift); }
     public static void putShiftTime(double time)    { shiftTimeRemaining.set(time); }
