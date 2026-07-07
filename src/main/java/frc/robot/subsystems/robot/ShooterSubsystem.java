@@ -11,25 +11,24 @@ import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
 import frc.robot.vision.CameraSubsystem;
 
-public class Shooters extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
     private final TalonFX lowerFeed;
     private final TalonFX upperFeed;
     EaseofLife MotorMode;
     CameraSubsystem cam;
-    private final IntakeSubsystem intakes;
 
     private boolean isShooting = false;
     private final Timer shooterUpdateTimer = new Timer();
     private static final double SHOOTER_UPDATE_PERIOD = 0.1; // seconds
 
-    public Shooters(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem camerasubsystem, IntakeSubsystem intakeSubsystem) {
+    public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem cameraSubsystem, IntakeSubsystem intakes) {
         this.shooterR  = shooterR;
         this.lowerFeed = lowerFeed;
         this.upperFeed = upperFeed;
         this.MotorMode = easeOfLife;
-        this.intakes = intakeSubsystem;
-        this.cam = camerasubsystem;
+
+        this.cam = cameraSubsystem;
         shooterL.setControl(new Follower(shooterR.getDeviceID(), MotorAlignmentValue.Opposed));
 
         Slot0Configs shooterGains = new Slot0Configs();
@@ -41,7 +40,7 @@ public class Shooters extends SubsystemBase {
         shooterR.getConfigurator().apply(shooterGains);
     }
 
-    public void shoot() {
+    public void start() {
         isShooting = true;
         shooterUpdateTimer.restart();
         /*  MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
@@ -50,22 +49,15 @@ public class Shooters extends SubsystemBase {
         MotorMode.setVelocity(shooterR, nt.getShooterSpeed());
         MotorMode.setSpeed(lowerFeed, -Vars.FEED_SPEED);
         MotorMode.setSpeed(upperFeed, Vars.FEED_SPEED);
-        intakes.startFeeding();
         nt.putRobotState("shooting");
     }
 
-    public void stopShoot() {
+    public void stop() {
         isShooting = false;
         MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(lowerFeed, 0);
         MotorMode.setSpeed(upperFeed, 0);
-        intakes.stopFeeding();
         nt.putRobotState("stop shooting");
-    }
-
-    public void simpleShoot() { // to be removed, only use for testing when pressing down on the d-pad.
-        nt.putRobotState("shooting");
-        MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
     }
 
     public double calculateShooterSpeed(double dist) {

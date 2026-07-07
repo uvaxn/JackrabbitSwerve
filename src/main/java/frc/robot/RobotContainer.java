@@ -22,7 +22,8 @@ package frc.robot;
  */
 
 import static edu.wpi.first.units.Units.*;
-
+// TODO: add feature that essentially makes it so that it uses the feed.start() function when holding down both right bumper & right trigger at the same time. Use regular shooter.shoot() otherwise.
+//
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -47,8 +48,9 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
+import frc.robot.subsystems.robot.FeedSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
-import frc.robot.subsystems.robot.Shooters;
+import frc.robot.subsystems.robot.ShooterSubsystem;
 import frc.robot.vision.CameraSubsystem;
 
 public class RobotContainer {
@@ -72,8 +74,11 @@ public class RobotContainer {
     private SendableChooser<Command> autoChooser;
     
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    
     public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
+
     public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
+
     // Motors
     public final TalonFX m_ShooterR   = new TalonFX(23);
     public final TalonFX m_ShooterL   = new TalonFX(22);
@@ -85,17 +90,37 @@ public class RobotContainer {
     
     
     public final IntakeSubsystem intakes = new IntakeSubsystem(
-        m_Intake, m_IntakeDrop,
+        m_Intake, 
+        m_IntakeDrop,
+
         new DigitalInput(0),
         new DigitalInput(1),
+
         easeOfLife, 
         driveInputs
     );
-    public final Shooters shooters = new Shooters(m_ShooterR, m_ShooterL, m_LowerFeed, m_UpperFeed, easeOfLife, cameraSubsystem, intakes);
+    public final ShooterSubsystem shooters = new ShooterSubsystem(
+        m_ShooterR, 
+        m_ShooterL, 
+
+        m_LowerFeed, 
+        m_UpperFeed, 
+
+        easeOfLife, 
+        cameraSubsystem, 
+        intakes
+    );
+    public final FeedSubsystem feeds = new FeedSubsystem(
+        intakes, 
+        easeOfLife, 
+
+        m_LowerFeed, 
+        m_UpperFeed
+    );
     // Commands
     public RobotContainer() {
-        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> shooters.shoot()));
-        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stopShoot()));
+        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> shooters.start()));
+        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stop()));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::startIntake, intakes));
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stopIntake,  intakes));
         NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
@@ -157,11 +182,8 @@ public class RobotContainer {
 
         // Shooter
         joystick.rightTrigger()
-            .onTrue(new InstantCommand(() -> shooters.shoot()))
-            .onFalse(new InstantCommand(() -> shooters.stopShoot()));
-        joystick.povLeft()
-            .onTrue(new InstantCommand(() -> shooters.simpleShoot()))
-            .onFalse(new InstantCommand(() -> shooters.stopShoot()));
+            .onTrue(new InstantCommand(() -> shooters.start()))
+            .onFalse(new InstantCommand(() -> shooters.stop()));
         joystick.povDown()
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
