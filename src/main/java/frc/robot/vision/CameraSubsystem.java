@@ -23,6 +23,12 @@ public class CameraSubsystem extends SubsystemBase {
 
     private Optional<Pose2d> latestEstimate = Optional.empty();
 
+    private boolean reportedOOB = false;
+
+    private boolean isInField(Translation2d t) {
+        return t.getX() >= 0 && t.getX() <= 16.54 &&
+            t.getY() >= 0 && t.getY() <= 8.21;
+    }
     private final DoubleArrayPublisher visionPosePub =
         NetworkTableInstance.getDefault().getTable("Pose")
             .getDoubleArrayTopic("VisionEstimate").publish();
@@ -57,10 +63,10 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     if (mt2 == null || mt2.tagCount == 0) return;
+    if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0 && mt2.rawFiducials[0].ambiguity > 0.7) {return;}
         Translation2d t = mt2.pose.getTranslation();
         // bounds check
-        if (t.getX() < 0 || t.getX() > 16.54 ||
-            t.getY() < 0 || t.getY() > 8.21) {
+        if (!isInField(t)) {
             DriverStation.reportWarning(
                 "Limelight OUT OF BOUNDS POSE (x=" + String.format("%.2f", t.getX()) +
                 " y=" + String.format("%.2f", t.getY()) + ")", false);
@@ -68,13 +74,17 @@ public class CameraSubsystem extends SubsystemBase {
         }
 
         // reject if spinning too fast (megatag 2 no likey that)
+        double angularVelocity = Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond);
+        if (Math.toDegrees(angularVelocity) > 720) { // tune this threshold
+            return;
+        }
         latestEstimate = Optional.of(mt2.pose);
         visionPosePub.set(new double[] {
             mt2.pose.getX(), mt2.pose.getY(), mt2.pose.getRotation().getDegrees()
         });
         // Distance scaled stddevs based on tagsd
         double tagDist = mt2.avgTagDist;
-        double stdDev = 0.8 + tagDist * tagDist; // small floor so close up reads aren't treated as perfect
+        double stdDev = 0.1 + 0.08 * tagDist * tagDist; // small floor so close up reads aren't treated as perfect
         if (mt2.tagCount > 1) {
             stdDev *= 0.5; 
         }
@@ -84,7 +94,7 @@ public class CameraSubsystem extends SubsystemBase {
             VecBuilder.fill(stdDev, stdDev, 9999999)
         );
     }
-    private boolean reportedOOB = false;
+
 
     public void setLEDBlink() {
     LimelightHelpers.setLEDMode_ForceBlink(LL_NAME);
@@ -96,15 +106,14 @@ public class CameraSubsystem extends SubsystemBase {
 
     public double getDistanceToHub() {
         Optional<Pose2d> pose = getEstimatedPose();
-        if (pose.isEmpty()) return 3;
+        if (pose.isEmpty()) return 3; // 3 meters by default
 
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
             ? Constants.redHubPosition
             : Constants.blueHubPosition;
 
         Translation2d t = pose.get().getTranslation();
-        boolean outOfBounds = t.getX() < 0 || t.getX() > 16.54 ||
-                            t.getY() < 0 || t.getY() > 8.21;
+        boolean outOfBounds = !isInField(t);
 
         if (outOfBounds) {
             if (!reportedOOB) {

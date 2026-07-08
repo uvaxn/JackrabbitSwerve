@@ -45,6 +45,8 @@ public class Robot extends TimedRobot {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().schedule(m_autonomousCommand);
         }
+
+        LimelightHelpers.SetIMUMode(LL_NAME, 3); // use the ll4 imu, and mt1
     }
 
     @Override
@@ -53,20 +55,16 @@ public class Robot extends TimedRobot {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
         m_robotContainer.easeOfLife.teleopInit();
-        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and the pigeon gyro
+        LimelightHelpers.SetIMUMode(LL_NAME, 3); // use the ll4 imu, and mt1
     }
-    @Override public void disabledInit() {}
-    @Override public void disabledPeriodic() {
+    @Override public void disabledInit() {
         LimelightHelpers.SetIMUMode(LL_NAME, 1); // re-seed 
     }
+    @Override public void disabledPeriodic() {}
     @Override public void disabledExit() {}
-    @Override public void autonomousPeriodic() {
-        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and the pigeon gyro
-    }
+    @Override public void autonomousPeriodic() {}
     @Override public void autonomousExit() {}
-    @Override public void teleopPeriodic() {
-        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and the pigeon gyro
-    }
+    @Override public void teleopPeriodic() {}
     @Override public void teleopExit() {}
     @Override public void testInit() { CommandScheduler.getInstance().cancelAll(); }
     @Override public void testPeriodic() {}

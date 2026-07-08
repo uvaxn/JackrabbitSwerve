@@ -40,7 +40,7 @@ public class FeedSubsystem extends SubsystemBase {
         easeOfLife.setSpeed(lowerFeed, 0);
         easeOfLife.setSpeed(upperFeed, 0);
 
-        if (!intake.isAtBottom() || intake.isAtTop()) return;
+        if (intake.isAtBottom()) return;
         intake.requestDown();
     }
 
