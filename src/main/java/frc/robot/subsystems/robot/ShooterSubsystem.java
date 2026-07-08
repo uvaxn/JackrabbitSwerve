@@ -49,7 +49,6 @@ public class ShooterSubsystem extends SubsystemBase {
         MotorMode.setVelocity(shooterR, nt.getShooterSpeed());
         MotorMode.setSpeed(lowerFeed, -Vars.FEED_SPEED);
         MotorMode.setSpeed(upperFeed, Vars.FEED_SPEED);
-        nt.putRobotState("shooting");
     }
 
     public void stop() {
@@ -57,7 +56,6 @@ public class ShooterSubsystem extends SubsystemBase {
         MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(lowerFeed, 0);
         MotorMode.setSpeed(upperFeed, 0);
-        nt.putRobotState("stop shooting");
     }
 
     public double calculateShooterSpeed(double dist) {

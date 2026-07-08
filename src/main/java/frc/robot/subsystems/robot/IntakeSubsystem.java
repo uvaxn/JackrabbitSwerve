@@ -12,7 +12,6 @@ import frc.robot.Vars;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
-import frc.robot.util.nt;
 
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -55,23 +54,22 @@ public class IntakeSubsystem extends SubsystemBase {
     public void requestDown() {
         if (isAtBottom() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
-        nt.putRobotState("going down");
+
     }
     public void requestUp() {
         if (isAtTop() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_UP;
-        nt.putRobotState("going up");
+
     }
-    public void startIntake() {
+    public void start() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
-        nt.putRobotState("intaking");
+
         Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 
     CommandScheduler.getInstance().schedule(driveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
         
     }
-    public void stopIntake() {
-        nt.putRobotState("stop intaking");
+    public void stop() {
         MotorMode.setSpeed(intakeMotor, 0);
         Vars.MaxSpeed = 0.7 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     }
@@ -90,8 +88,9 @@ public class IntakeSubsystem extends SubsystemBase {
     public boolean isFullyUp() {
         return state == DropState.IDLE && isAtTop();
     }
-
+    /** @return true when the lower sensor has been set off. */
     public boolean isAtBottom() { return !lowerSensor.get(); }
+    /** @return true when the upper sensor has been set off. */
     public boolean isAtTop()    { return !upperSensor.get(); }
 
     @Override

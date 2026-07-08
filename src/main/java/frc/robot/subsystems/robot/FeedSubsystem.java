@@ -14,7 +14,7 @@ public class FeedSubsystem extends SubsystemBase {
     private TalonFX lowerFeed;
     private boolean isFeeding = false;
 
-    private static final double UP_DURATION = 0.3; // seconds the arm stays up per bounce
+    private static final double UP_DURATION = 0.3; // seconds the arm goes up per bounce
 
     private enum FeedState { WAITING_AT_BOTTOM, GOING_UP, HOLDING_UP }
     private FeedState feedState = FeedState.WAITING_AT_BOTTOM;
@@ -40,11 +40,12 @@ public class FeedSubsystem extends SubsystemBase {
         easeOfLife.setSpeed(lowerFeed, 0);
         easeOfLife.setSpeed(upperFeed, 0);
 
+        if (!intake.isAtBottom() || intake.isAtTop()) return;
         intake.requestDown();
     }
 
     public void periodic() {
-        if (!isFeeding) return;
+        if (!isFeeding) return; 
 
         switch (feedState) {
             case WAITING_AT_BOTTOM -> {

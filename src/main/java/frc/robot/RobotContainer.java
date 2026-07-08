@@ -32,13 +32,12 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -48,6 +47,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
+import frc.robot.subsystems.Mechanisms;
 import frc.robot.subsystems.robot.FeedSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
@@ -117,15 +117,20 @@ public class RobotContainer {
         m_LowerFeed, 
         m_UpperFeed
     );
+    public final Mechanisms mechanisms = new Mechanisms(
+        shooters, 
+        intakes, 
+        feeds
+    );
     // Commands
     public RobotContainer() {
-        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> shooters.start()));
-        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> shooters.stop()));
-        NamedCommands.registerCommand("intake",     new InstantCommand(intakes::startIntake, intakes));
-        NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stopIntake,  intakes));
+        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> mechanisms.FullHopperShoot()));
+        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> mechanisms.StopShoot()));
+        NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
+        NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
         NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
         NamedCommands.registerCommand("requestDown", new InstantCommand(intakes::requestDown));
-        drivetrain.configureAutoBuilder();
+        drivetrain.configureAutoBuilder(); 
         configureBindings();
 
         autoChooser = AutoBuilder.buildAutoChooser("None");
@@ -177,13 +182,20 @@ public class RobotContainer {
         ));
         // Intake
         joystick.leftTrigger()
-            .onTrue(new InstantCommand(intakes::startIntake, intakes))
-            .onFalse(new InstantCommand(intakes::stopIntake,  intakes));
+            .onTrue(new InstantCommand(mechanisms::Intake, intakes))
+            .onFalse(new InstantCommand(mechanisms::StopIntake,  intakes));
 
         // Shooter
-        joystick.rightTrigger()
-            .onTrue(new InstantCommand(() -> shooters.start()))
-            .onFalse(new InstantCommand(() -> shooters.stop()));
+
+        joystick.rightTrigger().and(joystick.rightBumper())
+            .onTrue(new InstantCommand(mechanisms::FullHopperShoot))
+            .onFalse(new InstantCommand(mechanisms::StopShoot));
+
+
+        joystick.rightTrigger().and(joystick.rightBumper().negate())
+            .onTrue(new InstantCommand(mechanisms::RegularShoot))
+            .onFalse(new InstantCommand(mechanisms::StopShoot));
+
         joystick.povDown()
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
@@ -191,17 +203,6 @@ public class RobotContainer {
         joystick.povRight()
             .onTrue(new InstantCommand(cameraSubsystem::setLEDBlink))
             .onFalse(new InstantCommand(cameraSubsystem::setLEDNormal));
-        joystick.rightBumper()
-        .whileTrue(
-            new RunCommand(
-                () -> joystick.getHID().setRumble(RumbleType.kBothRumble, 0.5)
-            )
-            )
-        .onFalse(
-            new InstantCommand(
-                () -> joystick.getHID().setRumble(RumbleType.kBothRumble, 0.0)
-            )
-            );
         drivetrain.registerTelemetry(logger::telemeterize);
         
     }
