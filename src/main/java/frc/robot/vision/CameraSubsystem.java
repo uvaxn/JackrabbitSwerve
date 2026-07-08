@@ -63,7 +63,7 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     if (mt2 == null || mt2.tagCount == 0) return;
-    if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0 && mt2.rawFiducials[0].ambiguity > 0.7) {return;}
+    if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0 && mt2.rawFiducials[0].ambiguity > 0.5) {return;}
         Translation2d t = mt2.pose.getTranslation();
         // bounds check
         if (!isInField(t)) {
@@ -75,7 +75,7 @@ public class CameraSubsystem extends SubsystemBase {
 
         // reject if spinning too fast (megatag 2 no likey that)
         double angularVelocity = Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond);
-        if (Math.toDegrees(angularVelocity) > 720) { // tune this threshold
+        if (Math.toDegrees(angularVelocity) > 360) { // tune this threshold
             return;
         }
         latestEstimate = Optional.of(mt2.pose);
