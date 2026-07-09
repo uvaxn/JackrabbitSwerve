@@ -63,36 +63,58 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     if (mt2 == null || mt2.tagCount == 0) return;
-    if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0 && mt2.rawFiducials[0].ambiguity > 0.5) {return;}
+
+    // log the raw pose the instant we have one, before any rejection logic runs
+    SignalLogger.writeDoubleArray("Vision/RawPose", new double[] {
+        mt2.pose.getX(), mt2.pose.getY(), mt2.pose.getRotation().getDegrees()
+    });
+
+    if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0 && mt2.rawFiducials[0].ambiguity > 0.5) {
+        SignalLogger.writeBoolean("Vision/PoseAccepted", false);
+        return;
+    }
         Translation2d t = mt2.pose.getTranslation();
         // bounds check
         if (!isInField(t)) {
             DriverStation.reportWarning(
                 "Limelight OUT OF BOUNDS POSE (x=" + String.format("%.2f", t.getX()) +
                 " y=" + String.format("%.2f", t.getY()) + ")", false);
+            SignalLogger.writeBoolean("Vision/PoseAccepted", false);
             return;
         }
 
         // reject if spinning too fast (megatag 2 no likey that)
         double angularVelocity = Math.abs(swerveDrive.getState().Speeds.omegaRadiansPerSecond);
         if (Math.toDegrees(angularVelocity) > 360) { // tune this threshold
+            SignalLogger.writeBoolean("Vision/PoseAccepted", false);
             return;
         }
         latestEstimate = Optional.of(mt2.pose);
         visionPosePub.set(new double[] {
             mt2.pose.getX(), mt2.pose.getY(), mt2.pose.getRotation().getDegrees()
         });
+
+        SignalLogger.writeBoolean("Vision/PoseAccepted", true);
+        SignalLogger.writeDoubleArray("Vision/AcceptedPoseXYRotDeg", new double[] {
+            mt2.pose.getX(), mt2.pose.getY(), mt2.pose.getRotation().getDegrees()
+        });
+
         // Distance scaled stddevs based on tagsd
         double tagDist = mt2.avgTagDist;
         double stdDev = 0.1 + 0.08 * tagDist * tagDist; // small floor so close up reads aren't treated as perfect
         if (mt2.tagCount > 1) {
             stdDev *= 0.5; 
         }
+
+        SignalLogger.writeDouble("Vision/StdDev", stdDev);
+        SignalLogger.writeDouble("Vision/AvgTagDist", tagDist);
+
         swerveDrive.addVisionMeasurement(
             mt2.pose,
             mt2.timestampSeconds,
             VecBuilder.fill(stdDev, stdDev, 9999999)
         );
+        
     }
 
 

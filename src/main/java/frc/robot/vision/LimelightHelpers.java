@@ -1617,7 +1617,7 @@ public class LimelightHelpers {
         setLimelightNTDouble(limelightName, "ledMode", 1);
     }
 
-    public static void setLEDMode_ForceBlink(String limelightName) {
+    public static void  setLEDMode_ForceBlink(String limelightName) {
         setLimelightNTDouble(limelightName, "ledMode", 2);
     }
 
