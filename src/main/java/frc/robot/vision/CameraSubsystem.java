@@ -14,7 +14,6 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.vision.LimelightHelpers;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
 
 public class CameraSubsystem extends SubsystemBase {
@@ -55,7 +54,7 @@ public class CameraSubsystem extends SubsystemBase {
     public CameraSubsystem(String name) {
         this.name = name;
         this.telemetryTable = NetworkTableInstance.getDefault().getTable(name);
-        this.posePublisher = telemetryTable.getStructTopic("Estimated Robot Pose", Pose2d.struct).publish();
+        this.posePublisher = telemetryTable.getStructTopic("EstimatedPose", Pose2d.struct).publish();
     }
 
     private static boolean isInField(Translation2d t) {
