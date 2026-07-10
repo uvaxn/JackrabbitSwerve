@@ -1,31 +1,35 @@
 package frc.robot;
-
 import com.ctre.phoenix6.HootAutoReplay;
-
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.vision.LimelightHelpers;
-
 import com.ctre.phoenix6.SignalLogger;
 public class Robot extends TimedRobot {
-
     private Command m_autonomousCommand;
-    private RobotContainer m_robotContainer;
+    private RobotContainer robotContainer;
     private static final String LL_NAME = Constants.LL_NAME;
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
         .withTimestampReplay()
         .withJoystickReplay();
-
     @Override
     public void robotInit() {
-        m_robotContainer = new RobotContainer();
+        robotContainer = new RobotContainer();
     }
-
     @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
+
+        robotContainer.cameraSubsystem.getMeasurement(
+            robotContainer.drivetrain.getState().Pose,
+            robotContainer.drivetrain.getState().Speeds.omegaRadiansPerSecond
+        ).ifPresent(measurement -> robotContainer.drivetrain.addVisionMeasurement(
+            measurement.poseEstimate.pose,
+            measurement.poseEstimate.timestampSeconds,
+            measurement.standardDeviations
+        ));
+
         CommandScheduler.getInstance().run();
 
         String mode = DriverStation.isDisabled() ? "Disabled"
@@ -34,28 +38,23 @@ public class Robot extends TimedRobot {
             : "Test";
         SignalLogger.writeString("Robot/Mode", mode);
     }
-
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-
+        m_autonomousCommand = robotContainer.getAutonomousCommand();
         SignalLogger.writeString("Robot/SelectedAuto",
             m_autonomousCommand != null ? m_autonomousCommand.getName() : "None");
-
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().schedule(m_autonomousCommand);
         }
-
-        LimelightHelpers.SetIMUMode(LL_NAME, 3); // use the ll4 imu, and mt1
+        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and mt1
     }
-
     @Override
     public void teleopInit() {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
-        m_robotContainer.easeOfLife.teleopInit();
-        LimelightHelpers.SetIMUMode(LL_NAME, 3); // use the ll4 imu, and mt1
+        robotContainer.easeOfLife.teleopInit();
+        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and swerves gyro.
     }
     @Override public void disabledInit() {
         LimelightHelpers.SetIMUMode(LL_NAME, 1); // re-seed 
@@ -70,7 +69,6 @@ public class Robot extends TimedRobot {
     @Override public void testPeriodic() {}
     @Override public void testExit() {}
     @Override public void simulationInit() {
-
     }
     @Override public void simulationPeriodic() {}
     

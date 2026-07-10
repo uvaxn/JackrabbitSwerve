@@ -12,6 +12,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
@@ -40,6 +41,9 @@ public class CameraSubsystem extends SubsystemBase {
     private static final double MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD = 1.0;
     private static final double UNTRUSTED_ROTATION_STD_DEV = 9999999;
 
+    // ---- staleness: how long a fused pose stays valid with nothing refreshing it ----
+    private static final double MAX_ESTIMATE_AGE_SECONDS = 0.25;
+
     private final String name;
     private final NetworkTable telemetryTable;
     private final StructPublisher<Pose2d> posePublisher;
@@ -50,6 +54,7 @@ public class CameraSubsystem extends SubsystemBase {
     private boolean reportedOOB = false;
 
     private Optional<Pose2d> latestEstimate = Optional.empty();
+    private double latestEstimateTimestamp = 0.0;
 
     public CameraSubsystem(String name) {
         this.name = name;
@@ -131,12 +136,14 @@ public class CameraSubsystem extends SubsystemBase {
         posePublisher.set(fusedPose);
 
         latestEstimate = Optional.of(fusedPose);
+        latestEstimateTimestamp = mt2.timestampSeconds;
         return Optional.of(new Measurement(mt2, standardDeviations));
     }
 
 
     public double getDistanceToHub() {
-        if (latestEstimate.isEmpty()) {
+        Optional<Pose2d> pose = getEstimatedPose();
+        if (pose.isEmpty()) {
             return 3.0; // default fallback, matches your original
         }
 
@@ -144,7 +151,7 @@ public class CameraSubsystem extends SubsystemBase {
             ? RED_HUB_POSITION
             : BLUE_HUB_POSITION;
 
-        Translation2d t = latestEstimate.get().getTranslation();
+        Translation2d t = pose.get().getTranslation();
 
         if (!isInField(t)) {
             if (!reportedOOB) {
@@ -160,6 +167,12 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     public Optional<Pose2d> getEstimatedPose() {
+        if (latestEstimate.isEmpty()) {
+            return Optional.empty();
+        }
+        if (Timer.getFPGATimestamp() - latestEstimateTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
+            return Optional.empty();
+        }
         return latestEstimate;
     }
 

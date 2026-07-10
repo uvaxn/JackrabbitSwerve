@@ -22,8 +22,8 @@ public class EaseofLife extends SubsystemBase {
     private final CameraSubsystem cam;
     public final ShiftManager shifts = new ShiftManager();
     
-    NetworkTable table = NetworkTableInstance.getDefault().getTable("SmartDashboard/" + Constants.LL_NAME);
-    StructSubscriber<Pose2d> poseSubscriber = table.getStructTopic("Estimated Robot Pose", Pose2d.struct).subscribe(new Pose2d());
+    NetworkTable table = NetworkTableInstance.getDefault().getTable(Constants.LL_NAME);
+    StructSubscriber<Pose2d> poseSubscriber = table.getStructTopic("EstimatedPose", Pose2d.struct).subscribe(new Pose2d());
     public EaseofLife(CameraSubsystem cameraSubsystem) {
         this.cam = cameraSubsystem;
         // publish initial PID values to dashboard
