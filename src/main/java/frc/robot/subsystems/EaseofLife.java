@@ -5,9 +5,14 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.controls.ShiftManager;
 import frc.robot.util.nt;
 import frc.robot.vision.CameraSubsystem;
@@ -16,7 +21,9 @@ public class EaseofLife extends SubsystemBase {
  
     private final CameraSubsystem cam;
     public final ShiftManager shifts = new ShiftManager();
- 
+    
+    NetworkTable table = NetworkTableInstance.getDefault().getTable("SmartDashboard/" + Constants.LL_NAME);
+    StructSubscriber<Pose2d> poseSubscriber = table.getStructTopic("Estimated Robot Pose", Pose2d.struct).subscribe(new Pose2d());
     public EaseofLife(CameraSubsystem cameraSubsystem) {
         this.cam = cameraSubsystem;
         // publish initial PID values to dashboard

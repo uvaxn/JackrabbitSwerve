@@ -33,6 +33,8 @@ public class FeedSubsystem extends SubsystemBase {
 
         easeOfLife.setSpeed(lowerFeed, -Vars.FEED_SPEED);
         easeOfLife.setSpeed(upperFeed, Vars.FEED_SPEED);
+
+        
     }
 
     public void stop() {

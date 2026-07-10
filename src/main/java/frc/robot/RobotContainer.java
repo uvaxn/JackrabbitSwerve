@@ -75,7 +75,7 @@ public class RobotContainer {
     
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     
-    public final CameraSubsystem cameraSubsystem = new CameraSubsystem(drivetrain);
+    public final CameraSubsystem cameraSubsystem = new CameraSubsystem(Constants.LL_NAME);
 
     public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
 
@@ -200,9 +200,6 @@ public class RobotContainer {
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
             .onTrue(new InstantCommand(intakes::requestUp, intakes));
-        joystick.povRight()
-            .onTrue(new InstantCommand(cameraSubsystem::setLEDBlink))
-            .onFalse(new InstantCommand(cameraSubsystem::setLEDNormal));
         drivetrain.registerTelemetry(logger::telemeterize);
         
     }
