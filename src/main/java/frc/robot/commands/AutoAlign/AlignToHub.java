@@ -94,9 +94,9 @@ public class AlignToHub extends Command {
         // Publish angles
         Translation2d RobotPos = robotPose.getTranslation();
 
-        Translation2d toHubPredicted = hubTarget.minus(RobotPos);
+        Translation2d toHub = hubTarget.minus(RobotPos);
 
-        double targetAngle = Math.atan2(toHubPredicted.getY(), toHubPredicted.getX());
+        double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
 
         nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
 

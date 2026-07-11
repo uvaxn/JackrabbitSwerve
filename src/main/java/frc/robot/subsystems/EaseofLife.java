@@ -43,7 +43,10 @@ public class EaseofLife extends SubsystemBase {
         shifts.periodic();
         nt.putDisttoHub(cam.getDistanceToHub());
     }
- 
+    /** 
+     * @param motor The TalonFX motor.
+     * @param output -1.0 to 1.0, A percentage for what you want hte motor to spin at.
+     */
     public void setSpeed(TalonFX motor, double output) {
         //  prevents any value higher than 1.0 or lower than -1.0 from being passed into set.
         motor.set(MathUtil.clamp(output, -1.0, 1.0));
@@ -52,12 +55,17 @@ public class EaseofLife extends SubsystemBase {
     // one request object, reused for every call to avoid allocating on every periodic() tick
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
  
-    // closed loop velocity control, in rotations per second.
-    // motor's Slot0Configs must already be applied see Shooters constructor.
+    /** closed loop velocity control, in rotations per second.
+    *   motor's Slot0Configs must already be applied see Shooters constructor.
+    */ 
     public void setVelocity(TalonFX motor, double targetRotationsPerSecond) {
         motor.setControl(velocityRequest.withVelocity(targetRotationsPerSecond));
     }
- 
+    /** @param brake True or False.
+     * 
+     * @param motor
+     * @param brake
+     */
     public void setBrake(TalonFX motor, boolean brake) {
         motor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
     }

@@ -73,7 +73,7 @@ public class IntakeSubsystem extends SubsystemBase {
         MotorMode.setSpeed(intakeMotor, 0);
         Vars.MaxSpeed = 0.7 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     }
-
+ 
     /** @return true when the arm is not moving useful for command isFinished() checks */
     public boolean isIdle() {
         return state == DropState.IDLE;

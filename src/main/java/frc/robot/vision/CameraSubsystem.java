@@ -103,7 +103,6 @@ public class CameraSubsystem extends SubsystemBase {
         if (Math.toDegrees(Math.abs(angularVelocityRadPerSec)) > MAX_ANGULAR_VEL_DEG_PER_SEC) {
             return Optional.empty();
         }
-
         // --- MT1 only gets to correct rotation when it's actually trustworthy this cycle ---
 
         final boolean mt1RotationTrustworthy = mt1.tagCount > 1
@@ -144,7 +143,7 @@ public class CameraSubsystem extends SubsystemBase {
     public double getDistanceToHub() {
         Optional<Pose2d> pose = getEstimatedPose();
         if (pose.isEmpty()) {
-            return 3.0; // default fallback, matches your original
+            return 3.0; // default fallback
         }
 
         Translation2d hubTarget = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red
