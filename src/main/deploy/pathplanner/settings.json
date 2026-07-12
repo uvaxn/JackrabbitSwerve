@@ -3,10 +3,11 @@
   "robotLength": 0.87,
   "holonomicMode": true,
   "pathFolders": [
-    "test center",
-    "center",
+    "centerL",
+    "centerR",
     "left",
-    "right"
+    "right",
+    "test center"
   ],
   "autoFolders": [],
   "defaultMaxVel": 2.0,

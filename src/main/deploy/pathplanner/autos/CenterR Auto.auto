@@ -7,19 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "1 (C)"
+            "pathName": "1 (C) R"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "2 (C)"
+            "pathName": "2 (C) R"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "3 (C)"
+            "pathName": "3 (C) R"
           }
         },
         {
@@ -43,7 +43,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "4 (C)"
+            "pathName": "4 (C) R"
           }
         }
       ]
