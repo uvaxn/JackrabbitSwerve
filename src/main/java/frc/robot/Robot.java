@@ -46,7 +46,7 @@ public class Robot extends TimedRobot {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().schedule(m_autonomousCommand);
         }
-        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and mt1
+        LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and SWERVE gyro
     }
     @Override
     public void teleopInit() {

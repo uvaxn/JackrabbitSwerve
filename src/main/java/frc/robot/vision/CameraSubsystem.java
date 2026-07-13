@@ -35,7 +35,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     // ---- rotation stddev for the MT1-sourced drift correction ----
     // MT2's own rotation just echoes the gyro heading it was fed it is NOT an independent
-    // measurement - so MT1 (which solves rotation from tag geometry alone) is the only thing
+    // measurement so MT1 (which solves rotation from tag geometry alone) is the only thing
     // here that can actually correct gyro drift. It only gets to do so when trustworthy.
     private static final double MT1_ROTATION_STD_DEV_MULTI_TAG_RAD = 0.3;
     private static final double MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD = 1.0;
@@ -117,7 +117,7 @@ public class CameraSubsystem extends SubsystemBase {
                 : MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD;
         } else {
             // Keep MT2's own (gyro-echoing) rotation and tell the estimator this measurement
-            // says nothing about rotation this cycle - x/y are still good and still worth keeping.
+            // says nothing about rotation this cycle
             fusedPose = mt2.pose;
             rotationStdDevRad = UNTRUSTED_ROTATION_STD_DEV;
         }
@@ -155,7 +155,7 @@ public class CameraSubsystem extends SubsystemBase {
         if (!isInField(t)) {
             if (!reportedOOB) {
                 DriverStation.reportWarning(
-                    "out of bounds!", false);
+                    "the distance given is out of bounds!", false);
                 reportedOOB = true;
             }
             return 3.0;

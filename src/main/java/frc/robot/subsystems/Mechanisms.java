@@ -19,7 +19,7 @@ public class Mechanisms extends SubsystemBase {
         this.intakes = v_2;
         this.feeds = v_3;
     }
-
+    
     public void FullHopperShoot() {
         nt.putRobotState("FH SHOOTING");
         isFHOn = true;
