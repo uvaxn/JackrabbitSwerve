@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Vars;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
-import frc.robot.util.nt;
+import frc.robot.util.NetworkTables;
 
 public class AlignToAllianceWall extends Command {
 
@@ -82,7 +82,7 @@ public class AlignToAllianceWall extends Command {
             ? 0
             : Math.PI;
 
-        nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
+        NetworkTables.putTargetAngle(Units.radiansToDegrees(targetAngle));
 
         rotationPID.setGoal(targetAngle);
 

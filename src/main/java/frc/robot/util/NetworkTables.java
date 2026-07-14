@@ -8,7 +8,7 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.Vars;
 
-public class nt {
+public class NetworkTables {
     private static final NetworkTableInstance ntInst = NetworkTableInstance.getDefault();
     private static final NetworkTable rbtTable = ntInst.getTable("Robot");
     private static final NetworkTable infoTable = ntInst.getTable("Info");

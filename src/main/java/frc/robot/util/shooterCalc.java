@@ -1,7 +1,7 @@
 package frc.robot.util;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.subsystems.robot.ShooterSubsystem;
-public class shooterCalc {
+public class ShooterCalc {
     
     
     /**
@@ -9,7 +9,7 @@ public class shooterCalc {
      * {@link ShooterSubsystem} so that file only has to deal with hardware.
      */
     
-        private shooterCalc() {}
+        private ShooterCalc() {}
     
         private static final InterpolatingDoubleTreeMap shooterTable =
                 new InterpolatingDoubleTreeMap();

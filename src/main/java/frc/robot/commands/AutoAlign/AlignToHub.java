@@ -16,7 +16,7 @@ import frc.robot.Vars;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
-import frc.robot.util.nt;
+import frc.robot.util.NetworkTables;
 import frc.robot.vision.CameraSubsystem;
 
 import edu.wpi.first.math.util.Units;
@@ -98,7 +98,7 @@ public class AlignToHub extends Command {
 
         double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
 
-        nt.putTargetAngle(Units.radiansToDegrees(targetAngle));
+        NetworkTables.putTargetAngle(Units.radiansToDegrees(targetAngle));
 
         rotationPID.setGoal(targetAngle);
 

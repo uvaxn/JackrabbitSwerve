@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.controls.ShiftManager;
-import frc.robot.util.nt;
+import frc.robot.util.NetworkTables;
 import frc.robot.vision.CameraSubsystem;
  
 public class EaseofLife extends SubsystemBase {
@@ -27,10 +27,10 @@ public class EaseofLife extends SubsystemBase {
     public EaseofLife(CameraSubsystem cameraSubsystem) {
         this.cam = cameraSubsystem;
         // publish initial PID values to dashboard
-        nt.putAlignP(nt.getAlignP());
-        nt.putAlignI(nt.getAlignI());
-        nt.putAlignD(nt.getAlignD());
-        nt.putDisttoHub(0);
+        NetworkTables.putAlignP(NetworkTables.getAlignP());
+        NetworkTables.putAlignI(NetworkTables.getAlignI());
+        NetworkTables.putAlignD(NetworkTables.getAlignD());
+        NetworkTables.putDisttoHub(0);
     }
  
     public void teleopInit() {
@@ -39,9 +39,9 @@ public class EaseofLife extends SubsystemBase {
  
     @Override
     public void periodic() {
-        nt.isHubActive(isHubActive());
+        NetworkTables.isHubActive(isHubActive());
         shifts.periodic();
-        nt.putDisttoHub(cam.getDistanceToHub());
+        NetworkTables.putDisttoHub(cam.getDistanceToHub());
     }
     /** 
      * @param motor The TalonFX motor.
@@ -71,9 +71,9 @@ public class EaseofLife extends SubsystemBase {
     }
  
     //  read live values from dashboard
-    public double getAlignP() { return nt.getAlignP(); }
-    public double getAlignI() { return nt.getAlignI(); }
-    public double getAlignD() { return nt.getAlignD(); }
+    public double getAlignP() { return NetworkTables.getAlignP(); }
+    public double getAlignI() { return NetworkTables.getAlignI(); }
+    public double getAlignD() { return NetworkTables.getAlignD(); }
  
     public double getDistToHub() {
         return cam.getDistanceToHub();

@@ -1,7 +1,7 @@
 package frc.robot.controls;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.util.nt;
+import frc.robot.util.NetworkTables;
 public class ShiftManager {
     public enum Shift {
         TRANSITION, SHIFT_1, SHIFT_2, SHIFT_3, SHIFT_4, ENDGAME, UNKNOWN
@@ -32,8 +32,8 @@ public class ShiftManager {
     }
 
     public void periodic() {
-        nt.putCurrentShift(getCurrentShift().name());
-        nt.putShiftTime(getShiftTimeRemaining());
+        NetworkTables.putCurrentShift(getCurrentShift().name());
+        NetworkTables.putShiftTime(getShiftTimeRemaining());
     }
     /**
      * Returns the current shift. Does not account for which alliance side you are on.

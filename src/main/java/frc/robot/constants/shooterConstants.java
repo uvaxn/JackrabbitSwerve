@@ -1,5 +1,5 @@
 package frc.robot.constants;
 
-public class shooterConstants {
+public class ShooterConstants {
     
 }

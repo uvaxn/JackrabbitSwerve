@@ -11,8 +11,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.subsystems.EaseofLife;
-import frc.robot.util.nt;
-import frc.robot.util.shooterCalc;
+import frc.robot.util.NetworkTables;
+import frc.robot.util.ShooterCalc;
 
 /**
  * Shooter + feed subsystem. {@code shooterR} runs closed-loop velocity control (the
@@ -90,18 +90,22 @@ public class ShooterSubsystem extends SubsystemBase {
         /*  MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
          *  remeber to UNCOMMENT this once you are done tuning.
          */ 
-        MotorMode.setVelocity(shooterR, nt.getShooterSpeed());
+        MotorMode.setVelocity(shooterR, NetworkTables.getShooterSpeed());
     }
 
     public void stop() {
         isShooting = false;
         MotorMode.setSpeed(shooterR, 0);
     }
+    public boolean atSpeed() {
+        double current = shooterR.getVelocity().getValueAsDouble();
 
+        return Math.abs(current - Vars.SHOOTER_SPEED) < 2.0;
+    }
     public void periodic() {
-        Vars.SHOOTER_SPEED = shooterCalc.calculateShooterSpeed(MotorMode.getDistToHub());
-        nt.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
-        nt.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
+        Vars.SHOOTER_SPEED = ShooterCalc.calculateShooterSpeed(MotorMode.getDistToHub());
+        NetworkTables.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
+        NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 
         if (isShooting && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
             MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);

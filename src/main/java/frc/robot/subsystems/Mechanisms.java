@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.robot.FeedSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
-import frc.robot.util.nt;
+import frc.robot.util.NetworkTables;
 
 public class Mechanisms extends SubsystemBase {
     private ShooterSubsystem shooters;
@@ -14,6 +14,9 @@ public class Mechanisms extends SubsystemBase {
     private boolean isIntakeOn = false;
     private boolean isFHOn = false;
     private boolean isROn = false;
+
+    private boolean shooterReady = false;
+
     public Mechanisms(ShooterSubsystem v_1, IntakeSubsystem v_2, FeedSubsystem v_3) {
         this.shooters = v_1;
         this.intakes = v_2;
@@ -21,30 +24,24 @@ public class Mechanisms extends SubsystemBase {
     }
     
     public void FullHopperShoot() {
-        nt.putRobotState("FH SHOOTING");
+        NetworkTables.putRobotState("FH FIRING!");
         isFHOn = true;
         shooters.start();
-
-        feeds.start();
     }
 
     public void RegularShoot() {
-        nt.putRobotState("R SHOOTING");
+        NetworkTables.putRobotState("R FIRING!");
         isROn = true;
         shooters.start();
-
-        intakes.requestUp();
-
-        feeds.rollersStart();
     }
     public void Intake() {
-        nt.putRobotState("INTAKE");
+        NetworkTables.putRobotState("INTAKE");
         wantIntake = true;  
         intakes.requestDown();
     }
 
     public void StopIntake() {
-        nt.putRobotState("STOPPED INTAKE");
+        NetworkTables.putRobotState("STOPPED INTAKE");
         wantIntake = false;
         intakes.stop();
         intakes.requestUp();
@@ -52,7 +49,7 @@ public class Mechanisms extends SubsystemBase {
     }
 
     public void StopShoot() {
-        nt.putRobotState("STOPPED SHOOT");
+        NetworkTables.putRobotState("STOPPED FIRING");
         shooters.stop();
         if (isFHOn && !isROn) {
             feeds.stop();
@@ -64,13 +61,32 @@ public class Mechanisms extends SubsystemBase {
         }
         isFHOn = false;
         isROn = false;
+
+        shooterReady = false;
     }
 
     @Override
+
     public void periodic() {
         if (wantIntake && intakes.isAtBottom() && !isIntakeOn) {
             intakes.start();
             isIntakeOn = true;
+        }
+
+
+        if (isROn && shooters.atSpeed() && !shooterReady) {
+            NetworkTables.putRobotState("R SHOOTER READY");
+
+            feeds.rollersStart();
+            intakes.requestUp();
+            shooterReady = true;
+        }
+        if  (isFHOn && shooters.atSpeed() && !shooterReady) {
+            NetworkTables.putRobotState("FH SHOOTER READY");
+
+            feeds.start();
+            shooterReady = true;
+
         }
     }
 }
