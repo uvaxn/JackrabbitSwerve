@@ -12,7 +12,7 @@ import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
+import frc.robot.constants.Constants;
 import frc.robot.controls.ShiftManager;
 import frc.robot.util.nt;
 import frc.robot.vision.CameraSubsystem;

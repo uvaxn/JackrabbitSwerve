@@ -1,43 +1,87 @@
 package frc.robot.subsystems.robot;
 
-import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
-import frc.robot.vision.CameraSubsystem;
+import frc.robot.util.shooterCalc;
 
+/**
+ * Shooter + feed subsystem. {@code shooterR} runs closed-loop velocity control (the
+ * SV/PID gains below are already tuned -- don't change them without retuning on the
+ * robot). {@code shooterL} is a hardware {@link Follower} of {@code shooterR}, spinning
+ * opposite it to match the mirrored mount (also already tuned, see
+ * {@link #configureShooter}). Feed motors run open-loop through {@link EaseofLife}.
+ */
 public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
-    private final TalonFX lowerFeed;
-    private final TalonFX upperFeed;
     EaseofLife MotorMode;
-    CameraSubsystem cam;
 
     private boolean isShooting = false;
     private final Timer shooterUpdateTimer = new Timer();
     private static final double SHOOTER_UPDATE_PERIOD = 0.1; // seconds
 
-    public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, TalonFX lowerFeed, TalonFX upperFeed, EaseofLife easeOfLife, CameraSubsystem cameraSubsystem, IntakeSubsystem intakes) {
+    public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife easeOfLife) {
         this.shooterR  = shooterR;
-        this.lowerFeed = lowerFeed;
-        this.upperFeed = upperFeed;
         this.MotorMode = easeOfLife;
+        configureShooter(shooterR, shooterL);
+    }
 
-        this.cam = cameraSubsystem;
-        shooterL.setControl(new Follower(shooterR.getDeviceID(), MotorAlignmentValue.Opposed));
+    private void configureShooter(TalonFX leader, TalonFX follower) {
+        TalonFXConfiguration leaderConfig = new TalonFXConfiguration();
 
-        Slot0Configs shooterGains = new Slot0Configs();
-        shooterGains.kS = 0.5;
-        shooterGains.kV = 0.11;
-        shooterGains.kP = 0.1;
-        shooterGains.kI = 0.01;
-        shooterGains.kD = 0.0;
-        shooterR.getConfigurator().apply(shooterGains);
+        // SV/PID -- already tuned. Don't change these without retuning on the robot.
+        leaderConfig.Slot0.kS = 0.5;
+        leaderConfig.Slot0.kV = 0.11;
+        leaderConfig.Slot0.kP = 0.1;
+        leaderConfig.Slot0.kI = 0.01;
+        leaderConfig.Slot0.kD = 0.0;
+
+        leaderConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
+        applyCurrentLimitsAndNeutral(leaderConfig);
+        applyConfig(leader, leaderConfig);
+
+        // The follower mirrors the leader's output, so it doesn't need its own PID slot --
+        // just the same current limits and neutral behavior, for its own protection.
+        TalonFXConfiguration followerConfig = new TalonFXConfiguration();
+        applyCurrentLimitsAndNeutral(followerConfig);
+        applyConfig(follower, followerConfig);
+
+        // follower spins opposite the leader to match the mirrored mount.
+        follower.setControl(new Follower(leader.getDeviceID(), MotorAlignmentValue.Opposed));
+    }
+
+    private void applyCurrentLimitsAndNeutral(TalonFXConfiguration config) {
+        config.CurrentLimits.StatorCurrentLimit = 80.0;
+        config.CurrentLimits.StatorCurrentLimitEnable = true;
+        config.CurrentLimits.SupplyCurrentLimit = 70.0;
+        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+        config.CurrentLimits.SupplyCurrentLowerLimit = 40.0;
+        config.CurrentLimits.SupplyCurrentLowerTime = 1.0;
+        config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    }
+
+    /** Applies a config with a few retries, since a single CAN frame can occasionally drop. */
+    private void applyConfig(TalonFX motor, TalonFXConfiguration config) {
+        StatusCode status = null;
+        boolean success = false;
+        for (int attempt = 0; attempt < 5 && !success; attempt++) {
+            status = motor.getConfigurator().apply(config);
+            success = status.isOK();
+        }
+        if (!success) {
+            DriverStation.reportWarning(
+                "Shooter motor " + motor.getDeviceID() + " failed to configure: " + status,
+                false);
+        }
     }
 
     public void start() {
@@ -47,35 +91,15 @@ public class ShooterSubsystem extends SubsystemBase {
          *  remeber to UNCOMMENT this once you are done tuning.
          */ 
         MotorMode.setVelocity(shooterR, nt.getShooterSpeed());
-        MotorMode.setSpeed(lowerFeed, -Vars.FEED_SPEED);
-        MotorMode.setSpeed(upperFeed, Vars.FEED_SPEED);
     }
 
     public void stop() {
         isShooting = false;
         MotorMode.setSpeed(shooterR, 0);
-        MotorMode.setSpeed(lowerFeed, 0);
-        MotorMode.setSpeed(upperFeed, 0);
-    }
-
-    public double calculateShooterSpeed(double dist) {
-        final double MIN_DIST = 0;
-        final double MAX_DIST = 4.5;
-
-        double minSpeed = nt.getShooterMinSpeed();
-        double maxSpeed = nt.getShooterMaxSpeed();
-        double exponent = nt.getShooterExponent();
-
-        double distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
-        double normalized = (distance - MIN_DIST) / (MAX_DIST - MIN_DIST);
-
-        return minSpeed
-            + Math.pow(normalized, exponent)
-            * (maxSpeed - minSpeed);
     }
 
     public void periodic() {
-        Vars.SHOOTER_SPEED = calculateShooterSpeed(MotorMode.getDistToHub());
+        Vars.SHOOTER_SPEED = shooterCalc.calculateShooterSpeed(MotorMode.getDistToHub());
         nt.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
         nt.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 

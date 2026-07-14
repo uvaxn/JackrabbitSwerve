@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AutoAlign.AlignToAllianceWall;
 import frc.robot.commands.AutoAlign.AlignToHub;
+import frc.robot.constants.Constants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.DriveInputs;
@@ -103,12 +104,7 @@ public class RobotContainer {
         m_ShooterR, 
         m_ShooterL, 
 
-        m_LowerFeed, 
-        m_UpperFeed, 
-
-        easeOfLife, 
-        cameraSubsystem, 
-        intakes
+        easeOfLife
     );
     public final FeedSubsystem feeds = new FeedSubsystem(
         intakes, 

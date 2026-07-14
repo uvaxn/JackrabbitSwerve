@@ -34,6 +34,8 @@ public class Mechanisms extends SubsystemBase {
         shooters.start();
 
         intakes.requestUp();
+
+        feeds.rollersStart();
     }
     public void Intake() {
         nt.putRobotState("INTAKE");

@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Vars;
-import frc.robot.Constants;
+import frc.robot.constants.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.nt;
@@ -111,11 +111,6 @@ public class AlignToHub extends Command {
                 .withVelocityX(velocityX)
                 .withVelocityY(velocityY)
                 .withRotationalRate(rotationalRate));
-    }
-
-    @Override
-    public void end(boolean interrupted) {
-        swerveDrive.applyRequest(() -> new SwerveRequest.Idle());
     }
 
     @Override

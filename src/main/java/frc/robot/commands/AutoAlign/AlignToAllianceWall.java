@@ -98,11 +98,6 @@ public class AlignToAllianceWall extends Command {
     }
 
     @Override
-    public void end(boolean interrupted) {
-        swerveDrive.applyRequest(() -> new SwerveRequest.Idle());
-    }
-
-    @Override
     public boolean isFinished() {
         return false;
     }
