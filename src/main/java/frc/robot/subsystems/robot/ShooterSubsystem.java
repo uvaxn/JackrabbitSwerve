@@ -38,7 +38,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private void configureShooter(TalonFX leader, TalonFX follower) {
         TalonFXConfiguration leaderConfig = new TalonFXConfiguration();
 
-        // SV/PID -- already tuned. Don't change these without retuning on the robot.
+        // SV/PID 
         leaderConfig.Slot0.kS = 0.5;
         leaderConfig.Slot0.kV = 0.11;
         leaderConfig.Slot0.kP = 0.1;
@@ -73,7 +73,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private void applyConfig(TalonFX motor, TalonFXConfiguration config) {
         StatusCode status = null;
         boolean success = false;
-        for (int attempt = 0; attempt < 5 && !success; attempt++) {
+        for (int attempt = 0; attempt < 5 && !success; attempt++) { // attempts to apply configs 5 times, before returning an error message
             status = motor.getConfigurator().apply(config);
             success = status.isOK();
         }

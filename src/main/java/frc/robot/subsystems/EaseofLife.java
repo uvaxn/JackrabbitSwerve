@@ -75,7 +75,9 @@ public class EaseofLife extends SubsystemBase {
     public double getAlignI() { return nt.getAlignI(); }
     public double getAlignD() { return nt.getAlignD(); }
  
-    public double getDistToHub() { return cam.getDistanceToHub(); }
+    public double getDistToHub() {
+        return cam.getDistanceToHub();
+     }
  
     public boolean isHubActive() {
         Optional<Alliance> alliance = DriverStation.getAlliance();

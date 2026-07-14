@@ -1,4 +1,5 @@
 package frc.robot.util;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.subsystems.robot.ShooterSubsystem;
 public class shooterCalc {
     
@@ -7,28 +8,32 @@ public class shooterCalc {
      * Pure distance-to-speed calculations for the shooter, kept separate from
      * {@link ShooterSubsystem} so that file only has to deal with hardware.
      */
-
-    
-        private static final double MIN_DIST = 0;
-        private static final double MAX_DIST = 4.5;
     
         private shooterCalc() {}
     
+        private static final InterpolatingDoubleTreeMap shooterTable =
+                new InterpolatingDoubleTreeMap();
+        // The more values put, the better.
+        // 7 values forr now.
+        // TODO: Manually set the RPS, and once it looks good, put it in here.
+        static {
+            shooterTable.put(0.00, 55.0);// 0.00 meters | 55 rps
+            shooterTable.put(1.00, 60.0);
+            shooterTable.put(2.00, 65.0);
+            shooterTable.put(3.00, 70.0);// 3.00 meters | 70 rps
+            shooterTable.put(4.00, 75.0);
+            shooterTable.put(4.50, 82.5);
+            shooterTable.put(5.00, 85.0);// 5.00 meters | 85 rps
+        }
+
         /**
-         * Maps a distance to the hub (meters) to a target shooter speed using a power curve
-         * between the min/max speed pulled from NetworkTables. {@code exponent} shapes the
-         * curve -- 1.0 is linear, greater than 1.0 ramps speed up more sharply as distance
-         * increases.
+         * Returns the interpolated shooter speed (RPS) for the given distance.
+         *
+         * @param distanceMeters Distance to the target in meters.
+         * @return Shooter RPS.
          */
-        public static double calculateShooterSpeed(double dist) {
-            double minSpeed = nt.getShooterMinSpeed();
-            double maxSpeed = nt.getShooterMaxSpeed();
-            double exponent = nt.getShooterExponent();
-    
-            double distance = Math.max(MIN_DIST, Math.min(MAX_DIST, dist));
-            double normalized = (distance - MIN_DIST) / (MAX_DIST - MIN_DIST);
-    
-            return minSpeed + Math.pow(normalized, exponent) * (maxSpeed - minSpeed);
+        public static double calculateShooterSpeed(double distanceMeters) {
+            return shooterTable.get(distanceMeters);
         }
 
 }
