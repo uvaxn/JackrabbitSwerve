@@ -88,7 +88,6 @@ public class CameraSubsystem extends SubsystemBase {
                 && mt2.rawFiducials[0].ambiguity > MAX_SINGLE_TAG_AMBIGUITY) {
             return Optional.empty();
         }
-
         final Translation2d mt2Translation = mt2.pose.getTranslation();
         if (!isInField(mt2Translation)) {
             DriverStation.reportWarning(
