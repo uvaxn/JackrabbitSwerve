@@ -38,11 +38,12 @@ public class ShooterSubsystem extends SubsystemBase {
     private void configureShooter(TalonFX leader, TalonFX follower) {
         TalonFXConfiguration leaderConfig = new TalonFXConfiguration();
 
-        // SV/PID 
+        // SVA/PID 
         leaderConfig.Slot0.kS = 0.5;
         leaderConfig.Slot0.kV = 0.11;
+        leaderConfig.Slot0.kA = 0.01;
         leaderConfig.Slot0.kP = 0.1;
-        leaderConfig.Slot0.kI = 0.01;
+        leaderConfig.Slot0.kI = 0.0;
         leaderConfig.Slot0.kD = 0.0;
 
         leaderConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
