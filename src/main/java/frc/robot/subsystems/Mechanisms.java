@@ -55,6 +55,7 @@ public class Mechanisms extends SubsystemBase {
             feeds.stop();
         } else if (isROn && !isFHOn) {
             intakes.stop();
+            feeds.stop();
         } else {
             feeds.stop();
             intakes.stop();

@@ -99,8 +99,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
     public boolean atSpeed() {
         double current = shooterR.getVelocity().getValueAsDouble();
-
-        return Math.abs(current - Vars.SHOOTER_SPEED) < 2.0;
+        return Math.abs(current - (-Vars.SHOOTER_SPEED)) < 2.0;
     }
     public void periodic() {
         Vars.SHOOTER_SPEED = ShooterCalc.calculateShooterSpeed(MotorMode.getDistToHub());
