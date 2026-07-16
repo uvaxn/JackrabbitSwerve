@@ -1,5 +1,6 @@
 package frc.robot.constants;
 
+
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -21,4 +22,14 @@ public class Constants {
         }
         return redHubPosition;
     }
+
+    // Motors
+    public final static int m_ShooterR   = 23;
+    public final static int m_ShooterL   = 22;
+    public final static int m_Intake     = 25;
+    public final static int m_IntakeDrop = 20;
+    public final static int m_LowerFeed  = 21;
+    public final static int m_UpperFeed  = 24;
+
+    // The rest (drive and steer motors) are best if I just leave them inside 'generated/TunerConstants.'
 }

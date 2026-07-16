@@ -75,12 +75,12 @@ public class RobotContainer {
     public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
 
     // Motors
-    public final TalonFX m_ShooterR   = new TalonFX(23);
-    public final TalonFX m_ShooterL   = new TalonFX(22);
-    public final TalonFX m_Intake     = new TalonFX(25);
-    public final TalonFX m_IntakeDrop = new TalonFX(20);
-    public final TalonFX m_LowerFeed  = new TalonFX(21);
-    public final TalonFX m_UpperFeed  = new TalonFX(24);
+    public final TalonFX m_ShooterR   = new TalonFX(Constants.m_ShooterR);
+    public final TalonFX m_ShooterL   = new TalonFX(Constants.m_ShooterL);
+    public final TalonFX m_Intake     = new TalonFX(Constants.m_Intake);
+    public final TalonFX m_IntakeDrop = new TalonFX(Constants.m_IntakeDrop);
+    public final TalonFX m_LowerFeed  = new TalonFX(Constants.m_LowerFeed);
+    public final TalonFX m_UpperFeed  = new TalonFX(Constants.m_UpperFeed);
 
     
     
