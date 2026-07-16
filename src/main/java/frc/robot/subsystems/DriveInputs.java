@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.Vars;
+import frc.robot.Variables;
 
 import java.util.function.DoubleSupplier;
 
@@ -34,16 +34,16 @@ public class DriveInputs extends SubsystemBase {
         double rawY = MathUtil.applyDeadband(
             rawYSupplier.getAsDouble(), 0.08);
 
-        limitedX = Vars.xLimiter.calculate(rawX);
-        limitedY = Vars.yLimiter.calculate(rawY);
+        limitedX = Variables.xLimiter.calculate(rawX);
+        limitedY = Variables.yLimiter.calculate(rawY);
     }
 
     public double getX() {
-        return limitedX * Vars.getMaxSpeed();
+        return limitedX * Variables.getMaxSpeed();
     }
 
     public double getY() {
-        return limitedY * Vars.getMaxSpeed();
+        return limitedY * Variables.getMaxSpeed();
     }
     
 

@@ -7,7 +7,7 @@ import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import frc.robot.Vars;
+import frc.robot.Variables;
 
 public class NetworkTables {
     private static final NetworkTableInstance ntInst = NetworkTableInstance.getDefault();
@@ -32,11 +32,11 @@ public class NetworkTables {
     private static final DoublePublisher AligntoHubD = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").publish();
 
     // PID subscribers (for live tuning from dashboard)
-    private static final DoubleSubscriber alignPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").subscribe(Vars.AlignToHubP);
-    private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Vars.AlignToHubI);
-    private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Vars.AlignToHubD);
+    private static final DoubleSubscriber alignPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").subscribe(Variables.AlignToHubP);
+    private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Variables.AlignToHubI);
+    private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Variables.AlignToHubD);
     
-    private static final DoubleSubscriber shooterSpeedSub = rbtTable.getDoubleTopic("EaseofLife/ShooterSpeed").subscribe(Vars.SHOOTER_SPEED);
+    private static final DoubleSubscriber shooterSpeedSub = rbtTable.getDoubleTopic("EaseofLife/ShooterSpeed").subscribe(Variables.SHOOTER_SPEED);
     
     private static final BooleanSubscriber manualShooterOverrideSub =
         rbtTable.getBooleanTopic("EaseofLife/ManualShooterOverride").subscribe(false);

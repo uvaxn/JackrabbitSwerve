@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Vars;
+import frc.robot.Variables;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
@@ -49,9 +49,9 @@ public class AlignToAllianceWall extends Command {
         this.leftSupplier = leftSupplier;
 
         rotationPID = new ProfiledPIDController(
-            Vars.AlignToAllianceWallP,
-            Vars.AlignToAllianceWallI,
-            Vars.AlignToAllianceWallD,
+            Variables.AlignToAllianceWallP,
+            Variables.AlignToAllianceWallI,
+            Variables.AlignToAllianceWallD,
             new TrapezoidProfile.Constraints(Math.PI / 2, Math.PI));
         rotationPID.enableContinuousInput(-Math.PI, Math.PI);
         addRequirements(swerveDrive);
@@ -71,9 +71,9 @@ public class AlignToAllianceWall extends Command {
         Pose2d robotPose = possiblePose.get();
 
         rotationPID.setPID(
-            Vars.AlignToAllianceWallP,
-            Vars.AlignToAllianceWallI,
-            Vars.AlignToAllianceWallD
+            Variables.AlignToAllianceWallP,
+            Variables.AlignToAllianceWallI,
+            Variables.AlignToAllianceWallD
         );
 
         // Blue faces 0° (positive X), Red faces 180° (negative X / their wall) Measured in Radians 
@@ -87,11 +87,11 @@ public class AlignToAllianceWall extends Command {
 
         double rotationalRate = rotationPID.calculate(
             robotPose.getRotation().getRadians()
-        ) * Vars.MaxAngularRate;
+        ) * Variables.MaxAngularRate;
 
         swerveDrive.setControl(
             request
-                .withDeadband(Vars.getMaxSpeed() * 0.1)
+                .withDeadband(Variables.getMaxSpeed() * 0.1)
                 .withVelocityX(forwardSupplier.getAsDouble())
                 .withVelocityY(leftSupplier.getAsDouble())
                 .withRotationalRate(rotationalRate));

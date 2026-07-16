@@ -50,7 +50,7 @@ import frc.robot.vision.Limelight;
 
 public class RobotContainer {
 
-    private final double MaxAngularRate = RotationsPerSecond.of(Vars.MaxAngularRate).in(RadiansPerSecond);
+    private final double MaxAngularRate = RotationsPerSecond.of(Variables.MaxAngularRate).in(RadiansPerSecond);
     
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
         // .withDeadband(Vars.MaxSpeed * 0.03) -- this has 3 percent deadband
@@ -58,7 +58,7 @@ public class RobotContainer {
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-    private final Telemetry logger = new Telemetry(Vars.getMaxSpeed());
+    private final Telemetry logger = new Telemetry(Variables.getMaxSpeed());
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final DriveInputs driveInputs = new DriveInputs(

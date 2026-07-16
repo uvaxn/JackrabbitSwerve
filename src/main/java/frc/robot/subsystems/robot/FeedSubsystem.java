@@ -4,7 +4,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.EaseofLife;
-import frc.robot.Vars;
+import frc.robot.Variables;
 
 public class FeedSubsystem extends SubsystemBase {
     private IntakeSubsystem intake;
@@ -31,14 +31,14 @@ public class FeedSubsystem extends SubsystemBase {
         IS_FEEDING = true;
         feedState = FeedState.WAITING_AT_BOTTOM;
 
-        easeOfLife.setSpeed(lowerFeed, -Vars.FEED_SPEED);
-        easeOfLife.setSpeed(upperFeed, Vars.FEED_SPEED);
+        easeOfLife.setSpeed(lowerFeed, -Variables.FEED_SPEED);
+        easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED);
 
         
     }
     public void rollersStart() {
-        easeOfLife.setSpeed(lowerFeed, -Vars.FEED_SPEED);
-        easeOfLife.setSpeed(upperFeed, Vars.FEED_SPEED);
+        easeOfLife.setSpeed(lowerFeed, -Variables.FEED_SPEED);
+        easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED);
     }
     public void stop() {
         IS_FEEDING = false;

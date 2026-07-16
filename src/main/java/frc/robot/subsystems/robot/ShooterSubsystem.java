@@ -7,7 +7,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Vars;
+import frc.robot.Variables;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
 import frc.robot.util.ShooterCalculation;
@@ -92,23 +92,23 @@ public class ShooterSubsystem extends SubsystemBase {
     public boolean atSpeed() {
         double currentR = shooterR.getVelocity().getValueAsDouble();
         double currentL = shooterL.getVelocity().getValueAsDouble();
-        boolean rightAtSpeed = Math.abs(currentR - (-Vars.SHOOTER_SPEED)) < 2.0;
-        boolean leftAtSpeed  = Math.abs(currentL - (Vars.SHOOTER_SPEED)) < 2.0;
+        boolean rightAtSpeed = Math.abs(currentR - (-Variables.SHOOTER_SPEED)) < 2.0;
+        boolean leftAtSpeed  = Math.abs(currentL - (Variables.SHOOTER_SPEED)) < 2.0;
         return rightAtSpeed && leftAtSpeed;
     }
 
     public void periodic() {
         if (NetworkTables.isManualShooterOverride()) {
-            Vars.SHOOTER_SPEED = NetworkTables.getShooterSpeed();
+            Variables.SHOOTER_SPEED = NetworkTables.getShooterSpeed();
         } else {
-            Vars.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
+            Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         }
-        NetworkTables.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
+        NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
         NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 
         if (IS_SHOOTING && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
-            MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
-            MotorMode.setVelocity(shooterL, Vars.SHOOTER_SPEED);
+            MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
+            MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
         }
     }
 }

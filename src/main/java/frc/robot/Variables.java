@@ -7,7 +7,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Vars {
+public class Variables {
     
     
     public static final double AlignToHubP = 45.0;
