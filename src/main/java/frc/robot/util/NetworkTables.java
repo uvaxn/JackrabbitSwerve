@@ -4,6 +4,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.Vars;
@@ -25,7 +26,7 @@ public class NetworkTables {
     private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
     private static final DoublePublisher shooterSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterSpeed").publish();
     private static final DoublePublisher shooterActualSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterActualSpeedRPS").publish();
-
+    private static final BooleanPublisher manualshooterOveride = infoTable.getBooleanTopic("EaseofLife/ManualShooterOverride").publish();
     // PID publishers (initial values)
     private static final DoublePublisher AligntoHubP = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").publish();
     private static final DoublePublisher AligntoHubI = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").publish();
@@ -38,19 +39,8 @@ public class NetworkTables {
     
     private static final DoubleSubscriber shooterSpeedSub = rbtTable.getDoubleTopic("EaseofLife/ShooterSpeed").subscribe(Vars.SHOOTER_SPEED);
     
-    private static final DoublePublisher shooterMinSpeedPub =
-        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MinSpeedRPS").publish();
-    private static final DoublePublisher shooterMaxSpeedPub =
-        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MaxSpeedRPS").publish();
-    private static final DoublePublisher shooterExponentPub =
-        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/Exponent").publish();
-
-    private static final DoubleSubscriber shooterMinSpeedSub =
-        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MinSpeedRPS").subscribe(65.0);
-    private static final DoubleSubscriber shooterMaxSpeedSub =
-        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/MaxSpeedRPS").subscribe(95.0);
-    private static final DoubleSubscriber shooterExponentSub =
-        infoTable.getDoubleTopic("EaseofLife/ShooterCurve/Exponent").subscribe(1.4);
+    private static final BooleanSubscriber manualShooterOverrideSub =
+        rbtTable.getBooleanTopic("EaseofLife/ManualShooterOverride").subscribe(false);
     /**
      * Puts the target angle for AlignToHub
      * @param deg (Degrees)
@@ -68,34 +58,13 @@ public class NetworkTables {
     public static void putAlignI(double I) { AligntoHubI.set(I); }
     public static void putAlignD(double D) { AligntoHubD.set(D); }
 
-    public static void putShooterMinSpeed(double speed) {
-        shooterMinSpeedPub.set(speed);
-    }
 
-    public static void putShooterMaxSpeed(double speed) {
-        shooterMaxSpeedPub.set(speed);
-    }
-
-    public static void putShooterExponent(double exponent) {
-        shooterExponentPub.set(exponent);
-    }
     
     // PID getters (reads live value from dashboard)
     public static double getAlignP() { return alignPSub.get(); }
     public static double getAlignI() { return alignISub.get(); }
     public static double getAlignD() { return alignDSub.get(); }
 
-    public static double getShooterMinSpeed() {
-        return shooterMinSpeedSub.get();
-    }
-
-    public static double getShooterMaxSpeed() {
-        return shooterMaxSpeedSub.get();
-    }
-
-    public static double getShooterExponent() {
-        return shooterExponentSub.get();
-    }
-
     public static double getShooterSpeed() { return shooterSpeedSub.get(); }
+    public static boolean isManualShooterOverride() { return manualShooterOverrideSub.get(); }
 }

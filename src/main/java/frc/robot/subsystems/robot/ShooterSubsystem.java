@@ -80,12 +80,7 @@ public class ShooterSubsystem extends SubsystemBase {
     public void start() {
         IS_SHOOTING = true;
         shooterUpdateTimer.restart();
-        /*  MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
-         *  MotorMode.setVelocity(shooterL, Vars.SHOOTER_SPEED);
-         *  remeber to UNCOMMENT this once you are done tuning.
-         */
-        MotorMode.setVelocity(shooterR, NetworkTables.getShooterSpeed());
-        MotorMode.setVelocity(shooterL, -NetworkTables.getShooterSpeed());
+        // check periodic() to see where the velocity gets set.
     }
 
     public void stop() {
@@ -103,7 +98,11 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void periodic() {
-        Vars.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
+        if (NetworkTables.isManualShooterOverride()) {
+            Vars.SHOOTER_SPEED = NetworkTables.getShooterSpeed();
+        } else {
+            Vars.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
+        }
         NetworkTables.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
         NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 
