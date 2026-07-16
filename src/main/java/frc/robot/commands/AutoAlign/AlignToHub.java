@@ -23,7 +23,6 @@ import edu.wpi.first.math.util.Units;
 public class AlignToHub extends Command {
 
     private final SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
-        .withDeadband(Vars.MaxSpeed * 0.1)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final Limelight CameraSubsystem;
@@ -108,6 +107,7 @@ public class AlignToHub extends Command {
 
         swerveDrive.setControl(
             request
+                .withDeadband(Vars.MaxSpeed * 0.1)
                 .withVelocityX(velocityX)
                 .withVelocityY(velocityY)
                 .withRotationalRate(rotationalRate));

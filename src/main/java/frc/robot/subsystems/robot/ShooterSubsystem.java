@@ -2,13 +2,10 @@ package frc.robot.subsystems.robot;
 
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.subsystems.EaseofLife;
@@ -16,11 +13,12 @@ import frc.robot.util.NetworkTables;
 import frc.robot.util.ShooterCalculation;
 
 /**
- * Shooter + feed subsystem. {@code shooterR} runs closed-loop velocity control (the
- * SV/PID gains below are already tuned -- don't change them without retuning on the
- * robot). {@code shooterL} is a hardware {@link Follower} of {@code shooterR}, spinning
- * opposite it to match the mirrored mount (also already tuned, see
- * {@link #configureShooter}). Feed motors run open-loop through {@link EaseofLife}.
+ * Shooter + feed subsystem. Both {@code shooterR} and {@code shooterL} run their own
+ * closed-loop velocity control with identical SV/PID gains (the gains below are already
+ * tuned don't change them without retuning on the robot). {@code shooterL} is mounted
+ * opposite {@code shooterR}, so it's driven at the negated target velocity instead of
+ * being a hardware {@link com.ctre.phoenix6.controls.Follower}. Feed motors run open-loop
+ * through {@link EaseofLife}.
  */
 public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
@@ -33,34 +31,25 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
-        this.shooterL = shooterL;
+        this.shooterL  = shooterL;
         this.MotorMode = EaseOfLife;
         configureShooter(shooterR, shooterL);
     }
 
-    private void configureShooter(TalonFX leader, TalonFX follower) {
-        TalonFXConfiguration leaderConfig = new TalonFXConfiguration();
+    private void configureShooter(TalonFX right, TalonFX left) {
+        TalonFXConfiguration sharedConfig = new TalonFXConfiguration();
+        sharedConfig.Slot0.kS = 0.5;
+        sharedConfig.Slot0.kV = 0.11;
+        sharedConfig.Slot0.kA = 0.01;
+        sharedConfig.Slot0.kP = 0.1;
+        sharedConfig.Slot0.kI = 0.0;
+        sharedConfig.Slot0.kD = 0.0;
 
-        // SVA/PID 
-        leaderConfig.Slot0.kS = 0.5;
-        leaderConfig.Slot0.kV = 0.11;
-        leaderConfig.Slot0.kA = 0.01;
-        leaderConfig.Slot0.kP = 0.1;
-        leaderConfig.Slot0.kI = 0.0;
-        leaderConfig.Slot0.kD = 0.0;
+        sharedConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
 
-        leaderConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
-        applyCurrentLimitsAndNeutral(leaderConfig);
-        applyConfig(leader, leaderConfig);
-
-        // The follower mirrors the leader's output, so it doesn't need its own PID slot --
-        // just the same current limits and neutral behavior, for its own protection.
-        TalonFXConfiguration followerConfig = new TalonFXConfiguration();
-        applyCurrentLimitsAndNeutral(followerConfig);
-        applyConfig(follower, followerConfig);
-
-        // follower spins opposite the leader to match the mirrored mount.
-        follower.setControl(new Follower(leader.getDeviceID(), MotorAlignmentValue.Opposed));
+        applyCurrentLimitsAndNeutral(sharedConfig);
+        applyConfig(right, sharedConfig);
+        applyConfig(left, sharedConfig);
     }
 
     private void applyCurrentLimitsAndNeutral(TalonFXConfiguration config) {
@@ -92,19 +81,27 @@ public class ShooterSubsystem extends SubsystemBase {
         IS_SHOOTING = true;
         shooterUpdateTimer.restart();
         /*  MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
+         *  MotorMode.setVelocity(shooterL, Vars.SHOOTER_SPEED);
          *  remeber to UNCOMMENT this once you are done tuning.
-         */ 
+         */
         MotorMode.setVelocity(shooterR, NetworkTables.getShooterSpeed());
+        MotorMode.setVelocity(shooterL, -NetworkTables.getShooterSpeed());
     }
 
     public void stop() {
-        IS_SHOOTING= false;
+        IS_SHOOTING = false;
         MotorMode.setSpeed(shooterR, 0);
+        MotorMode.setSpeed(shooterL, 0);
     }
+
     public boolean atSpeed() {
-        double current = shooterR.getVelocity().getValueAsDouble();
-        return Math.abs(current - (-Vars.SHOOTER_SPEED)) < 2.0;
+        double currentR = shooterR.getVelocity().getValueAsDouble();
+        double currentL = shooterL.getVelocity().getValueAsDouble();
+        boolean rightAtSpeed = Math.abs(currentR - (-Vars.SHOOTER_SPEED)) < 2.0;
+        boolean leftAtSpeed  = Math.abs(currentL - (Vars.SHOOTER_SPEED)) < 2.0;
+        return rightAtSpeed && leftAtSpeed;
     }
+
     public void periodic() {
         Vars.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         NetworkTables.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
@@ -112,6 +109,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         if (IS_SHOOTING && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
             MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
+            MotorMode.setVelocity(shooterL, Vars.SHOOTER_SPEED);
         }
     }
 }

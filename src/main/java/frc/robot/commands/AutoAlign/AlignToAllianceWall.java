@@ -22,7 +22,6 @@ import frc.robot.util.NetworkTables;
 public class AlignToAllianceWall extends Command {
 
     private final SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
-        .withDeadband(Vars.MaxSpeed * 0.1)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final CommandSwerveDrivetrain swerveDrive;
@@ -92,6 +91,7 @@ public class AlignToAllianceWall extends Command {
 
         swerveDrive.setControl(
             request
+                .withDeadband(Vars.MaxSpeed * 0.1)
                 .withVelocityX(forwardSupplier.getAsDouble())
                 .withVelocityY(leftSupplier.getAsDouble())
                 .withRotationalRate(rotationalRate));

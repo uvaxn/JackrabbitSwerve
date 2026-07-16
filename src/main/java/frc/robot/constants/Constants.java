@@ -6,6 +6,9 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+// added import
+import java.util.Optional;
+
 
 public class Constants {
     public static final double CAMERA_TILT = Units.degreesToRadians(20);
@@ -17,10 +20,12 @@ public class Constants {
     public static final Translation2d blueHubPosition = 
         new Translation2d(Units.inchesToMeters(172.2835), Units.inchesToMeters(158.32));
     public static Translation2d getTeamHubTranslation() {
-        if (DriverStation.getAlliance().get() == DriverStation.Alliance.Blue) {
+        Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
+        if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Blue) {
             return blueHubPosition;
         }
         return redHubPosition;
+        // defaults to redhubPOS
     }
 
     // Motors
