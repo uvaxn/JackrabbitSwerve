@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
-import frc.robot.util.ShooterCalc;
+import frc.robot.util.ShooterCalculation;
 
 /**
  * Shooter + feed subsystem. {@code shooterR} runs closed-loop velocity control (the
@@ -103,7 +103,7 @@ public class ShooterSubsystem extends SubsystemBase {
         return Math.abs(current - (-Vars.SHOOTER_SPEED)) < 2.0;
     }
     public void periodic() {
-        Vars.SHOOTER_SPEED = ShooterCalc.calculateShooterSpeed(MotorMode.getDistToHub());
+        Vars.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         NetworkTables.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
         NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 
