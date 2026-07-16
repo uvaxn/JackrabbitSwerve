@@ -8,6 +8,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
 import frc.robot.subsystems.EaseofLife;
@@ -23,6 +24,7 @@ import frc.robot.util.ShooterCalculation;
  */
 public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
+    private final TalonFX shooterL;
     EaseofLife MotorMode;
 
     private boolean IS_SHOOTING = false;
@@ -31,6 +33,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
+        this.shooterL = shooterL;
         this.MotorMode = EaseOfLife;
         configureShooter(shooterR, shooterL);
     }
