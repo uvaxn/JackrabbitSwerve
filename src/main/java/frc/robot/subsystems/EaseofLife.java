@@ -84,7 +84,6 @@ public class EaseofLife extends SubsystemBase {
         if (alliance.isEmpty())                  return false;
         if (DriverStation.isAutonomousEnabled()) return true;
         if (!DriverStation.isTeleopEnabled())    return false;
-        double matchTime = DriverStation.getMatchTime();
         String gameData  = DriverStation.getGameSpecificMessage();
         if (gameData.isEmpty()) return false;
         boolean redInactiveFirst = switch (gameData.charAt(0)) {
@@ -96,11 +95,11 @@ public class EaseofLife extends SubsystemBase {
             case Red  -> !redInactiveFirst;
             case Blue ->  redInactiveFirst;
         };
-        if      (matchTime > ShiftManager.TRANSITION_END) return true;
-        else if (matchTime > ShiftManager.SHIFT1_END)     return shift1Active;
-        else if (matchTime > ShiftManager.SHIFT2_END)     return !shift1Active;
-        else if (matchTime > ShiftManager.SHIFT3_END)     return shift1Active;
-        else if (matchTime > ShiftManager.ENDGAME_START)  return !shift1Active;
-        else                                               return true;
+        return switch (shifts.getCurrentShift()) {
+            case TRANSITION, ENDGAME -> true;
+            case SHIFT_1, SHIFT_3    -> shift1Active;
+            case SHIFT_2, SHIFT_4    -> !shift1Active;
+            default                  -> true; // won't hit here unless theres a major bug (not even my fault in this case)
+        };                                       
     }
 }
