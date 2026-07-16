@@ -49,18 +49,6 @@
         {
           "type": "named",
           "data": {
-            "name": "requestDown"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
             "name": "shoot"
           }
         },

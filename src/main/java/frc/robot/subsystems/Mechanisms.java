@@ -30,7 +30,7 @@ public class Mechanisms extends SubsystemBase {
         shooters.start();
     }
 
-    /** Switches feed behavior to Full-Hopper (continuous intake bounce) without touching the shooter. */
+    /** Switches feed behavior to Full-Hopper (continuous intake bounce */
     public void FullHopperMode() {
         NetworkTables.putRobotState("FH FIRING!");
         isFHOn = true;

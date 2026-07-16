@@ -26,7 +26,6 @@ public class NetworkTables {
     private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
     private static final DoublePublisher shooterSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterSpeed").publish();
     private static final DoublePublisher shooterActualSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterActualSpeedRPS").publish();
-    private static final BooleanPublisher manualshooterOveride = infoTable.getBooleanTopic("EaseofLife/ManualShooterOverride").publish();
     // PID publishers (initial values)
     private static final DoublePublisher AligntoHubP = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").publish();
     private static final DoublePublisher AligntoHubI = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").publish();
