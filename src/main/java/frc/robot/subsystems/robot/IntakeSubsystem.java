@@ -20,7 +20,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private final DigitalInput upperSensor;
     private final DigitalInput lowerSensor;
     EaseofLife MotorMode;
-    private final DriveInputs driveInputs;
+    private final DriveInputs DriveInputs;
     private double DROP_SPEED      = 0.15;
     private double LIFT_SPEED      = 0.1;
     private static final double SOFT_LIMIT_DOWN = 50.0;
@@ -40,13 +40,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private boolean hasSeededBottom = false;
 
     public IntakeSubsystem(TalonFX intakeMotor, TalonFX dropMotor,
-                        DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife easeOfLife, DriveInputs DriveInputs) {
+                        DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife EaseOfLife, DriveInputs DriveInputs) {
         this.intakeMotor = intakeMotor;
         this.dropMotor   = dropMotor;
         this.upperSensor = upperSensor;
         this.lowerSensor = lowerSensor;
-        this.MotorMode = easeOfLife;     
-        this.driveInputs = DriveInputs;
+        this.MotorMode = EaseOfLife;     
+        this.DriveInputs = DriveInputs;
         dropMotor.setPosition(0.0);
         dropMotor.setControl(staticBrake);
 
@@ -66,7 +66,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
         Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
 
-    CommandScheduler.getInstance().schedule(driveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
+    CommandScheduler.getInstance().schedule(DriveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
         
     }
     public void stop() {

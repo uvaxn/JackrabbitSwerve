@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
 
-public class CameraSubsystem extends SubsystemBase {
+public class Limelight extends SubsystemBase {
 
     // ---- field + rejection tunables ----
     private static final double FIELD_LENGTH_M = 16.54;
@@ -56,7 +56,7 @@ public class CameraSubsystem extends SubsystemBase {
     private Optional<Pose2d> latestEstimate = Optional.empty();
     private double latestEstimateTimestamp = 0.0;
 
-    public CameraSubsystem(String name) {
+    public Limelight(String name) {
         this.name = name;
         this.telemetryTable = NetworkTableInstance.getDefault().getTable(name);
         this.posePublisher = telemetryTable.getStructTopic("EstimatedPose", Pose2d.struct).publish();

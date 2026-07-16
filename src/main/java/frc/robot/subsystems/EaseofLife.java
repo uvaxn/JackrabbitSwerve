@@ -15,16 +15,16 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.controls.ShiftManager;
 import frc.robot.util.NetworkTables;
-import frc.robot.vision.CameraSubsystem;
+import frc.robot.vision.Limelight;
  
 public class EaseofLife extends SubsystemBase {
  
-    private final CameraSubsystem cam;
+    private final Limelight cam;
     public final ShiftManager shifts = new ShiftManager();
     
     NetworkTable table = NetworkTableInstance.getDefault().getTable(Constants.LL_NAME);
     StructSubscriber<Pose2d> poseSubscriber = table.getStructTopic("EstimatedPose", Pose2d.struct).subscribe(new Pose2d());
-    public EaseofLife(CameraSubsystem cameraSubsystem) {
+    public EaseofLife(Limelight cameraSubsystem) {
         this.cam = cameraSubsystem;
         // publish initial PID values to dashboard
         NetworkTables.putAlignP(NetworkTables.getAlignP());

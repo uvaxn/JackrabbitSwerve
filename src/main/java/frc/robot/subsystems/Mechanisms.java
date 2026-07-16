@@ -17,10 +17,10 @@ public class Mechanisms extends SubsystemBase {
 
     private boolean shooterReady = false;
 
-    public Mechanisms(ShooterSubsystem v_1, IntakeSubsystem v_2, FeedSubsystem v_3) {
-        this.shooters = v_1;
-        this.intakes = v_2;
-        this.feeds = v_3;
+    public Mechanisms(ShooterSubsystem ShooterSubsystem, IntakeSubsystem IntakeSubsystem, FeedSubsystem FeedSubsystem) {
+        this.shooters = ShooterSubsystem;
+        this.intakes = IntakeSubsystem;
+        this.feeds = FeedSubsystem;
     }
     
     public void FullHopperShoot() {

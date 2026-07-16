@@ -12,7 +12,7 @@ public class FeedSubsystem extends SubsystemBase {
 
     private TalonFX upperFeed;
     private TalonFX lowerFeed;
-    private boolean isFeeding = false;
+    private boolean IS_FEEDING = false;
 
     private static final double UP_DURATION = 0.3; // seconds the arm goes up per bounce
 
@@ -20,15 +20,15 @@ public class FeedSubsystem extends SubsystemBase {
     private FeedState feedState = FeedState.WAITING_AT_BOTTOM;
     private final Timer upTimer = new Timer();
 
-    public FeedSubsystem(IntakeSubsystem v_1, EaseofLife v_2, TalonFX m_1, TalonFX m_2) {
-        this.intake = v_1;
-        this.easeOfLife = v_2;
-        this.lowerFeed = m_1;
-        this.upperFeed = m_2;
+    public FeedSubsystem(IntakeSubsystem IntakeSubsystem, EaseofLife EaseofLife, TalonFX lowerFeed, TalonFX upperFeed) {
+        this.intake = IntakeSubsystem;
+        this.easeOfLife = EaseofLife;
+        this.lowerFeed = lowerFeed;
+        this.upperFeed = upperFeed;
     }
 
     public void start() {
-        isFeeding = true;
+        IS_FEEDING = true;
         feedState = FeedState.WAITING_AT_BOTTOM;
 
         easeOfLife.setSpeed(lowerFeed, -Vars.FEED_SPEED);
@@ -41,7 +41,7 @@ public class FeedSubsystem extends SubsystemBase {
         easeOfLife.setSpeed(upperFeed, Vars.FEED_SPEED);
     }
     public void stop() {
-        isFeeding = false;
+        IS_FEEDING = false;
         easeOfLife.setSpeed(lowerFeed, 0);
         easeOfLife.setSpeed(upperFeed, 0);
 
@@ -50,7 +50,7 @@ public class FeedSubsystem extends SubsystemBase {
     }
 
     public void periodic() {
-        if (!isFeeding) return; 
+        if (!IS_FEEDING) return; 
 
         switch (feedState) {
             case WAITING_AT_BOTTOM -> {

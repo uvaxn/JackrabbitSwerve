@@ -25,13 +25,13 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
     EaseofLife MotorMode;
 
-    private boolean isShooting = false;
+    private boolean IS_SHOOTING = false;
     private final Timer shooterUpdateTimer = new Timer();
     private static final double SHOOTER_UPDATE_PERIOD = 0.1; // seconds
 
-    public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife easeOfLife) {
+    public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
-        this.MotorMode = easeOfLife;
+        this.MotorMode = EaseOfLife;
         configureShooter(shooterR, shooterL);
     }
 
@@ -86,7 +86,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void start() {
-        isShooting = true;
+        IS_SHOOTING = true;
         shooterUpdateTimer.restart();
         /*  MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
          *  remeber to UNCOMMENT this once you are done tuning.
@@ -95,7 +95,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void stop() {
-        isShooting = false;
+        IS_SHOOTING= false;
         MotorMode.setSpeed(shooterR, 0);
     }
     public boolean atSpeed() {
@@ -107,7 +107,7 @@ public class ShooterSubsystem extends SubsystemBase {
         NetworkTables.putTargetShooterSpeed(Vars.SHOOTER_SPEED);
         NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 
-        if (isShooting && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
+        if (IS_SHOOTING && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
             MotorMode.setVelocity(shooterR, -Vars.SHOOTER_SPEED);
         }
     }

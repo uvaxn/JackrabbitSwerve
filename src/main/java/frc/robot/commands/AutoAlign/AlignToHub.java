@@ -17,7 +17,7 @@ import frc.robot.constants.Constants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
-import frc.robot.vision.CameraSubsystem;
+import frc.robot.vision.Limelight;
 
 import edu.wpi.first.math.util.Units;
 public class AlignToHub extends Command {
@@ -26,9 +26,9 @@ public class AlignToHub extends Command {
         .withDeadband(Vars.MaxSpeed * 0.1)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    private final CameraSubsystem camSubsystem;
+    private final Limelight CameraSubsystem;
     private final CommandSwerveDrivetrain swerveDrive;
-    EaseofLife easeofLife;
+    EaseofLife EaseofLife;
     private final ProfiledPIDController rotationPID;
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
@@ -38,21 +38,21 @@ public class AlignToHub extends Command {
      * to still control forward/lateral movement.
      *
      * @param swerveDrive     the drivetrain subsystem
-     * @param cameraSubsystem the vision subsystem
+     * @param CameraSubsystem the vision subsystem
      * @param forwardSupplier field-centric percent max speed (forward)
      * @param leftSupplier    field-centric percent max speed (left)
      */
 
     public AlignToHub(
-        CameraSubsystem camsub,
-        EaseofLife easeOfLife,
+        Limelight CameraSubsystem,
+        EaseofLife EaseOfLife,
         CommandSwerveDrivetrain swerveDrivetrain,
         DoubleSupplier forwardSupplier,
         DoubleSupplier leftSupplier) {
         
         this.swerveDrive = swerveDrivetrain;
-        this.camSubsystem = camsub;
-        this.easeofLife = easeOfLife;
+        this.CameraSubsystem = CameraSubsystem;
+        this.EaseofLife = EaseOfLife;
         this.forwardSupplier = forwardSupplier;
         this.leftSupplier = leftSupplier;
 
@@ -66,7 +66,7 @@ public class AlignToHub extends Command {
 
     @Override
     public void initialize() {
-        Pose2d startPose = camSubsystem.getEstimatedPose()
+        Pose2d startPose = CameraSubsystem.getEstimatedPose()
             .orElse(swerveDrive.getState().Pose);
         rotationPID.reset(startPose.getRotation().getRadians());
     }
@@ -74,7 +74,7 @@ public class AlignToHub extends Command {
     @Override
     public void execute() {
         // falls back to odometry if no cam pose is present 
-        Pose2d robotPose = camSubsystem.getEstimatedPose()
+        Pose2d robotPose = CameraSubsystem.getEstimatedPose()
             .orElse(swerveDrive.getState().Pose);
 
         double velocityX = forwardSupplier.getAsDouble();
@@ -83,9 +83,9 @@ public class AlignToHub extends Command {
         
 
         rotationPID.setPID(
-            easeofLife.getAlignP(),
-            easeofLife.getAlignI(),
-            easeofLife.getAlignD()
+            EaseofLife.getAlignP(),
+            EaseofLife.getAlignI(),
+            EaseofLife.getAlignD()
         );
         // Pick hub based on alliance
         Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red

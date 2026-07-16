@@ -46,7 +46,7 @@ import frc.robot.subsystems.Mechanisms;
 import frc.robot.subsystems.robot.FeedSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
-import frc.robot.vision.CameraSubsystem;
+import frc.robot.vision.Limelight;
 
 public class RobotContainer {
 
@@ -70,7 +70,7 @@ public class RobotContainer {
     
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     
-    public final CameraSubsystem cameraSubsystem = new CameraSubsystem(Constants.LL_NAME);
+    public final Limelight cameraSubsystem = new Limelight(Constants.LL_NAME);
 
     public final EaseofLife easeOfLife = new EaseofLife(cameraSubsystem);
 
