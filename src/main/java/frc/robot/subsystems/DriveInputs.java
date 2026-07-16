@@ -39,11 +39,11 @@ public class DriveInputs extends SubsystemBase {
     }
 
     public double getX() {
-        return limitedX * Vars.MaxSpeed;
+        return limitedX * Vars.getMaxSpeed();
     }
 
     public double getY() {
-        return limitedY * Vars.MaxSpeed;
+        return limitedY * Vars.getMaxSpeed();
     }
     
 

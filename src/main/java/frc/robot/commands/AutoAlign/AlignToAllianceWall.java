@@ -91,7 +91,7 @@ public class AlignToAllianceWall extends Command {
 
         swerveDrive.setControl(
             request
-                .withDeadband(Vars.MaxSpeed * 0.1)
+                .withDeadband(Vars.getMaxSpeed() * 0.1)
                 .withVelocityX(forwardSupplier.getAsDouble())
                 .withVelocityY(leftSupplier.getAsDouble())
                 .withRotationalRate(rotationalRate));

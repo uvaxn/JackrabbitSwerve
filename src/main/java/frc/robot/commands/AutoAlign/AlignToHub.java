@@ -107,7 +107,7 @@ public class AlignToHub extends Command {
 
         swerveDrive.setControl(
             request
-                .withDeadband(Vars.MaxSpeed * 0.1)
+                .withDeadband(Vars.getMaxSpeed()* 0.1)
                 .withVelocityX(velocityX)
                 .withVelocityY(velocityY)
                 .withRotationalRate(rotationalRate));

@@ -58,7 +58,7 @@ public class RobotContainer {
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-    private final Telemetry logger = new Telemetry(Vars.MaxSpeed);
+    private final Telemetry logger = new Telemetry(Vars.getMaxSpeed());
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final DriveInputs driveInputs = new DriveInputs(

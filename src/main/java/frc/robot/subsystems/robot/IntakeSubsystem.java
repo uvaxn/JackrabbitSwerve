@@ -1,7 +1,5 @@
 package frc.robot.subsystems.robot;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -9,7 +7,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Vars;
-import frc.robot.generated.TunerConstants;
+
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
 
@@ -64,14 +62,14 @@ public class IntakeSubsystem extends SubsystemBase {
     public void start() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
 
-        Vars.MaxSpeed = 0.3 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        Vars.requestSpeedLimit("intake", 0.3);
 
     CommandScheduler.getInstance().schedule(DriveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
         
     }
     public void stop() {
         MotorMode.setSpeed(intakeMotor, 0);
-        Vars.MaxSpeed = 0.7 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        Vars.clearSpeedLimit("intake");
     }
  
     /** @return true when the arm is not moving useful for command isFinished() checks */
