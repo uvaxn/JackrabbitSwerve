@@ -176,16 +176,17 @@ public class RobotContainer {
             .onFalse(new InstantCommand(mechanisms::StopIntake,  intakes));
 
         // Shooter
+       // Shooter spins for as long as right trigger is held, full stop only when it's released.
+       joystick.rightTrigger()
+           .onTrue(new InstantCommand(mechanisms::StartShooting))
+           .onFalse(new InstantCommand(mechanisms::StopShoot));
 
+        // Bumper only selects feed mode while the trigger is held
         joystick.rightTrigger().and(joystick.rightBumper())
-            .onTrue(new InstantCommand(mechanisms::FullHopperShoot))
-            .onFalse(new InstantCommand(mechanisms::StopShoot));
-
-
+            .onTrue(new InstantCommand(mechanisms::FullHopperMode));
         joystick.rightTrigger().and(joystick.rightBumper().negate())
-            .onTrue(new InstantCommand(mechanisms::RegularShoot))
-            .onFalse(new InstantCommand(mechanisms::StopShoot));
-
+            .onTrue(new InstantCommand(mechanisms::RegularMode));
+            
         joystick.povDown()
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()

@@ -22,18 +22,38 @@ public class Mechanisms extends SubsystemBase {
         this.intakes = IntakeSubsystem;
         this.feeds = FeedSubsystem;
     }
-    
-    public void FullHopperShoot() {
-        NetworkTables.putRobotState("FH FIRING!");
-        isFHOn = true;
+        /** Spins the shooter up. Feed mode (FH vs Regular) is set separately via
+     *  {@link #FullHopperMode()} / {@link #RegularMode()} and never restarts the shooter. */
+    public void StartShooting() {
+        NetworkTables.putRobotState("SPINNING UP");
+        shooterReady = false;
         shooters.start();
     }
 
-    public void RegularShoot() {
+    /** Switches feed behavior to Full-Hopper (continuous intake bounce) without touching the shooter. */
+    public void FullHopperMode() {
+        NetworkTables.putRobotState("FH FIRING!");
+        isFHOn = true;
+        isROn = false;
+        shooterReady = false; // re-arm so periodic() re-fires this mode's entry action
+    }
+
+    /** Switches feed behavior to Regular (single intake lift) without touching the shooter. */
+    public void RegularMode() {
         NetworkTables.putRobotState("R FIRING!");
         isROn = true;
-        shooters.start();
+        isFHOn = false;
+        shooterReady = false; // re-arm so periodic() re-fires this mode's entry action
     }
+
+    /** spin up and go straight to Full-Hopper mode, purely for auto. */
+    public void FullHopperShoot() {
+        StartShooting();
+        FullHopperMode();
+     }
+
+
+
     public void Intake() {
         NetworkTables.putRobotState("INTAKE");
         wantIntake = true;  
@@ -51,15 +71,9 @@ public class Mechanisms extends SubsystemBase {
     public void StopShoot() {
         NetworkTables.putRobotState("STOPPED FIRING");
         shooters.stop();
-        if (isFHOn && !isROn) {
-            feeds.stop();
-        } else if (isROn && !isFHOn) {
-            intakes.stop();
-            feeds.stop();
-        } else {
-            feeds.stop();
-            intakes.stop();
-        }
+        feeds.stop();
+        intakes.stop();
+
         isFHOn = false;
         isROn = false;
 
@@ -73,15 +87,13 @@ public class Mechanisms extends SubsystemBase {
             intakes.start();
             isIntakeOn = true;
         }
-
-
         if (isROn && shooters.atSpeed() && !shooterReady) {
             NetworkTables.putRobotState("R SHOOTER READY");
-
             feeds.rollersStart();
             intakes.requestUp();
             shooterReady = true;
         }
+
         if  (isFHOn && shooters.atSpeed() && !shooterReady) {
             NetworkTables.putRobotState("FH SHOOTER READY");
 
