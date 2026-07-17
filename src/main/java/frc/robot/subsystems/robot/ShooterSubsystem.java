@@ -99,7 +99,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public void periodic() {
         if (NetworkTables.isManualShooterOverride()) {
-            Variables.SHOOTER_SPEED = NetworkTables.getShooterSpeed();
+            Variables.SHOOTER_SPEED = NetworkTables.getManualShooterSpeed();
         } else {
             Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         }

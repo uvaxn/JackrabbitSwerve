@@ -24,6 +24,9 @@ public class NetworkTables {
     private static final DoublePublisher shiftTimeRemaining = infoTable.getDoubleTopic("EaseofLife/ShiftTimeRemaining").publish();
     private static final BooleanPublisher isHubActive = infoTable.getBooleanTopic("EaseofLife/IsHubActive").publish();
     private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
+    // Telemetry only — this is what speed the robot is actually targeting/running.
+    // Written unconditionally every periodic() loop, so nothing should ever read
+    // this back as an input (that's what the setpoint topic below is for).
     private static final DoublePublisher shooterSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterSpeed").publish();
     private static final DoublePublisher shooterActualSpeed = infoTable.getDoubleTopic("EaseofLife/ShooterActualSpeedRPS").publish();
     // PID publishers (initial values)
@@ -35,11 +38,30 @@ public class NetworkTables {
     private static final DoubleSubscriber alignPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubP").subscribe(Variables.AlignToHubP);
     private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Variables.AlignToHubI);
     private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Variables.AlignToHubD);
-    
-    private static final DoubleSubscriber shooterSpeedSub = rbtTable.getDoubleTopic("EaseofLife/ShooterSpeed").subscribe(Variables.SHOOTER_SPEED);
-    
+
+    // Manual shooter speed setpoint — deliberately a SEPARATE topic from "ShooterSpeed"
+    // above. If this shared that topic with the telemetry publisher, whatever value
+    // you typed on the dashboard would get overwritten within 20ms by the robot's own
+    // auto-calculated telemetry write in ShooterSubsystem.periodic(). Same live-tuning
+    // pattern as the PID gains above: publish a default so it shows up on the dashboard,
+    // then subscribe for live edits, and never write to it from robot code again.
+    private static final DoublePublisher shooterSpeedSetpointPub =
+        rbtTable.getDoubleTopic("EaseofLife/ManualShooterSpeedSetpoint").publish();
+    private static final DoubleSubscriber shooterSpeedSetpointSub =
+        rbtTable.getDoubleTopic("EaseofLife/ManualShooterSpeedSetpoint").subscribe(Variables.SHOOTER_SPEED);
+
+    private static final BooleanPublisher manualShooterOverridePub =
+        rbtTable.getBooleanTopic("EaseofLife/ManualShooterOverride").publish();
     private static final BooleanSubscriber manualShooterOverrideSub =
         rbtTable.getBooleanTopic("EaseofLife/ManualShooterOverride").subscribe(false);
+
+    static {
+        // Seed defaults so both entries show up on the dashboard immediately,
+        // rather than only appearing after the robot happens to publish once.
+        shooterSpeedSetpointPub.set(Variables.SHOOTER_SPEED);
+        manualShooterOverridePub.set(false);
+    }
+
     /**
      * Puts the target angle for AlignToHub
      * @param deg (Degrees)
@@ -58,12 +80,13 @@ public class NetworkTables {
     public static void putAlignD(double D) { AligntoHubD.set(D); }
 
 
-    
+
     // PID getters (reads live value from dashboard)
     public static double getAlignP() { return alignPSub.get(); }
     public static double getAlignI() { return alignISub.get(); }
     public static double getAlignD() { return alignDSub.get(); }
 
-    public static double getShooterSpeed() { return shooterSpeedSub.get(); }
+    /** Manually-entered shooter speed setpoint from the dashboard (used when manual override is on). */
+    public static double getManualShooterSpeed() { return shooterSpeedSetpointSub.get(); }
     public static boolean isManualShooterOverride() { return manualShooterOverrideSub.get(); }
 }

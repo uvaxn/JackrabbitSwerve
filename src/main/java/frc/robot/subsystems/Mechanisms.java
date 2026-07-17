@@ -64,7 +64,6 @@ public class Mechanisms extends SubsystemBase {
         NetworkTables.putRobotState("STOPPED INTAKE");
         wantIntake = false;
         intakes.stop();
-        intakes.requestUp();
         isIntakeOn = false;
     }
 
@@ -96,7 +95,6 @@ public class Mechanisms extends SubsystemBase {
 
         if  (isFHOn && shooters.atSpeed() && !shooterReady) {
             NetworkTables.putRobotState("FH SHOOTER READY");
-
             feeds.start();
             shooterReady = true;
 

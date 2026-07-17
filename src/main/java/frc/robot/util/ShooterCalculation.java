@@ -19,11 +19,11 @@ public class ShooterCalculation {
         static {
             shooterTable.put(0.00, 55.0);// 0.00 meters | 55 rps
             shooterTable.put(1.00, 60.0);
-            shooterTable.put(2.00, 65.0);
-            shooterTable.put(3.00, 70.0);// 3.00 meters | 70 rps
-            shooterTable.put(4.00, 75.0);
-            shooterTable.put(4.50, 82.5);
-            shooterTable.put(5.00, 85.0);// 5.00 meters | 85 rps
+            shooterTable.put(2.00, 68.0);
+            shooterTable.put(3.00, 80.0);// 3.00 meters | 70 rps
+            shooterTable.put(4.00, 85.0);
+            shooterTable.put(4.50, 87.5);
+            shooterTable.put(5.00, 90.0);// 5.00 meters | 85 rps
         }
 
         /**

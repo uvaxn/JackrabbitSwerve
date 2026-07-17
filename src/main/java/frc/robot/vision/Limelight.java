@@ -14,7 +14,6 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.constants.Constants;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
 
 public class Limelight extends SubsystemBase {
@@ -48,14 +47,12 @@ public class Limelight extends SubsystemBase {
     private final NetworkTable telemetryTable;
     private final StructPublisher<Pose2d> posePublisher;
 
-    private static final Translation2d BLUE_HUB_POSITION = Constants.blueHubPosition;
-    private static final Translation2d RED_HUB_POSITION = Constants.redHubPosition;
-
-    private boolean reportedOOB = false;
-
     private Optional<Pose2d> latestEstimate = Optional.empty();
     private double latestEstimateTimestamp = 0.0;
-
+    
+    private Optional<Pose2d> latestCameraOnlyPose = Optional.empty();
+    private double latestCameraOnlyTimestamp = 0.0;
+    private double latestCameraOnlyAvgTagDist = 0.0;
     public Limelight(String name) {
         this.name = name;
         this.telemetryTable = NetworkTableInstance.getDefault().getTable(name);
@@ -114,6 +111,12 @@ public class Limelight extends SubsystemBase {
             rotationStdDevRad = (mt1.tagCount > 1)
                 ? MT1_ROTATION_STD_DEV_MULTI_TAG_RAD
                 : MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD;
+                    final Translation2d mt1Translation = mt1.pose.getTranslation();
+        if (isInField(mt1Translation) && mt1.avgTagDist <= MAX_ACCEPT_DIST_M) {
+            latestCameraOnlyPose = Optional.of(mt1.pose);
+            latestCameraOnlyTimestamp = mt1.timestampSeconds;
+            latestCameraOnlyAvgTagDist = mt1.avgTagDist;
+        }
         } else {
             // Keep MT2's own (gyro-echoing) rotation and tell the estimator this measurement
             // says nothing about rotation this cycle
@@ -138,30 +141,24 @@ public class Limelight extends SubsystemBase {
         return Optional.of(new Measurement(mt2, standardDeviations));
     }
 
+public Optional<Pose2d> getCameraOnlyPose() {
+    if (latestCameraOnlyPose.isEmpty()) {
+        return Optional.empty();
+    }
+    if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
+        return Optional.empty();
+    }
+    return latestCameraOnlyPose;
+}
 
     public double getDistanceToHub() {
-        Optional<Pose2d> pose = getEstimatedPose();
-        if (pose.isEmpty()) {
+        if (latestCameraOnlyPose.isEmpty()) {
             return 3.0; // default fallback
         }
-
-        Translation2d hubTarget = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red
-            ? RED_HUB_POSITION
-            : BLUE_HUB_POSITION;
-
-        Translation2d t = pose.get().getTranslation();
-
-        if (!isInField(t)) {
-            if (!reportedOOB) {
-                DriverStation.reportWarning(
-                    "the distance given is out of bounds!", false);
-                reportedOOB = true;
-            }
+        if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
             return 3.0;
         }
-        reportedOOB = false;
-
-        return hubTarget.minus(t).getNorm();
+        return latestCameraOnlyAvgTagDist;
     }
 
     public Optional<Pose2d> getEstimatedPose() {

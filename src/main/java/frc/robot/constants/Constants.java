@@ -12,13 +12,19 @@ import java.util.Optional;
 
 public class Constants {
     public static final double CAMERA_TILT = Units.degreesToRadians(20);
-    public static final String LL_NAME = "limelight";
+    public static final String LL_NAME = "limelight-one";
     public static final double CAMERA_ELEVATION = Units.inchesToMeters(21);
     public static final Transform3d ROBOT_TO_CAM = new Transform3d(Units.inchesToMeters(0), Units.inchesToMeters(12), Units.inchesToMeters(1), new Rotation3d(Units.degreesToRadians(0), Units.degreesToRadians(-20), Units.degreesToRadians(0)));
-    public static final Translation2d redHubPosition = 
-        new Translation2d(Units.inchesToMeters(574.01575), Units.inchesToMeters(158.32));
-    public static final Translation2d blueHubPosition = 
-        new Translation2d(Units.inchesToMeters(172.2835), Units.inchesToMeters(158.32));
+    public static final Translation2d blueHubPosition =
+        new Translation2d(
+            Units.inchesToMeters(158.6),
+            Units.inchesToMeters(158.85));
+
+            
+    public static final Translation2d redHubPosition =
+        new Translation2d(
+            Units.inchesToMeters(492.6),
+            Units.inchesToMeters(158.85));
     public static Translation2d getTeamHubTranslation() {
         Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
         if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Blue) {

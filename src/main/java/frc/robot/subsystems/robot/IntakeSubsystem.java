@@ -10,7 +10,7 @@ import frc.robot.Variables;
 
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
-
+    import edu.wpi.first.wpilibj.Timer;
 public class IntakeSubsystem extends SubsystemBase {
 
     private final TalonFX intakeMotor;
@@ -31,11 +31,25 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private enum DropState { IDLE, MOVING_DOWN, MOVING_UP }
 
+    private final Timer bounceTimer = new Timer();
+
+    private static final double BOUNCE_UP_TIME = 0.6; // time held at top
+
+    private enum BounceState {
+        OFF,
+        GOING_UP,
+        GOING_DOWN
+    }
+
+    private BounceState bounceState = BounceState.OFF;
+    private boolean bouncing = false;
     private DropState state = DropState.IDLE;
     // what "Seeded" means in these variables is basically has it set off the top sensor (it stores that) 
     private boolean hasSeededTop    = true; // the nail is somewhat bent at the top, so it wont set off the top sensor too well. Best to leave this true.
     // same thing except for it's the bottom sensor
     private boolean hasSeededBottom = false;
+
+
 
     public IntakeSubsystem(TalonFX intakeMotor, TalonFX dropMotor,
                         DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife EaseOfLife, DriveInputs DriveInputs) {
@@ -59,6 +73,46 @@ public class IntakeSubsystem extends SubsystemBase {
         state = DropState.MOVING_UP;
 
     }
+    public void startBounce() {
+        bouncing = true;
+        bounceState = BounceState.GOING_UP;
+
+        requestUp();
+        bounceTimer.restart();
+    }
+
+    public void stopBounce() {
+        bouncing = false;
+        bounceState = BounceState.OFF;
+
+        bounceTimer.stop();
+        bounceTimer.reset();
+    }
+    private void updateBounce() {
+            if (!bouncing) return;
+
+            switch (bounceState) {
+
+                case GOING_UP -> {
+                    // Keep going up until the timer expires
+                    if (bounceTimer.hasElapsed(BOUNCE_UP_TIME)) {
+                        requestDown();
+                        bounceState = BounceState.GOING_DOWN;
+                    }
+                }
+
+                case GOING_DOWN -> {
+                    // Once bottom sensor is hit, go back up
+                    if (isAtBottom()) {
+                        requestUp();
+                        bounceTimer.restart();
+                        bounceState = BounceState.GOING_UP;
+                    }
+                }
+
+                case OFF -> {}
+            }
+        }
     public void start() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
 
@@ -128,5 +182,6 @@ public class IntakeSubsystem extends SubsystemBase {
             }
             case IDLE -> {}
         }
+        updateBounce();
     }
 }

@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.8078412979399132,
-        "y": 5.963242892325488
+        "x": 0.6740094899169637,
+        "y": 5.008706998813759
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.3052274673784743,
-        "y": 5.641107503799759
+        "x": 1.1581731909845794,
+        "y": 5.417556346381969
       },
       "isLocked": false,
       "linkedName": "Test 3 End"
@@ -64,7 +64,7 @@
   "folder": "test center",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 179.38161672216128
+    "rotation": -76.89079180184565
   },
   "useDefaultConstraints": false
 }

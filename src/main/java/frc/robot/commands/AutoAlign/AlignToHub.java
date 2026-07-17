@@ -1,5 +1,6 @@
 package frc.robot.commands.AutoAlign;
 
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -9,8 +10,6 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Variables;
 import frc.robot.constants.Constants;
@@ -31,10 +30,16 @@ public class AlignToHub extends Command {
     private final ProfiledPIDController rotationPID;
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
+    private boolean hasValidTarget = false;
 
     /**
      * Rotates the robot to face the Hub while allowing the driver
      * to still control forward/lateral movement.
+     *
+     * Rotation is driven entirely by the Limelight's camera-only pose. If a
+     * fresh camera pose isn't available on a given cycle, no new rotation
+     * command is issued — the robot holds its current heading until the
+     * camera picks the tag back up.
      *
      * @param swerveDrive     the drivetrain subsystem
      * @param CameraSubsystem the vision subsystem
@@ -65,45 +70,46 @@ public class AlignToHub extends Command {
 
     @Override
     public void initialize() {
-        Pose2d startPose = CameraSubsystem.getEstimatedPose()
-            .orElse(swerveDrive.getState().Pose);
-        rotationPID.reset(startPose.getRotation().getRadians());
+        // No reset here — we may not have a camera pose yet at button-press.
+        // The PID seeds itself off the first valid camera pose in execute().
+        hasValidTarget = false;
     }
 
     @Override
     public void execute() {
-        // falls back to odometry if no cam pose is present 
-        Pose2d robotPose = CameraSubsystem.getEstimatedPose()
-            .orElse(swerveDrive.getState().Pose);
-
         double velocityX = forwardSupplier.getAsDouble();
         double velocityY = leftSupplier.getAsDouble();
         double rotationalRate = 0;
-        
 
         rotationPID.setPID(
             EaseofLife.getAlignP(),
             EaseofLife.getAlignI(),
             EaseofLife.getAlignD()
         );
-        // Pick hub based on alliance
-        Translation2d hubTarget = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-            ? Constants.redHubPosition
-            : Constants.blueHubPosition;
-        // Publish angles
-        Translation2d RobotPos = robotPose.getTranslation();
 
-        Translation2d toHub = hubTarget.minus(RobotPos);
+        Optional<Pose2d> cameraPose = CameraSubsystem.getCameraOnlyPose();
 
-        double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
+        if (cameraPose.isPresent()) {
+            Pose2d robotPose = cameraPose.get();
 
-        NetworkTables.putTargetAngle(Units.radiansToDegrees(targetAngle));
+            if (!hasValidTarget) {
+                rotationPID.reset(robotPose.getRotation().getRadians());
+                hasValidTarget = true;
+            }
 
-        rotationPID.setGoal(targetAngle);
+            Translation2d hubTarget = Constants.getTeamHubTranslation();
+            Translation2d toHub = hubTarget.minus(robotPose.getTranslation());
+            double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
 
-        rotationalRate = rotationPID.calculate(
-            robotPose.getRotation().getRadians()
-        ) * Variables.MaxAngularRate;
+            NetworkTables.putTargetAngle(Units.radiansToDegrees(targetAngle));
+            rotationPID.setGoal(targetAngle);
+
+            rotationalRate = rotationPID.calculate(
+                robotPose.getRotation().getRadians()
+            ) * Variables.MaxAngularRate;
+        }
+        // else: no fresh camera pose this cycle rotationalRate stays 0,
+        // holding the current heading instead of rotating off a guess.
 
         swerveDrive.setControl(
             request
