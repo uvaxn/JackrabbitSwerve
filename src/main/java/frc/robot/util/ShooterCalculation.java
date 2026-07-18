@@ -25,7 +25,7 @@ public class ShooterCalculation {
             shooterTable.put(4.50, 87.5);
             shooterTable.put(5.00, 90.0);// 5.00 meters | 85 rps
         }
-
+        // the reason for the seemingly high rotations per second is because of the fact that the hood is shaped in a way that makes energy lose a ton of kinetic energy.
         /**
          * Returns the interpolated shooter speed (RPS) for the given distance.
          *

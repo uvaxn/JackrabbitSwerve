@@ -183,7 +183,10 @@ public Optional<Pose2d> getCameraOnlyPose() {
         if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
             return 3.0;
         }
-        return latestCameraHubDist;
+        return latestCameraHubDist; // the reason behind using megatag1 for distance, is because though megatag2 gives significantly better pose reads
+                                    // megatag1 is substantially better for if we want the distance from the hub. Though there is pose ambiguity,
+                                    // atleast they retain around the same distance from the hub. Megatag2 also might have a problem if the robot's
+                                    // yaw is off.
     }
 
     public Optional<Pose2d> getEstimatedPose() {
