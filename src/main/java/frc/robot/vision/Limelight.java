@@ -2,6 +2,8 @@ package frc.robot.vision;
 
 import java.util.Optional;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -14,16 +16,21 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.constants.Constants;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
 
 public class Limelight extends SubsystemBase {
+    private static final AprilTagFieldLayout Afield =
+            AprilTagFieldLayout.loadField(
+                AprilTagFields.k2026RebuiltAndymark
+            );
+    
+        // ---- field + rejection tunables ----
+    private static final double FIELD_LENGTH_M = Afield.getFieldLength();
+    private static final double FIELD_WIDTH_M = Afield.getFieldWidth();
 
-    // ---- field + rejection tunables ----
-    private static final double FIELD_LENGTH_M = 16.54;
-    private static final double FIELD_WIDTH_M = 8.21;
-
-    private static final double MAX_SINGLE_TAG_AMBIGUITY = 0.5;
-    private static final double MAX_ANGULAR_VEL_DEG_PER_SEC = 360.0;
+    private static final double MAX_SINGLE_TAG_AMBIGUITY = 0.32;
+    private static final double MAX_ANGULAR_VEL_DEG_PER_SEC = 540.0;
     private static final double MAX_ACCEPT_DIST_M = 5.0;
 
     // ---- position (x/y) stddev model, scaled by MT2 distance/tag count ----
@@ -52,7 +59,7 @@ public class Limelight extends SubsystemBase {
     
     private Optional<Pose2d> latestCameraOnlyPose = Optional.empty();
     private double latestCameraOnlyTimestamp = 0.0;
-    private double latestCameraOnlyAvgTagDist = 0.0;
+    private double latestCameraHubDist = 0.0;
     public Limelight(String name) {
         this.name = name;
         this.telemetryTable = NetworkTableInstance.getDefault().getTable(name);
@@ -74,8 +81,7 @@ public class Limelight extends SubsystemBase {
 
         final PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
         final PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
-
-        if (mt1 == null || mt2 == null || mt1.tagCount == 0 || mt2.tagCount == 0) {
+        if (mt2 == null || mt2.tagCount == 0) {
             return Optional.empty();
         }
 
@@ -101,8 +107,10 @@ public class Limelight extends SubsystemBase {
         }
         // --- MT1 only gets to correct rotation when it's actually trustworthy this cycle ---
 
-        final boolean mt1RotationTrustworthy = mt1.tagCount > 1
-            || (mt1.rawFiducials.length > 0 && mt1.rawFiducials[0].ambiguity <= MAX_SINGLE_TAG_AMBIGUITY);
+        final boolean mt1RotationTrustworthy = mt1 != null &&
+            (mt1.tagCount > 1
+            || (mt1.rawFiducials.length > 0 
+            && mt1.rawFiducials[0].ambiguity <= MAX_SINGLE_TAG_AMBIGUITY));
 
         final Pose2d fusedPose;
         final double rotationStdDevRad;
@@ -113,9 +121,20 @@ public class Limelight extends SubsystemBase {
                 : MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD;
                     final Translation2d mt1Translation = mt1.pose.getTranslation();
         if (isInField(mt1Translation) && mt1.avgTagDist <= MAX_ACCEPT_DIST_M) {
-            latestCameraOnlyPose = Optional.of(mt1.pose);
-            latestCameraOnlyTimestamp = mt1.timestampSeconds;
-            latestCameraOnlyAvgTagDist = mt1.avgTagDist;
+            latestCameraOnlyPose =
+            Optional.of(
+                new Pose2d(
+                    mt2.pose.getTranslation(),
+                    mt1.pose.getRotation()
+                )
+            );
+        latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
+        Translation2d robotPosition = mt1.pose.getTranslation();
+
+        Translation2d hubPosition = Constants.getTeamHubTranslation();
+
+        latestCameraHubDist =
+            robotPosition.getDistance(hubPosition);
         }
         } else {
             // Keep MT2's own (gyro-echoing) rotation and tell the estimator this measurement
@@ -133,12 +152,18 @@ public class Limelight extends SubsystemBase {
         posStdDev = Math.min(posStdDev, MAX_ACCEPTED_POS_STD_DEV);
 
         final Matrix<N3, N1> standardDeviations = VecBuilder.fill(posStdDev, posStdDev, rotationStdDevRad);
-        mt2.pose = fusedPose;
         posePublisher.set(fusedPose);
 
         latestEstimate = Optional.of(fusedPose);
         latestEstimateTimestamp = mt2.timestampSeconds;
-        return Optional.of(new Measurement(mt2, standardDeviations));
+
+        return Optional.of(
+            new Measurement(
+                fusedPose,
+                mt2.timestampSeconds,
+                standardDeviations
+            )
+        );
     }
 
 public Optional<Pose2d> getCameraOnlyPose() {
@@ -158,7 +183,7 @@ public Optional<Pose2d> getCameraOnlyPose() {
         if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
             return 3.0;
         }
-        return latestCameraOnlyAvgTagDist;
+        return latestCameraHubDist;
     }
 
     public Optional<Pose2d> getEstimatedPose() {
@@ -172,12 +197,19 @@ public Optional<Pose2d> getCameraOnlyPose() {
     }
 
     public static class Measurement {
-        public final PoseEstimate poseEstimate;
-        public final Matrix<N3, N1> standardDeviations;
+        public final Pose2d pose;
+        public final double timestamp;
+        public final Matrix<N3,N1> standardDeviations;
 
-        public Measurement(PoseEstimate poseEstimate, Matrix<N3, N1> standardDeviations) {
-            this.poseEstimate = poseEstimate;
+        public Measurement(
+            Pose2d pose,
+            double timestamp,
+            Matrix<N3,N1> standardDeviations) {
+
+            this.pose = pose;
+            this.timestamp = timestamp;
             this.standardDeviations = standardDeviations;
         }
+        
     }
 }

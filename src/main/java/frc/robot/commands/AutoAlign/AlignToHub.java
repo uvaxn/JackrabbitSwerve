@@ -2,14 +2,11 @@ package frc.robot.commands.AutoAlign;
 
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
-
-import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-
-import edu.wpi.first.math.controller.ProfiledPIDController;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Variables;
 import frc.robot.constants.Constants;
@@ -17,106 +14,87 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
 import frc.robot.vision.Limelight;
-
-import edu.wpi.first.math.util.Units;
 public class AlignToHub extends Command {
 
-    private final SwerveRequest.FieldCentric request = new SwerveRequest.FieldCentric()
-        .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+    private final SwerveRequest.FieldCentricFacingAngle request =
+        new SwerveRequest.FieldCentricFacingAngle()
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    private final Limelight CameraSubsystem;
+    private final Limelight cameraSubsystem;
     private final CommandSwerveDrivetrain swerveDrive;
-    EaseofLife EaseofLife;
-    private final ProfiledPIDController rotationPID;
+    private final EaseofLife easeOfLife;
+
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
-    private boolean hasValidTarget = false;
-
-    /**
-     * Rotates the robot to face the Hub while allowing the driver
-     * to still control forward/lateral movement.
-     *
-     * Rotation is driven entirely by the Limelight's camera-only pose. If a
-     * fresh camera pose isn't available on a given cycle, no new rotation
-     * command is issued — the robot holds its current heading until the
-     * camera picks the tag back up.
-     *
-     * @param swerveDrive     the drivetrain subsystem
-     * @param CameraSubsystem the vision subsystem
-     * @param forwardSupplier field-centric percent max speed (forward)
-     * @param leftSupplier    field-centric percent max speed (left)
-     */
 
     public AlignToHub(
-        Limelight CameraSubsystem,
-        EaseofLife EaseOfLife,
-        CommandSwerveDrivetrain swerveDrivetrain,
-        DoubleSupplier forwardSupplier,
-        DoubleSupplier leftSupplier) {
-        
-        this.swerveDrive = swerveDrivetrain;
-        this.CameraSubsystem = CameraSubsystem;
-        this.EaseofLife = EaseOfLife;
+            Limelight cameraSubsystem,
+            EaseofLife easeOfLife,
+            CommandSwerveDrivetrain swerveDrive,
+            DoubleSupplier forwardSupplier,
+            DoubleSupplier leftSupplier) {
+
+        this.cameraSubsystem = cameraSubsystem;
+        this.easeOfLife = easeOfLife;
+        this.swerveDrive = swerveDrive;
         this.forwardSupplier = forwardSupplier;
         this.leftSupplier = leftSupplier;
 
-        rotationPID = new ProfiledPIDController(
-            Variables.AlignToHubP,
-            Variables.AlignToHubI,
-            Variables.AlignToHubD,
-            new TrapezoidProfile.Constraints(Math.PI / 2, Math.PI));
-        rotationPID.enableContinuousInput(-Math.PI, Math.PI);
-    }
+        request.HeadingController.setPID(
+                Variables.AlignToHubP,
+                Variables.AlignToHubI,
+                Variables.AlignToHubD);
 
-    @Override
-    public void initialize() {
-        // No reset here — we may not have a camera pose yet at button-press.
-        // The PID seeds itself off the first valid camera pose in execute().
-        hasValidTarget = false;
+        request.HeadingController.enableContinuousInput(
+                -Math.PI,
+                Math.PI);
+
+        addRequirements(swerveDrive);
     }
 
     @Override
     public void execute() {
+
+        request.HeadingController.setPID(
+                easeOfLife.getAlignP(),
+                easeOfLife.getAlignI(),
+                easeOfLife.getAlignD());
+
         double velocityX = forwardSupplier.getAsDouble();
         double velocityY = leftSupplier.getAsDouble();
-        double rotationalRate = 0;
 
-        rotationPID.setPID(
-            EaseofLife.getAlignP(),
-            EaseofLife.getAlignI(),
-            EaseofLife.getAlignD()
-        );
-
-        Optional<Pose2d> cameraPose = CameraSubsystem.getCameraOnlyPose();
+        Optional<Pose2d> cameraPose = cameraSubsystem.getCameraOnlyPose();
 
         if (cameraPose.isPresent()) {
+
             Pose2d robotPose = cameraPose.get();
 
-            if (!hasValidTarget) {
-                rotationPID.reset(robotPose.getRotation().getRadians());
-                hasValidTarget = true;
-            }
+            Translation2d hub = Constants.getTeamHubTranslation();
+            Translation2d toHub = hub.minus(robotPose.getTranslation());
 
-            Translation2d hubTarget = Constants.getTeamHubTranslation();
-            Translation2d toHub = hubTarget.minus(robotPose.getTranslation());
-            double targetAngle = Math.atan2(toHub.getY(), toHub.getX());
+            Rotation2d targetDirection =
+                    Rotation2d.fromRadians(
+                            Math.atan2(toHub.getY(), toHub.getX()));
 
-            NetworkTables.putTargetAngle(Units.radiansToDegrees(targetAngle));
-            rotationPID.setGoal(targetAngle);
+            NetworkTables.putTargetAngle(targetDirection.getDegrees());
 
-            rotationalRate = rotationPID.calculate(
-                robotPose.getRotation().getRadians()
-            ) * Variables.MaxAngularRate;
+            swerveDrive.setControl(
+                    request
+                            .withDeadband(Variables.getMaxSpeed() * 0.1)
+                            .withVelocityX(velocityX)
+                            .withVelocityY(velocityY)
+                            .withTargetDirection(targetDirection));
+
+        } else {
+
+            // No camera pose this cycle.
+            // Continue driving while keeping the previous heading target.
+            swerveDrive.setControl(
+                    request
+                            .withDeadband(Variables.getMaxSpeed() * 0.1)
+                            .withVelocityX(velocityX)
+                            .withVelocityY(velocityY));
         }
-        // else: no fresh camera pose this cycle rotationalRate stays 0,
-        // holding the current heading instead of rotating off a guess.
-
-        swerveDrive.setControl(
-            request
-                .withDeadband(Variables.getMaxSpeed()* 0.1)
-                .withVelocityX(velocityX)
-                .withVelocityY(velocityY)
-                .withRotationalRate(rotationalRate));
     }
 
     @Override

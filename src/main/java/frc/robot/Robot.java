@@ -22,14 +22,16 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
 
-        robotContainer.cameraSubsystem.getMeasurement(
-            robotContainer.drivetrain.getState().Pose,
-            robotContainer.drivetrain.getState().Speeds.omegaRadiansPerSecond
-        ).ifPresent(measurement -> robotContainer.drivetrain.addVisionMeasurement(
-            measurement.poseEstimate.pose,
-            measurement.poseEstimate.timestampSeconds,
+    robotContainer.cameraSubsystem.getMeasurement(
+        robotContainer.drivetrain.getState().Pose,
+        robotContainer.drivetrain.getState().Speeds.omegaRadiansPerSecond
+    ).ifPresent(measurement ->
+        robotContainer.drivetrain.addVisionMeasurement(
+            measurement.pose,
+            measurement.timestamp,
             measurement.standardDeviations
-        ));
+        )
+    );
 
         CommandScheduler.getInstance().run();
 
