@@ -18,6 +18,7 @@ package frc.robot;
  */
 
 import static edu.wpi.first.units.Units.*;
+import edu.wpi.first.math.MathUtil;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -52,9 +53,11 @@ public class RobotContainer {
 
     private final double MaxAngularRate = RotationsPerSecond.of(Variables.MaxAngularRate).in(RadiansPerSecond);
     
+    private static final double ROTATION_STICK_DEADBAND = 0.08; // matches DriveInputs' X/Y deadband
+
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
         // .withDeadband(Vars.MaxSpeed * 0.03) -- this has 3 percent deadband
-        .withRotationalDeadband(MaxAngularRate * 0.003)
+        .withRotationalDeadband(MaxAngularRate * 0.03) // was 0.003 (0.3%) -- effectively no deadband, fixed the decimal
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
@@ -133,7 +136,8 @@ public class RobotContainer {
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(driveInputs.getX())
                     .withVelocityY(driveInputs.getY())
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
+                    .withRotationalRate(
+                        -MathUtil.applyDeadband(joystick.getRightX(), ROTATION_STICK_DEADBAND) * MaxAngularRate)
             )
         );
 
@@ -172,20 +176,20 @@ public class RobotContainer {
         ));
         // Intake
         joystick.leftTrigger()
-            .onTrue(new InstantCommand(mechanisms::Intake, intakes))
-            .onFalse(new InstantCommand(mechanisms::StopIntake,  intakes));
+            .onTrue(new InstantCommand(mechanisms::Intake, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::StopIntake, mechanisms));
 
         // Shooter
        // Shooter spins for as long as right trigger is held, full stop only when it's released.
        joystick.rightTrigger()
-           .onTrue(new InstantCommand(mechanisms::StartShooting))
-           .onFalse(new InstantCommand(mechanisms::StopShoot));
+           .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
+           .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
 
         // Bumper only selects feed mode while the trigger is held
         joystick.rightTrigger().and(joystick.rightBumper())
-            .onTrue(new InstantCommand(mechanisms::FullHopperMode));
+            .onTrue(new InstantCommand(mechanisms::FullHopperMode, mechanisms));
         joystick.rightTrigger().and(joystick.rightBumper().negate())
-            .onTrue(new InstantCommand(mechanisms::RegularMode));
+            .onTrue(new InstantCommand(mechanisms::RegularMode, mechanisms));
             
         joystick.povDown()
             .onTrue(new InstantCommand(intakes::requestDown, intakes));

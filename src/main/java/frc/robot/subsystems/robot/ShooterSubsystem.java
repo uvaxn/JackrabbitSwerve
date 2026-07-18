@@ -80,7 +80,12 @@ public class ShooterSubsystem extends SubsystemBase {
     public void start() {
         IS_SHOOTING = true;
         shooterUpdateTimer.restart();
-        // check periodic() to see where the velocity gets set.
+        // Command velocity immediately instead of waiting for the throttled periodic()
+        // update below -- previously this left the shooter at its old output (usually 0)
+        // for up to SHOOTER_UPDATE_PERIOD (100ms) after every start() call.
+        MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
+        MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
+        // periodic() continues to refresh this every SHOOTER_UPDATE_PERIOD as distance/target changes.
     }
 
     public void stop() {

@@ -56,9 +56,9 @@ public class AlignToAllianceWall extends Command {
     public void execute() {
 
         request.HeadingController.setPID(
-            easeOfLife.getAlignP(),
-            easeOfLife.getAlignI(),
-            easeOfLife.getAlignD()
+            easeOfLife.getAlignWallP(),
+            easeOfLife.getAlignWallI(),
+            easeOfLife.getAlignWallD()
         );
         double targetAngle =
             DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red

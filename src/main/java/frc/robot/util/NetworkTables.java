@@ -39,6 +39,19 @@ public class NetworkTables {
     private static final DoubleSubscriber alignISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubI").subscribe(Variables.AlignToHubI);
     private static final DoubleSubscriber alignDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToHubD").subscribe(Variables.AlignToHubD);
 
+    // PID publishers (initial values) — AlignToAllianceWall.
+    // Previously AlignToAllianceWall read the AlignToHub topics above, so tuning one
+    // always retuned the other and AlignToAllianceWallP/I/D in Variables.java never
+    // actually got used past the first execute() tick. Separate topics fix that.
+    private static final DoublePublisher AligntoWallP = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallP").publish();
+    private static final DoublePublisher AligntoWallI = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallI").publish();
+    private static final DoublePublisher AligntoWallD = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallD").publish();
+
+    // PID subscribers (for live tuning from dashboard) — AlignToAllianceWall.
+    private static final DoubleSubscriber alignWallPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallP").subscribe(Variables.AlignToAllianceWallP);
+    private static final DoubleSubscriber alignWallISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallI").subscribe(Variables.AlignToAllianceWallI);
+    private static final DoubleSubscriber alignWallDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallD").subscribe(Variables.AlignToAllianceWallD);
+
     // Manual shooter speed setpoint — deliberately a SEPARATE topic from "ShooterSpeed"
     // above. If this shared that topic with the telemetry publisher, whatever value
     // you typed on the dashboard would get overwritten within 20ms by the robot's own
@@ -79,12 +92,22 @@ public class NetworkTables {
     public static void putAlignI(double I) { AligntoHubI.set(I); }
     public static void putAlignD(double D) { AligntoHubD.set(D); }
 
+    // PID setters — AlignToAllianceWall
+    public static void putAlignWallP(double P) { AligntoWallP.set(P); }
+    public static void putAlignWallI(double I) { AligntoWallI.set(I); }
+    public static void putAlignWallD(double D) { AligntoWallD.set(D); }
+
 
 
     // PID getters (reads live value from dashboard)
     public static double getAlignP() { return alignPSub.get(); }
     public static double getAlignI() { return alignISub.get(); }
     public static double getAlignD() { return alignDSub.get(); }
+
+    // PID getters (reads live value from dashboard) — AlignToAllianceWall
+    public static double getAlignWallP() { return alignWallPSub.get(); }
+    public static double getAlignWallI() { return alignWallISub.get(); }
+    public static double getAlignWallD() { return alignWallDSub.get(); }
 
     /** Manually-entered shooter speed setpoint from the dashboard (used when manual override is on). */
     public static double getManualShooterSpeed() { return shooterSpeedSetpointSub.get(); }

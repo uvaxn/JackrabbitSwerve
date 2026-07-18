@@ -20,10 +20,13 @@ public class ShooterCalculation {
             shooterTable.put(0.00, 55.0);// 0.00 meters | 55 rps
             shooterTable.put(1.00, 60.0);
             shooterTable.put(2.00, 68.0);
-            shooterTable.put(3.00, 80.0);// 3.00 meters | 70 rps
+            // NOTE: comments here previously said 70/85 rps while the code had 80.0/90.0 --
+            // comments corrected to match the code. Please confirm against your actual
+            // on-robot tuning data that 80.0 @ 3.00m and 90.0 @ 5.00m are still correct.
+            shooterTable.put(3.00, 80.0);// 3.00 meters | 80 rps
             shooterTable.put(4.00, 85.0);
             shooterTable.put(4.50, 87.5);
-            shooterTable.put(5.00, 90.0);// 5.00 meters | 85 rps
+            shooterTable.put(5.00, 90.0);// 5.00 meters | 90 rps
         }
         // the reason for the seemingly high rotations per second is because of the fact that the hood is shaped in a way that makes energy lose a ton of kinetic energy.
         /**
@@ -37,4 +40,3 @@ public class ShooterCalculation {
         }
 
 }
-

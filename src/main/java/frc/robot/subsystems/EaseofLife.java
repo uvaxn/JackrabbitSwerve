@@ -30,6 +30,9 @@ public class EaseofLife extends SubsystemBase {
         NetworkTables.putAlignP(NetworkTables.getAlignP());
         NetworkTables.putAlignI(NetworkTables.getAlignI());
         NetworkTables.putAlignD(NetworkTables.getAlignD());
+        NetworkTables.putAlignWallP(NetworkTables.getAlignWallP());
+        NetworkTables.putAlignWallI(NetworkTables.getAlignWallI());
+        NetworkTables.putAlignWallD(NetworkTables.getAlignWallD());
         NetworkTables.putDisttoHub(0);
     }
  
@@ -74,6 +77,11 @@ public class EaseofLife extends SubsystemBase {
     public double getAlignP() { return NetworkTables.getAlignP(); }
     public double getAlignI() { return NetworkTables.getAlignI(); }
     public double getAlignD() { return NetworkTables.getAlignD(); }
+
+    //  read live values from dashboard — AlignToAllianceWall
+    public double getAlignWallP() { return NetworkTables.getAlignWallP(); }
+    public double getAlignWallI() { return NetworkTables.getAlignWallI(); }
+    public double getAlignWallD() { return NetworkTables.getAlignWallD(); }
  
     public double getDistToHub() {
         return cam.getDistanceToHub();
