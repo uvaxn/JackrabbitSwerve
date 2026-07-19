@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.NetworkTables;
 
 /**
  * The intake drop arm. Sweeps from 0 degrees (up, stowed) down to 45 degrees (down, deployed)
@@ -172,6 +173,12 @@ public class IntakeDropSubsystem extends SubsystemBase {
         return trueDegreesFromHorizontal / 360.0;
     }
 
+    /** Inverse of userDegreesToMechanismRotations, for turning a live measured position back
+     *  into our 0 (up) - 45 (down) degree convention for telemetry. */
+    private static double mechanismRotationsToUserDegrees(double mechanismRotations) {
+        return UP_ANGLE_ABOVE_HORIZONTAL_DEGREES - (mechanismRotations * 360.0);
+    }
+
     public void requestDown() {
         if (isAtBottom() && !RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
@@ -246,6 +253,9 @@ public class IntakeDropSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        NetworkTables.putIntakeDropPositionDegrees(
+            mechanismRotationsToUserDegrees(dropMotor.getPosition().getValueAsDouble()));
+
         if (isAtTop() && !hasSeededTop) {
             dropMotor.setPosition(userDegreesToMechanismRotations(UP_POSITION_DEGREES));
             hasSeededTop    = true;

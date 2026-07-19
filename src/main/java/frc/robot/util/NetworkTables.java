@@ -51,13 +51,7 @@ public class NetworkTables {
     private static final DoubleSubscriber alignWallPSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallP").subscribe(Variables.AlignToAllianceWallP);
     private static final DoubleSubscriber alignWallISub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallI").subscribe(Variables.AlignToAllianceWallI);
     private static final DoubleSubscriber alignWallDSub = rbtTable.getDoubleTopic("EaseofLife/PID/AlignToWallD").subscribe(Variables.AlignToAllianceWallD);
-
-    // Manual shooter speed setpoint — deliberately a SEPARATE topic from "ShooterSpeed"
-    // above. If this shared that topic with the telemetry publisher, whatever value
-    // you typed on the dashboard would get overwritten within 20ms by the robot's own
-    // auto-calculated telemetry write in ShooterSubsystem.periodic(). Same live-tuning
-    // pattern as the PID gains above: publish a default so it shows up on the dashboard,
-    // then subscribe for live edits, and never write to it from robot code again.
+    
     private static final DoublePublisher shooterSpeedSetpointPub =
         rbtTable.getDoubleTopic("EaseofLife/ManualShooterSpeedSetpoint").publish();
     private static final DoubleSubscriber shooterSpeedSetpointSub =
@@ -67,6 +61,12 @@ public class NetworkTables {
         rbtTable.getBooleanTopic("EaseofLife/ManualShooterOverride").publish();
     private static final BooleanSubscriber manualShooterOverrideSub =
         rbtTable.getBooleanTopic("EaseofLife/ManualShooterOverride").subscribe(false);
+
+    // intake drop
+    // Telemetry only, the arm's measured position (0 = up, 45 = down), written unconditionally
+    // every periodic() loop for debugging, nothing should read this back as an input.
+    private static final DoublePublisher intakeDropPositionDeg =
+        rbtTable.getDoubleTopic("IntakeDrop/PositionInDegrees").publish();
 
     static {
         // Seed defaults so both entries show up on the dashboard immediately,
@@ -87,6 +87,7 @@ public class NetworkTables {
     public static void putDisttoHub(double dist)    { distToHubPublisher.set(dist); }
     public static void putTargetShooterSpeed(double speed){ shooterSpeed.set(speed); }
     public static void putShooterSpeed(double rps){ shooterActualSpeed.set(rps); }
+    public static void putIntakeDropPositionDegrees(double degrees) { intakeDropPositionDeg.set(degrees); }
     // PID setters
     public static void putAlignP(double P) { AligntoHubP.set(P); }
     public static void putAlignI(double I) { AligntoHubI.set(I); }
