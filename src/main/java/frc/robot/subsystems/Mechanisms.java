@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.robot.FeedSubsystem;
+import frc.robot.subsystems.robot.IntakeDropSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
 import frc.robot.util.NetworkTables;
@@ -9,6 +10,7 @@ import frc.robot.util.NetworkTables;
 public class Mechanisms extends SubsystemBase {
     private ShooterSubsystem shooters;
     private IntakeSubsystem intakes;
+    private IntakeDropSubsystem intakeDrop;
     private FeedSubsystem feeds;
     private boolean wantIntake = false;
     private boolean isIntakeOn = false;
@@ -17,9 +19,11 @@ public class Mechanisms extends SubsystemBase {
 
     private boolean shooterReady = false;
 
-    public Mechanisms(ShooterSubsystem ShooterSubsystem, IntakeSubsystem IntakeSubsystem, FeedSubsystem FeedSubsystem) {
+    public Mechanisms(ShooterSubsystem ShooterSubsystem, IntakeSubsystem IntakeSubsystem,
+                       IntakeDropSubsystem IntakeDropSubsystem, FeedSubsystem FeedSubsystem) {
         this.shooters = ShooterSubsystem;
         this.intakes = IntakeSubsystem;
+        this.intakeDrop = IntakeDropSubsystem;
         this.feeds = FeedSubsystem;
     }
         /** Spins the shooter up. Feed mode (FH vs Regular) is set separately via
@@ -57,7 +61,7 @@ public class Mechanisms extends SubsystemBase {
     public void Intake() {
         NetworkTables.putRobotState("INTAKE");
         wantIntake = true;  
-        intakes.requestDown();
+        intakeDrop.requestDown();
     }
 
     public void StopIntake() {
@@ -82,14 +86,14 @@ public class Mechanisms extends SubsystemBase {
     @Override
 
     public void periodic() {
-        if (wantIntake && intakes.isAtBottom() && !isIntakeOn) {
+        if (wantIntake && intakeDrop.isAtBottom() && !isIntakeOn) {
             intakes.start();
             isIntakeOn = true;
         }
         if (isROn && shooters.atSpeed() && !shooterReady) {
             NetworkTables.putRobotState("R SHOOTER READY");
             feeds.rollersStart();
-            intakes.requestUp();
+            intakeDrop.requestUp();
             shooterReady = true;
         }
 

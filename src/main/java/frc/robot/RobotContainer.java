@@ -45,6 +45,7 @@ import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.subsystems.Mechanisms;
 import frc.robot.subsystems.robot.FeedSubsystem;
+import frc.robot.subsystems.robot.IntakeDropSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
 import frc.robot.vision.Limelight;
@@ -87,12 +88,14 @@ public class RobotContainer {
 
     
     
-    public final IntakeSubsystem intakes = new IntakeSubsystem(
-        m_Intake, 
+    public final IntakeDropSubsystem intakeDrop = new IntakeDropSubsystem(
         m_IntakeDrop,
 
         new DigitalInput(0),
-        new DigitalInput(1),
+        new DigitalInput(1)
+    );
+    public final IntakeSubsystem intakes = new IntakeSubsystem(
+        m_Intake,
 
         easeOfLife, 
         driveInputs
@@ -104,7 +107,7 @@ public class RobotContainer {
         easeOfLife
     );
     public final FeedSubsystem feeds = new FeedSubsystem(
-        intakes, 
+        intakeDrop, 
         easeOfLife, 
 
         m_LowerFeed, 
@@ -113,6 +116,7 @@ public class RobotContainer {
     public final Mechanisms mechanisms = new Mechanisms(
         shooters, 
         intakes, 
+        intakeDrop,
         feeds
     );
     // Commands
@@ -121,8 +125,8 @@ public class RobotContainer {
         NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> mechanisms.StopShoot()));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
-        NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
-        NamedCommands.registerCommand("requestDown", new InstantCommand(intakes::requestDown));
+        NamedCommands.registerCommand("requestUp", new InstantCommand(intakeDrop::requestUp));
+        NamedCommands.registerCommand("requestDown", new InstantCommand(intakeDrop::requestDown));
         drivetrain.configureAutoBuilder(); 
         configureBindings();
 
@@ -192,9 +196,9 @@ public class RobotContainer {
             .onTrue(new InstantCommand(mechanisms::RegularMode, mechanisms));
             
         joystick.povDown()
-            .onTrue(new InstantCommand(intakes::requestDown, intakes));
+            .onTrue(new InstantCommand(intakeDrop::requestDown, intakeDrop));
         joystick.povUp()
-            .onTrue(new InstantCommand(intakes::requestUp, intakes));
+            .onTrue(new InstantCommand(intakeDrop::requestUp, intakeDrop));
         drivetrain.registerTelemetry(logger::telemeterize);
         
     }
@@ -202,7 +206,7 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         Command selected = autoChooser.getSelected();
         if (selected == null) return Commands.none();
-        System.out.println("auto: " + selected.getName());
+        System.out.println("Auto: " + selected.getName());
         return selected;
     }
 }

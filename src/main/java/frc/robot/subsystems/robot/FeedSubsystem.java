@@ -6,33 +6,35 @@ import frc.robot.subsystems.EaseofLife;
 import frc.robot.Variables;
 
 public class FeedSubsystem extends SubsystemBase {
-    private IntakeSubsystem intake;
-    private EaseofLife easeOfLife;
+    private final IntakeDropSubsystem intakeDrop;
+    private final EaseofLife easeOfLife;
 
-    private TalonFX upperFeed;
-    private TalonFX lowerFeed;
+    private final TalonFX upperFeed;
+    private final TalonFX lowerFeed;
 
-    public FeedSubsystem(IntakeSubsystem IntakeSubsystem, EaseofLife EaseofLife, TalonFX lowerFeed, TalonFX upperFeed) {
-        this.intake = IntakeSubsystem;
-        this.easeOfLife = EaseofLife;
+    public FeedSubsystem(IntakeDropSubsystem intakeDrop, EaseofLife easeOfLife, TalonFX lowerFeed, TalonFX upperFeed) {
+        this.intakeDrop = intakeDrop;
+        this.easeOfLife = easeOfLife;
         this.lowerFeed = lowerFeed;
         this.upperFeed = upperFeed;
+        easeOfLife.configureVelocityControl(lowerFeed);
+        easeOfLife.configureVelocityControl(upperFeed);
     }
 
     public void start() {
         rollersStart();
-        intake.startBounce();
+        intakeDrop.startBounce();
     }
     public void rollersStart() {
-        easeOfLife.setSpeed(lowerFeed, -Variables.FEED_SPEED);
-        easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED);
+        easeOfLife.setSpeed(lowerFeed, Variables.FEED_SPEED, true);
+        easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED, false);
     }
     public void stop() {
-        easeOfLife.setSpeed(lowerFeed, 0);
-        easeOfLife.setSpeed(upperFeed, 0);
-        intake.stopBounce();
-        if (!intake.isAtBottom()) {
-            intake.requestDown();
+        easeOfLife.stop(lowerFeed);
+        easeOfLife.stop(upperFeed);
+        intakeDrop.stopBounce();
+        if (!intakeDrop.isAtBottom()) {
+            intakeDrop.requestDown();
         }
     }
 
