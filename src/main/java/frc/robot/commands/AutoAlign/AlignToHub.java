@@ -53,6 +53,11 @@ public class AlignToHub extends Command {
     }
 
     @Override
+    public void initialize() {
+        cameraSubsystem.setAlignMode(true);
+    }
+
+    @Override
     public void execute() {
 
         request.HeadingController.setPID(
@@ -100,5 +105,10 @@ public class AlignToHub extends Command {
     @Override
     public boolean isFinished() {
         return false;
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        cameraSubsystem.setAlignMode(false);
     }
 }

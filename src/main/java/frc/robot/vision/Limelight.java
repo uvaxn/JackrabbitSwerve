@@ -1,74 +1,55 @@
 package frc.robot.vision;
 
+import static frc.robot.constants.LimelightConstants.AGREED_TRANSLATION_EPSILON_M;
+import static frc.robot.constants.LimelightConstants.ALIGN_STD_DEV_SCALE;
+import static frc.robot.constants.LimelightConstants.DEFAULT_STABLE_UPDATE_THRESHOLD;
+import static frc.robot.constants.LimelightConstants.MAX_ESTIMATE_AGE_SECONDS;
+
 import java.util.Optional;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
+import frc.robot.vision.PoseFusion.FusionResult;
 
+/**
+ * The Limelight subsystem. Talks to LimelightHelpers, hands the raw MT1/MT2 estimates to
+ * PoseFusion for the actual fusion/rejection math (see that file), and owns everything
+ * stateful: caching the latest accepted pose, tracking pose stability, publishing telemetry,
+ * and toggling align mode. Every tunable number lives in LimelightConstants.java.
+ */
 public class Limelight extends SubsystemBase {
-    private static final AprilTagFieldLayout Afield =
-            AprilTagFieldLayout.loadField(
-                AprilTagFields.k2026RebuiltAndymark
-            );
-    
-        // ---- field + rejection tunables ----
-    private static final double FIELD_LENGTH_M = Afield.getFieldLength();
-    private static final double FIELD_WIDTH_M = Afield.getFieldWidth();
-
-    private static final double MAX_SINGLE_TAG_AMBIGUITY = 0.32;
-    private static final double MAX_ANGULAR_VEL_DEG_PER_SEC = 540.0;
-    private static final double MAX_ACCEPT_DIST_M = 5.0;
-
-    // ---- position (x/y) stddev model, scaled by MT2 distance/tag count ----
-    private static final double POS_STD_DEV_FLOOR = 0.1;
-    private static final double POS_STD_DEV_DIST_COEFF = 0.08;
-    private static final double MULTI_TAG_STD_DEV_SCALE = 0.5;
-    private static final double MAX_ACCEPTED_POS_STD_DEV = 3.0;
-
-    // ---- rotation stddev for the MT1-sourced drift correction ----
-    // MT2's own rotation just echoes the gyro heading it was fed it is NOT an independent
-    // measurement so MT1 (which solves rotation from tag geometry alone) is the only thing
-    // here that can actually correct gyro drift. It only gets to do so when trustworthy.
-    private static final double MT1_ROTATION_STD_DEV_MULTI_TAG_RAD = 0.3;
-    private static final double MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD = 1.0;
-    private static final double UNTRUSTED_ROTATION_STD_DEV = 9999999;
-
-    // ---- staleness: how long a fused pose stays valid with nothing refreshing it ----
-    private static final double MAX_ESTIMATE_AGE_SECONDS = 0.25;
 
     private final String name;
     private final NetworkTable telemetryTable;
     private final StructPublisher<Pose2d> posePublisher;
+    private final IntegerPublisher stableUpdatesPublisher;
 
     private Optional<Pose2d> latestEstimate = Optional.empty();
     private double latestEstimateTimestamp = 0.0;
-    
+
     private Optional<Pose2d> latestCameraOnlyPose = Optional.empty();
     private double latestCameraOnlyTimestamp = 0.0;
     private double latestCameraHubDist = 0.0;
+
+    private int numStableUpdates = 0;
+    private boolean alignMode = false;
+
     public Limelight(String name) {
         this.name = name;
         this.telemetryTable = NetworkTableInstance.getDefault().getTable(name);
         this.posePublisher = telemetryTable.getStructTopic("EstimatedPose", Pose2d.struct).publish();
-    }
-
-    private static boolean isInField(Translation2d t) {
-        return t.getX() >= 0 && t.getX() <= FIELD_LENGTH_M &&
-               t.getY() >= 0 && t.getY() <= FIELD_WIDTH_M;
+        this.stableUpdatesPublisher = telemetryTable.getIntegerTopic("NumStableUpdates").publish();
     }
 
     /**
@@ -81,100 +62,56 @@ public class Limelight extends SubsystemBase {
 
         final PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
         final PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
-        if (mt2 == null || mt2.tagCount == 0) {
+
+        final Optional<FusionResult> result = PoseFusion.fuse(mt1, mt2, angularVelocityRadPerSec);
+        if (result.isEmpty()) {
             return Optional.empty();
         }
+        final FusionResult fusion = result.get();
 
-        // --- MT2 gates whether we trust this cycle's position at all ---
-
-        if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0
-                && mt2.rawFiducials[0].ambiguity > MAX_SINGLE_TAG_AMBIGUITY) {
-            return Optional.empty();
-        }
-        final Translation2d mt2Translation = mt2.pose.getTranslation();
-        if (!isInField(mt2Translation)) {
-            DriverStation.reportWarning(
-                "out of bounds!", false);
-            return Optional.empty();
-        }
-
-        if (mt2.avgTagDist > MAX_ACCEPT_DIST_M) {
-            return Optional.empty();
-        }
-
-        if (Math.toDegrees(Math.abs(angularVelocityRadPerSec)) > MAX_ANGULAR_VEL_DEG_PER_SEC) {
-            return Optional.empty();
-        }
-        // --- MT1 only gets to correct rotation when it's actually trustworthy this cycle ---
-
-        final boolean mt1RotationTrustworthy = mt1 != null &&
-            (mt1.tagCount > 1
-            || (mt1.rawFiducials.length > 0 
-            && mt1.rawFiducials[0].ambiguity <= MAX_SINGLE_TAG_AMBIGUITY));
-
-        final Pose2d fusedPose;
-        final double rotationStdDevRad;
-        if (mt1RotationTrustworthy) {
-            fusedPose = new Pose2d(mt2Translation, mt1.pose.getRotation());
-            rotationStdDevRad = (mt1.tagCount > 1)
-                ? MT1_ROTATION_STD_DEV_MULTI_TAG_RAD
-                : MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD;
-                    final Translation2d mt1Translation = mt1.pose.getTranslation();
-        if (isInField(mt1Translation) && mt1.avgTagDist <= MAX_ACCEPT_DIST_M) {
-            latestCameraOnlyPose =
-            Optional.of(
-                new Pose2d(
-                    mt2.pose.getTranslation(),
-                    mt1.pose.getRotation()
-                )
-            );
-        latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
-        Translation2d robotPosition = mt1.pose.getTranslation();
-
-        Translation2d hubPosition = Constants.getTeamHubTranslation();
-
-        latestCameraHubDist =
-            robotPosition.getDistance(hubPosition);
-        }
+        // --- pose stability: has this cycle's fused pose landed near where we already
+        // thought we were? Consecutive agreement builds confidence, any miss resets it. A
+        // rejected/missing cycle (the isEmpty() check above) neither adds to nor resets this.
+        if (fusion.fusedPose.getTranslation().getDistance(currentRobotPose.getTranslation())
+                < AGREED_TRANSLATION_EPSILON_M) {
+            numStableUpdates++;
         } else {
-            // Keep MT2's own (gyro-echoing) rotation and tell the estimator this measurement
-            // says nothing about rotation this cycle
-            fusedPose = mt2.pose;
-            rotationStdDevRad = UNTRUSTED_ROTATION_STD_DEV;
+            numStableUpdates = 0;
+        }
+        stableUpdatesPublisher.set(numStableUpdates);
+
+        // align mode is subsystem state, not fusion math, so it's applied here on top of
+        // PoseFusion's intrinsic (distance/tag-count based) std dev, not inside PoseFusion.
+        double posStdDev = fusion.posStdDevBase;
+        if (alignMode) {
+            posStdDev *= ALIGN_STD_DEV_SCALE;
         }
 
-        // --- position stddev, scaled by MT2 distance and tag count ---
-
-        double posStdDev = POS_STD_DEV_FLOOR + POS_STD_DEV_DIST_COEFF * mt2.avgTagDist * mt2.avgTagDist;
-        if (mt2.tagCount > 1) {
-            posStdDev *= MULTI_TAG_STD_DEV_SCALE;
+        if (fusion.cameraOnlyPose.isPresent() && fusion.mt1TranslationForHubDistance.isPresent()) {
+            latestCameraOnlyPose = fusion.cameraOnlyPose;
+            latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
+            latestCameraHubDist = fusion.mt1TranslationForHubDistance.get()
+                    .getDistance(Constants.getTeamHubTranslation());
         }
-        posStdDev = Math.min(posStdDev, MAX_ACCEPTED_POS_STD_DEV);
 
-        final Matrix<N3, N1> standardDeviations = VecBuilder.fill(posStdDev, posStdDev, rotationStdDevRad);
-        posePublisher.set(fusedPose);
+        final Matrix<N3, N1> standardDeviations = VecBuilder.fill(posStdDev, posStdDev, fusion.rotationStdDevRad);
+        posePublisher.set(fusion.fusedPose);
 
-        latestEstimate = Optional.of(fusedPose);
-        latestEstimateTimestamp = mt2.timestampSeconds;
+        latestEstimate = Optional.of(fusion.fusedPose);
+        latestEstimateTimestamp = fusion.timestampSeconds;
 
-        return Optional.of(
-            new Measurement(
-                fusedPose,
-                mt2.timestampSeconds,
-                standardDeviations
-            )
-        );
+        return Optional.of(new Measurement(fusion.fusedPose, fusion.timestampSeconds, standardDeviations));
     }
 
-public Optional<Pose2d> getCameraOnlyPose() {
-    if (latestCameraOnlyPose.isEmpty()) {
-        return Optional.empty();
+    public Optional<Pose2d> getCameraOnlyPose() {
+        if (latestCameraOnlyPose.isEmpty()) {
+            return Optional.empty();
+        }
+        if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
+            return Optional.empty();
+        }
+        return latestCameraOnlyPose;
     }
-    if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
-        return Optional.empty();
-    }
-    return latestCameraOnlyPose;
-}
 
     public double getDistanceToHub() {
         if (latestCameraOnlyPose.isEmpty()) {
@@ -183,10 +120,11 @@ public Optional<Pose2d> getCameraOnlyPose() {
         if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
             return 3.0;
         }
-        return latestCameraHubDist; // the reason behind using megatag1 for distance, is because though megatag2 gives significantly better pose reads
-                                    // megatag1 is substantially better for if we want the distance from the hub. Though there is pose ambiguity,
-                                    // atleast they retain around the same distance from the hub. Megatag2 also might have a problem if the robot's
-                                    // yaw is off.
+        // MegaTag1 is used for hub distance (instead of MegaTag2) because though MegaTag2
+        // gives significantly better pose reads, MegaTag1 is substantially better for hub
+        // distance specifically: despite its own pose ambiguity, it holds distance-from-hub
+        // steady, and MegaTag2's distance can be thrown off if the robot's yaw estimate is off.
+        return latestCameraHubDist;
     }
 
     public Optional<Pose2d> getEstimatedPose() {
@@ -199,20 +137,34 @@ public Optional<Pose2d> getCameraOnlyPose() {
         return latestEstimate;
     }
 
-    public static class Measurement {
-        public final Pose2d pose;
-        public final double timestamp;
-        public final Matrix<N3,N1> standardDeviations;
+    /** @return how many consecutive accepted vision updates have landed within
+     *  AGREED_TRANSLATION_EPSILON_M of the pose we already had, resets to 0 on any miss.
+     *  A rejected/missing cycle neither adds to nor resets this, it just holds. */
+    public int getNumStableUpdates() {
+        return numStableUpdates;
+    }
 
-        public Measurement(
-            Pose2d pose,
-            double timestamp,
-            Matrix<N3,N1> standardDeviations) {
+    /** @return true once the default number of consecutive updates have agreed. */
+    public boolean isPoseStable() {
+        return numStableUpdates >= DEFAULT_STABLE_UPDATE_THRESHOLD;
+    }
 
-            this.pose = pose;
-            this.timestamp = timestamp;
-            this.standardDeviations = standardDeviations;
-        }
-        
+    /** @param updates a custom threshold, for callers that want to demand more or less
+     *  agreement than the default before trusting this camera. */
+    public boolean isPoseStable(int updates) {
+        return numStableUpdates >= updates;
+    }
+
+    /**
+     * Trusts vision position more (tighter std devs, scaled by ALIGN_STD_DEV_SCALE) while a
+     * precision alignment command is running. Call with true from that command's initialize()
+     * and false from its end(), rotation trust is untouched, this only affects position.
+     */
+    public void setAlignMode(boolean aligning) {
+        this.alignMode = aligning;
+    }
+
+    public boolean isAlignMode() {
+        return alignMode;
     }
 }
