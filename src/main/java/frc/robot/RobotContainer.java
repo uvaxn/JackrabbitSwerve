@@ -58,7 +58,7 @@ public class RobotContainer {
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
         // .withDeadband(Vars.MaxSpeed * 0.03) -- this has 3 percent deadband
-        .withRotationalDeadband(MaxAngularRate * 0.03) // was 0.003 (0.3%) -- effectively no deadband, fixed the decimal
+        .withRotationalDeadband(MaxAngularRate * 0.03) // was 0.03 (3%)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
