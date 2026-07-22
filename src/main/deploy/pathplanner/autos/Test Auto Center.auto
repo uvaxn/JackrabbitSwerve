@@ -31,12 +31,6 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Test 2"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
             "pathName": "Test 3"
           }
         },
