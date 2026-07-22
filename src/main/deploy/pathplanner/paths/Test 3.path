@@ -36,7 +36,7 @@
         "y": 5.008706998813759
       },
       "prevControl": {
-        "x": 0.42533654146032585,
+        "x": 0.42533654146032573,
         "y": 5.034431786585134
       },
       "nextControl": null,
@@ -91,7 +91,7 @@
     },
     {
       "name": "stop intake",
-      "waypointRelativePos": 1.0,
+      "waypointRelativePos": 2.0,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
@@ -119,5 +119,5 @@
     "velocity": 0,
     "rotation": 180.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

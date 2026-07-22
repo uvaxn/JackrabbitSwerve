@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.499451044416689,
-        "y": 4.7351623863501775
+        "x": 6.280990394460783,
+        "y": 4.440007716864181
       },
       "isLocked": false,
       "linkedName": "1 (C) L End"
     },
     {
       "anchor": {
-        "x": 7.2810484361831564,
-        "y": 4.68610482620021
+        "x": 7.404813724394902,
+        "y": 3.9606145481510255
       },
       "prevControl": {
-        "x": 6.895159214022847,
-        "y": 4.503315194650589
+        "x": 7.018924502234593,
+        "y": 3.7778249166014044
       },
       "nextControl": {
-        "x": 7.915015077153903,
-        "y": 4.986404814028459
+        "x": 8.03878036536565,
+        "y": 4.260914535979275
       },
       "isLocked": false,
       "linkedName": null
@@ -86,8 +86,8 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 2.0,
-    "maxAcceleration": 2.0,
+    "maxVelocity": 3.5,
+    "maxAcceleration": 2.5,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,

@@ -85,7 +85,7 @@ public class RobotContainer {
     public final TalonFX m_IntakeDrop = new TalonFX(Constants.m_IntakeDrop);
     public final TalonFX m_LowerFeed  = new TalonFX(Constants.m_LowerFeed);
     public final TalonFX m_UpperFeed  = new TalonFX(Constants.m_UpperFeed);
-
+ 
     
     
     public final IntakeDropSubsystem intakeDrop = new IntakeDropSubsystem(
@@ -121,8 +121,8 @@ public class RobotContainer {
     );
     // Commands
     public RobotContainer() {
-        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> mechanisms.FullHopperShoot()));
-        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> mechanisms.StopShoot()));
+        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.FULL_HOPPER)));
+        NamedCommands.registerCommand("stop shoot", new InstantCommand(mechanisms::stopShooting));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
         NamedCommands.registerCommand("requestUp", new InstantCommand(intakeDrop::requestUp));
@@ -180,20 +180,19 @@ public class RobotContainer {
         ));
         // Intake
         joystick.leftTrigger()
-            .onTrue(new InstantCommand(mechanisms::Intake, mechanisms))
-            .onFalse(new InstantCommand(mechanisms::StopIntake, mechanisms));
+            .onTrue(new InstantCommand(mechanisms::requestIntake, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::stopIntake, mechanisms));
 
-        // Shooter
-       // Shooter spins for as long as right trigger is held, full stop only when it's released.
-       joystick.rightTrigger()
-           .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
-           .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
-
-        // Bumper only selects feed mode while the trigger is held
+        // Shooter spins for as long as right trigger is held, full stop only when it's released.
+        // Feed mode (FH vs Regular) is decided by the bumper at the moment the trigger is first
+        // pressed, in the same startShooting() call -- see Mechanisms.java for why that used to
+        // be two separate calls racing on the same button edge.
+        joystick.rightTrigger()
+            .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
         joystick.rightTrigger().and(joystick.rightBumper())
-            .onTrue(new InstantCommand(mechanisms::FullHopperMode, mechanisms));
+            .onTrue(new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.FULL_HOPPER), mechanisms));
         joystick.rightTrigger().and(joystick.rightBumper().negate())
-            .onTrue(new InstantCommand(mechanisms::RegularMode, mechanisms));
+            .onTrue(new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.REGULAR), mechanisms));
             
         joystick.povDown()
             .onTrue(new InstantCommand(intakeDrop::requestDown, intakeDrop));
