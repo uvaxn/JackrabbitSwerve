@@ -8,6 +8,7 @@ import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -73,8 +74,6 @@ public class IntakeDropSubsystem extends SubsystemBase {
     private static final double ARM_COM_METERS    = ARM_LENGTH_METERS / 2.0;    // assumes a uniform arm
     private static final double ARM_MOI_KGM2       = (ARM_MASS_KG * ARM_LENGTH_METERS * ARM_LENGTH_METERS) / 3.0; // uniform rod about one end
 
-    // Kraken X60 datasheet numbers at 12 V. Swap these two if this is actually a Falcon 500 or
-    // Kraken X44.
     private static final double MOTOR_STALL_TORQUE_NM = 7.09;
     private static final double MOTOR_FREE_SPEED_RPS  = 100.0;
 
@@ -90,12 +89,28 @@ public class IntakeDropSubsystem extends SubsystemBase {
 
     private static final double POSITION_TOLERANCE_ROTATIONS = 0.01; // ~3.6 degrees at the mechanism
 
-    private enum DropState { IDLE_UP, IDLE_DOWN, MOVING_UP, MOVING_DOWN }
+    // Reed/limit switches chatter right at the trigger point, and both the seed/re-zero logic
+    // and every state transition below key off isAtTop()/isAtBottom(), so an undebounced read
+    // could cause rapid state flips right as the arm crosses the sensor. kBoth debounces the
+    // signal going true or false, 20ms is enough to filter contact bounce without meaningfully
+    // delaying the actual safety cutoff.
+    private static final double SENSOR_DEBOUNCE_SECONDS = 0.02;
+    private final Debouncer topSensorDebouncer = new Debouncer(SENSOR_DEBOUNCE_SECONDS, Debouncer.DebounceType.kBoth);
+    private final Debouncer bottomSensorDebouncer = new Debouncer(SENSOR_DEBOUNCE_SECONDS, Debouncer.DebounceType.kBoth);
+
+    // If a move never reaches its hard sensor (jam, mechanical bind, a target that's actually
+    // unreachable), stop pushing instead of commanding Motion Magic forever. 1.5s is a generous
+    // margin over the ~0.3-0.5s a 45 degree sweep should take at the cruise velocity configured
+    // below, tighten it once real speed is known.
+    private static final double STALL_TIMEOUT_SECONDS = 3;
+    private final Timer moveTimer = new Timer();
+
+    private enum DropState { IDLE_UP, IDLE_DOWN, MOVING_UP, MOVING_DOWN, STALLED }
     private DropState state = DropState.IDLE_UP;
 
     // what "Seeded" means here is has it set off the relevant hard sensor and had its
     // position re-zeroed off of it, same idea as the old code.
-    private boolean hasSeededTop    = true; // matches the old code's note: the top sensor is unreliable, default true
+    private boolean hasSeededTop    = true; //: the top sensor is unreliable, default true
     private boolean hasSeededBottom = false;
 
     // ---------------- bounce (continuous up/down cycling while shooting) ----------------
@@ -182,11 +197,13 @@ public class IntakeDropSubsystem extends SubsystemBase {
     public void requestDown() {
         if (isAtBottom() && !RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;
+        moveTimer.restart();
     }
 
     public void requestUp() {
         if (isAtTop() && !RobotBase.isSimulation()) return;
         state = DropState.MOVING_UP;
+        moveTimer.restart();
     }
 
     public void startBounce() {
@@ -226,19 +243,20 @@ public class IntakeDropSubsystem extends SubsystemBase {
         }
     }
 
-    /** @return true when the lower hard sensor has been tripped. */
-    public boolean isAtBottom() { return !bottomSensor.get(); }
-    /** @return true when the upper hard sensor has been tripped. */
-    public boolean isAtTop()    { return !topSensor.get(); }
+    /** @return true when the lower hard sensor has been tripped, debounced. */
+    public boolean isAtBottom() { return bottomSensorDebouncer.calculate(!bottomSensor.get()); }
+    /** @return true when the upper hard sensor has been tripped, debounced. */
+    public boolean isAtTop()    { return topSensorDebouncer.calculate(!topSensor.get()); }
 
     /** @return true once Motion Magic's closed loop error says it has reached its current goal. */
     public boolean atGoal() {
         return Math.abs(dropMotor.getClosedLoopError().getValueAsDouble()) < POSITION_TOLERANCE_ROTATIONS;
     }
 
-    /** @return true when the arm is not actively moving, useful for command isFinished() checks */
+    /** @return true when the arm is not actively moving (including a stall), useful for
+     *  command isFinished() checks. */
     public boolean isIdle() {
-        return state == DropState.IDLE_UP || state == DropState.IDLE_DOWN;
+        return state == DropState.IDLE_UP || state == DropState.IDLE_DOWN || state == DropState.STALLED;
     }
 
     /** @return true when arm is fully down and settled */
@@ -271,10 +289,11 @@ public class IntakeDropSubsystem extends SubsystemBase {
             case MOVING_DOWN -> {
                 if (isAtBottom()) {
                     // hard sensor says we're there no matter what Motion Magic thinks, stop
-                    // asking the motor to push further and let gravity + the hard stop hold
-                    // it, same as the old code did.
+                    // asking the motor to push further
                     dropMotor.setControl(coastOut);
                     state = DropState.IDLE_DOWN;
+                } else if (moveTimer.hasElapsed(STALL_TIMEOUT_SECONDS)) {
+                    stall();
                 } else {
                     dropMotor.setControl(motionMagicRequest.withPosition(userDegreesToMechanismRotations(DOWN_POSITION_DEGREES)));
                 }
@@ -283,12 +302,30 @@ public class IntakeDropSubsystem extends SubsystemBase {
                 if (isAtTop()) {
                     dropMotor.setControl(staticBrake);
                     state = DropState.IDLE_UP;
+                } else if (moveTimer.hasElapsed(STALL_TIMEOUT_SECONDS)) {
+                    stall();
                 } else {
                     dropMotor.setControl(motionMagicRequest.withPosition(userDegreesToMechanismRotations(UP_POSITION_DEGREES)));
                 }
             }
-            case IDLE_UP, IDLE_DOWN -> {}
+            case IDLE_UP, IDLE_DOWN, STALLED -> {}
         }
         updateBounce();
+    }
+
+    /**
+     * Called when a move has run past STALL_TIMEOUT_SECONDS without reaching its hard sensor.
+     * Stops pushing and parks in STALLED (distinct from IDLE_UP/IDLE_DOWN on purpose, so
+     * telemetry/logs can tell "finished" apart from "gave up"). requestUp()/requestDown() both
+     * work normally from here and will try again.
+     */
+    private void stall() {
+        DriverStation.reportWarning(
+            "IntakeDropSubsystem: " + state + " timed out after " + STALL_TIMEOUT_SECONDS
+            + "s without reaching its hard sensor, stopping instead of continuing to push. "
+            + "Check for a jam, a bad sensor, or a Motion Magic target that's unreachable.",
+            false);
+        dropMotor.setControl(coastOut);
+        state = DropState.STALLED;
     }
 }
