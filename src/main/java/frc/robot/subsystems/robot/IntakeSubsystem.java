@@ -31,8 +31,6 @@ public class IntakeSubsystem extends SubsystemBase {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED, true);
 
         Variables.requestSpeedLimit("intake", 0.45);
-
-        CommandScheduler.getInstance().schedule(DriveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
     }
 
     public void stop() {
