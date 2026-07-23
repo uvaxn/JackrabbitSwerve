@@ -97,8 +97,7 @@ public class RobotContainer {
     public final IntakeSubsystem intakes = new IntakeSubsystem(
         m_Intake,
 
-        easeOfLife, 
-        driveInputs
+        easeOfLife
     );
     public final ShooterSubsystem shooters = new ShooterSubsystem(
         m_ShooterR, 

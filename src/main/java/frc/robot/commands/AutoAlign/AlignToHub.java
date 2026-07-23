@@ -2,11 +2,14 @@ package frc.robot.commands.AutoAlign;
 
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Variables;
 import frc.robot.constants.Constants;
@@ -68,18 +71,28 @@ public class AlignToHub extends Command {
         double velocityX = forwardSupplier.getAsDouble();
         double velocityY = leftSupplier.getAsDouble();
 
-        Optional<Pose2d> cameraPose = cameraSubsystem.getCameraOnlyPose();
+        // No real Limelight exists under simulation, so getCameraOnlyPose() would never
+        // return a value there and this command would be untestable on the desktop sim.
+        // Fall back to the drivetrain's own (simulated) pose in that case; on the real
+        // robot this reads the camera-only pose exactly as before.
+        Optional<Pose2d> alignPose = Utils.isSimulation()
+                ? Optional.of(swerveDrive.getState().Pose)
+                : cameraSubsystem.getCameraOnlyPose();
 
-        if (cameraPose.isPresent()) {
+        if (alignPose.isPresent()) {
 
-            Pose2d robotPose = cameraPose.get();
+            Pose2d robotPose = alignPose.get();
 
             Translation2d hub = Constants.getTeamHubTranslation();
             Translation2d toHub = hub.minus(robotPose.getTranslation());
+        Rotation2d targetDirection =
+            Rotation2d.fromRadians(
+                Math.atan2(toHub.getY(), toHub.getX()));
 
-            Rotation2d targetDirection =
-                    Rotation2d.fromRadians(
-                            Math.atan2(toHub.getY(), toHub.getX()));
+        if (DriverStation.getAlliance().isPresent()
+                && DriverStation.getAlliance().get() == Alliance.Red) {
+            targetDirection = targetDirection.plus(Rotation2d.k180deg);
+        }
 
             NetworkTables.putTargetAngle(targetDirection.getDegrees());
 

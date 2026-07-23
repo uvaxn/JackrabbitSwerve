@@ -1,10 +1,8 @@
 package frc.robot.subsystems.robot;
 
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
-import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
 
 /**
@@ -15,15 +13,14 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private final TalonFX intakeMotor;
     private final EaseofLife MotorMode;
-    private final DriveInputs DriveInputs;
+
 
     // magnitude only now, 0.0 to 1.0, direction comes from the reverse flag passed to setSpeed()
     private static final double INTAKE_COLLECT_SPEED = 0.6; // collecting from ground
 
-    public IntakeSubsystem(TalonFX intakeMotor, EaseofLife EaseOfLife, DriveInputs DriveInputs) {
+    public IntakeSubsystem(TalonFX intakeMotor, EaseofLife EaseOfLife) {
         this.intakeMotor = intakeMotor;
         this.MotorMode = EaseOfLife;
-        this.DriveInputs = DriveInputs;
         MotorMode.configureVelocityControl(intakeMotor);
     }
 

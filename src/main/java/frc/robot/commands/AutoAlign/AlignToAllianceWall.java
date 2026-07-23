@@ -60,10 +60,7 @@ public class AlignToAllianceWall extends Command {
             easeOfLife.getAlignWallI(),
             easeOfLife.getAlignWallD()
         );
-        double targetAngle =
-            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-                ? Math.PI
-                : 0.0;
+        double targetAngle = Math.PI;
 
 
         NetworkTables.putTargetAngle(
