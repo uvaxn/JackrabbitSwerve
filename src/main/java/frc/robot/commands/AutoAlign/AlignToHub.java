@@ -88,11 +88,7 @@ public class AlignToHub extends Command {
         Rotation2d targetDirection =
             Rotation2d.fromRadians(
                 Math.atan2(toHub.getY(), toHub.getX()));
-
-        if (DriverStation.getAlliance().isPresent()
-                && DriverStation.getAlliance().get() == Alliance.Red) {
-            targetDirection = targetDirection.plus(Rotation2d.k180deg);
-        }
+                
 
             NetworkTables.putTargetAngle(targetDirection.getDegrees());
 
@@ -102,6 +98,7 @@ public class AlignToHub extends Command {
                             .withVelocityX(velocityX)
                             .withVelocityY(velocityY)
                             .withTargetDirection(targetDirection));
+                                
 
         } else {
 
