@@ -4,6 +4,7 @@ import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -21,6 +22,7 @@ public class AlignToAllianceWall extends Command {
 
     private final SwerveRequest.FieldCentricFacingAngle request =
         new SwerveRequest.FieldCentricFacingAngle()
+            .withTargetDirectionPerspective(TargetDirectionPerspectiveValue.BlueAlliance)
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final CommandSwerveDrivetrain swerveDrive;
@@ -60,7 +62,10 @@ public class AlignToAllianceWall extends Command {
             easeOfLife.getAlignWallI(),
             easeOfLife.getAlignWallD()
         );
-        double targetAngle = Math.PI;
+        double targetAngle =
+            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+                ? 0.0
+                : Math.PI;
 
 
         NetworkTables.putTargetAngle(
