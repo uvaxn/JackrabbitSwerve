@@ -59,7 +59,7 @@ public class IntakeDropSubsystem extends SubsystemBase {
 
     // ======================= Sweep, in the arm's own frame =======================
     private static final double UP_POSITION_DEGREES   = 0.0;
-    private static final double DOWN_POSITION_DEGREES = 45.0;
+    private static final double DOWN_POSITION_DEGREES = 100.0;
 
     // See note 2 above. 0 means "assume up is horizontal", almost certainly wrong.
     private static final double UP_ANGLE_ABOVE_HORIZONTAL_DEGREES = 0.0; // TODO verify on robot
@@ -115,7 +115,7 @@ public class IntakeDropSubsystem extends SubsystemBase {
 
     // ---------------- bounce (continuous up/down cycling while shooting) ----------------
     private final Timer bounceTimer = new Timer();
-    private static final double BOUNCE_UP_TIME = 0.6; // time held at top
+    private static final double BOUNCE_UP_TIME = 0.75; // time held at top
     private enum BounceState { OFF, GOING_UP, GOING_DOWN }
     private BounceState bounceState = BounceState.OFF;
     private boolean bouncing = false;
@@ -146,7 +146,7 @@ public class IntakeDropSubsystem extends SubsystemBase {
         config.Slot0.kA = kA_VOLTS_PER_RPS2;
         config.Slot0.kG = kG_VOLTS;
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
-        config.Slot0.kP = 60.0;
+        config.Slot0.kP = 5.0;
         config.Slot0.kI = 0.0;
         config.Slot0.kD = 0.5;
 

@@ -93,7 +93,7 @@ public class NetworkTables {
     public static void putAlignI(double I) { AligntoHubI.set(I); }
     public static void putAlignD(double D) { AligntoHubD.set(D); }
 
-    // PID setters — AlignToAllianceWall
+    // PID setters AlignToAllianceWall
     public static void putAlignWallP(double P) { AligntoWallP.set(P); }
     public static void putAlignWallI(double I) { AligntoWallI.set(I); }
     public static void putAlignWallD(double D) { AligntoWallD.set(D); }
@@ -105,7 +105,7 @@ public class NetworkTables {
     public static double getAlignI() { return alignISub.get(); }
     public static double getAlignD() { return alignDSub.get(); }
 
-    // PID getters (reads live value from dashboard) — AlignToAllianceWall
+    // PID getters (reads live value from dashboard) AlignToAllianceWall
     public static double getAlignWallP() { return alignWallPSub.get(); }
     public static double getAlignWallI() { return alignWallISub.get(); }
     public static double getAlignWallD() { return alignWallDSub.get(); }
