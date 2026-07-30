@@ -45,7 +45,7 @@ public class EaseofLife extends SubsystemBase {
  
     @Override
     public void periodic() {
-        NetworkTables.isHubActive(isHubActive());
+        NetworkTables.putIsHubActive(isHubActive());
         shifts.periodic();
         NetworkTables.putDisttoHub(cam.getDistanceToHub());
     }

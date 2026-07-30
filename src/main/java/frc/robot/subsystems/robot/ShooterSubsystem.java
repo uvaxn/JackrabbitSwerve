@@ -24,11 +24,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
     private final TalonFX shooterL;
     EaseofLife MotorMode;
-
-    private boolean IS_SHOOTING = false;
     private final Timer shooterUpdateTimer = new Timer();
-    private static final double SHOOTER_UPDATE_PERIOD = 0.1; // seconds
-
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
         this.shooterL  = shooterL;
@@ -77,7 +73,6 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void start() {
-        IS_SHOOTING = true;
         shooterUpdateTimer.restart();
         Variables.requestSpeedLimit("shooters", 0.45);
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
@@ -86,7 +81,6 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void stop() {
-        IS_SHOOTING = false;
         Variables.requestSpeedLimit("shooters", 0);
         MotorMode.stop(shooterR);
         MotorMode.stop(shooterL);
