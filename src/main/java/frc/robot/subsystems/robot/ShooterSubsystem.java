@@ -100,6 +100,7 @@ public class ShooterSubsystem extends SubsystemBase {
         } else {
             Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         }
+        
         NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
         NetworkTables.putShooterVelocityRight(shooterR.getVelocity().getValueAsDouble());
         NetworkTables.putShooterVelocityLeft(shooterL.getVelocity().getValueAsDouble());
