@@ -9,7 +9,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -19,33 +18,38 @@ import frc.robot.util.NetworkTables;
 
 /**
  * The intake drop arm. Sweeps from 0 degrees (up, stowed) down to 45 degrees (down, deployed)
- * using CTRE's Motion Magic Expo, the same style of generator Tuner X produces for an arm
- * mechanism, instead of the old open loop timed move.
+ * using CTRE's Motion Magic Expo control mode.
  *
- * IMPORTANT, read before trusting any number in this file:
+ * THREE THINGS BELOW ARE STILL PLACEHOLDERS. Read this before trusting the arm on the robot:
  *
- * 1. GEAR_REDUCTION below is set to 1.0 (direct drive) because that is what was asked for, but
- *    this is very likely wrong. The old code capped the drop motor's raw encoder position at
- *    50 rotations, and the old code could hold the arm up at the top using nothing but
- *    StaticBrake (no active current). A true 1:1 direct drive Kraken cannot do either of those
- *    things while holding up a ~15-20 lb arm at ~10-13 inches, the math below (kG_VOLTS) comes
- *    out to about 19 V, more than the ~12 V the robot actually has. That mismatch is the
- *    system telling you GEAR_REDUCTION is wrong, not a bug in this file. Measure the real
- *    ratio (spin the arm by hand end to end while watching rotor rotations in Tuner X, or read
- *    it off the gearbox) and fix the constant, the constructor below will also print a
- *    DriverStation warning at startup if kG looks physically impossible.
+ * 1. GEAR_REDUCTION is set to 1.0 (direct drive), which is almost certainly wrong for an arm
+ *    carrying real weight. This number just tells the Talon "how many times does the motor spin
+ *    for one spin of the arm" - it's a units conversion, not something SysId can fix for you.
+ *    Get it wrong and every rotation count the Talon reports is scaled wrong, which throws off
+ *    the position targets below AND anything measured afterward (including SysId). Read it off
+ *    the gearbox/sprocket ratios if documented, or measure by hand: rotate the arm a known angle
+ *    by hand, watch rotor rotations in Tuner X, and scale up to a full rotation.
  *
- * 2. CTRE's Arm_Cosine gravity feedforward assumes a raw closed loop position of 0 rotations
- *    equals horizontal. Our 0 degrees is "stowed/up", which is almost certainly not horizontal
- *    on the real robot. UP_ANGLE_ABOVE_HORIZONTAL_DEGREES exists to correct for that, it is
- *    left at 0 (meaning "assume up is horizontal") since the real geometry isn't in the code
- *    anywhere. Measure it and fix the constant.
+ * 2. UP_ANGLE_ABOVE_HORIZONTAL_DEGREES is set to 0 (meaning "assume up is horizontal"), which is
+ *    almost certainly wrong too. CTRE's Arm_Cosine gravity feedforward needs to know where true
+ *    horizontal actually is, because gravity pulls hardest there and pulls with zero torque at
+ *    vertical - get this wrong and the arm will be under- or over-compensated depending on where
+ *    it is in its sweep, even once kG itself is measured correctly. Measure it with an angle
+ *    gauge/level held against the arm while it's sitting at its physical "up" position.
  *
- * 3. The two DigitalInput hard sensors are wired to the RoboRIO, not to the TalonFX itself, so
- *    they can't be plugged into TalonFXConfiguration's HardwareLimitSwitch feature (that needs
- *    the switch wired directly into the Talon). This file gets the same safety benefit in
- *    software instead: periodic() always trusts a tripped sensor over whatever Motion Magic
- *    thinks the position is, and re-zeroes off of it.
+ * 3. kS_VOLTS, kG_VOLTS, kV_VOLTS_PER_RPS, and kA_VOLTS_PER_RPS2 are all left at 0.0 on purpose.
+ *    These should come from a real Phoenix 6 SysId characterization run (Tuner X's SysId
+ *    routine, or the WPILib SysId analyzer fed by the Phoenix SignalLogger) done with the arm
+ *    fully built and under real gravity load - not hand math off an estimated arm weight and
+ *    length. SysId captures real friction, real inertia, and voltage sag that a paper formula
+ *    can't. See the comment above those constants for how to run each test. The constructor
+ *    below prints a DriverStation warning at startup if these are still all zero.
+ *
+ * The two DigitalInput hard sensors are wired to the RoboRIO, not to the TalonFX itself, so they
+ * can't be plugged into TalonFXConfiguration's HardwareLimitSwitch feature (that needs the
+ * switch wired directly into the Talon). This file gets the same safety benefit in software
+ * instead: periodic() always trusts a tripped sensor over whatever Motion Magic thinks the
+ * position is, and re-zeroes off of it.
  */
 public class IntakeDropSubsystem extends SubsystemBase {
 
@@ -59,33 +63,30 @@ public class IntakeDropSubsystem extends SubsystemBase {
 
     // ======================= Sweep, in the arm's own frame =======================
     private static final double UP_POSITION_DEGREES   = 0.0;
-    private static final double DOWN_POSITION_DEGREES = 100.0;
+    private static final double DOWN_POSITION_DEGREES = 45.0;
 
-    // See note 2 above. 0 means "assume up is horizontal", almost certainly wrong.
-    private static final double UP_ANGLE_ABOVE_HORIZONTAL_DEGREES = 0.0; // TODO verify on robot
+    // How many degrees above true horizontal the "up" position sits. See note 2 in the class
+    // javadoc for why Arm_Cosine needs this. 0 here means "assume up is horizontal" - a
+    // placeholder, almost certainly wrong until measured.
+    private static final double UP_ANGLE_ABOVE_HORIZONTAL_DEGREES = 0.0; // TODO measure on robot
 
-    // ======================= Gearing, see note 1 above =======================
-    private static final double GEAR_REDUCTION = 1.0; // TODO verify, probably NOT really 1:1
+    // ======================= Gearing, see note 1 in the class javadoc =======================
+    private static final double GEAR_REDUCTION = 1.0; // TODO measure, probably NOT really 1:1
 
-    // ======================= Arm physical estimate =======================
-    // Only used to derive a starting kG/kV/kA, not measured off the real robot.
-    private static final double ARM_LENGTH_METERS = Units.inchesToMeters(11.5); // ~10-13 in estimate
-    private static final double ARM_MASS_KG       = Units.lbsToKilograms(17.5); // ~15-20 lb estimate
-    private static final double ARM_COM_METERS    = ARM_LENGTH_METERS / 2.0;    // assumes a uniform arm
-    private static final double ARM_MOI_KGM2       = (ARM_MASS_KG * ARM_LENGTH_METERS * ARM_LENGTH_METERS) / 3.0; // uniform rod about one end
-
-    private static final double MOTOR_STALL_TORQUE_NM = 7.09;
-    private static final double MOTOR_FREE_SPEED_RPS  = 100.0;
-
-    private static final double GRAVITY_TORQUE_NM = ARM_MASS_KG * 9.81 * ARM_COM_METERS;
-
-    // Derived starting gains, in "mechanism" units since Feedback.SensorToMechanismRatio below
-    // is set to GEAR_REDUCTION. Treat these as a first guess to load in and iterate on with
-    // Tuner X, not a final answer, kS especially can't be derived on paper.
-    private static final double kG_VOLTS          = (GRAVITY_TORQUE_NM / GEAR_REDUCTION) / MOTOR_STALL_TORQUE_NM * 12.0;
-    private static final double kV_VOLTS_PER_RPS  = 12.0 * GEAR_REDUCTION / MOTOR_FREE_SPEED_RPS;
-    private static final double kA_VOLTS_PER_RPS2 = (ARM_MOI_KGM2 * 2.0 * Math.PI / GEAR_REDUCTION) * (12.0 / MOTOR_STALL_TORQUE_NM);
-    private static final double kS_VOLTS          = 0.25; // static friction, tune by hand on the robot
+    // ======================= Feedforward + PID gains, see note 3 in the class javadoc =======================
+    // All four below should come from a Phoenix 6 SysId run, done with the arm fully built:
+    //   kS - open-loop voltage control, slowly ramp up from 0V until the arm just barely starts
+    //        to move smoothly (not jump). That voltage is kS.
+    //   kG - with GravityType already set to Arm_Cosine, hold the arm at exactly horizontal in
+    //        open-loop voltage control and find the voltage that holds it still without
+    //        drifting up or down. That voltage is kG. (SysId's fit can also report this
+    //        directly if GravityType is configured before the SysId run.)
+    //   kV, kA - from the SysId quasistatic (slow ramp) and dynamic (quick step) test fits, run
+    //        in both directions.
+    private static final double kS_VOLTS          = 0.0; // TODO measure via SysId (see above)
+    private static final double kG_VOLTS          = 0.0; // TODO measure via SysId (see above)
+    private static final double kV_VOLTS_PER_RPS  = 0.0; // TODO measure via SysId (see above)
+    private static final double kA_VOLTS_PER_RPS2 = 0.0; // TODO measure via SysId (see above)
 
     private static final double POSITION_TOLERANCE_ROTATIONS = 0.01; // ~3.6 degrees at the mechanism
 
@@ -125,11 +126,12 @@ public class IntakeDropSubsystem extends SubsystemBase {
         this.topSensor = topSensor;
         this.bottomSensor = bottomSensor;
 
-        if (kG_VOLTS > 6.0) {
+        if (kS_VOLTS == 0.0 && kG_VOLTS == 0.0 && kV_VOLTS_PER_RPS == 0.0 && kA_VOLTS_PER_RPS2 == 0.0) {
             DriverStation.reportWarning(
-                "IntakeDropSubsystem: derived kG of " + kG_VOLTS + " V (using GEAR_REDUCTION = "
-                + GEAR_REDUCTION + ") is more than half the available bus voltage. "
-                + "GEAR_REDUCTION is almost certainly wrong, fix it before trusting Motion Magic here.",
+                "IntakeDropSubsystem: kS/kG/kV/kA are still all 0.0 placeholders, meaning the "
+                + "arm has no gravity compensation or motion profile configured yet. Run SysId "
+                + "and fill these in before trusting Motion "
+                + "Magic on the real robot.",
                 false);
         }
 
@@ -278,11 +280,13 @@ public class IntakeDropSubsystem extends SubsystemBase {
             dropMotor.setPosition(userDegreesToMechanismRotations(UP_POSITION_DEGREES));
             hasSeededTop    = true;
             hasSeededBottom = false;
+            // set position to be at whatever the up position in degrees is, since we can trust the sensors more than the motor.
         }
         if (isAtBottom() && !hasSeededBottom) {
             dropMotor.setPosition(userDegreesToMechanismRotations(DOWN_POSITION_DEGREES));
             hasSeededBottom = true;
             hasSeededTop    = false;
+            // set position to be at whatever the down position in degrees is, since we can trust the sensors more than the motor.
         }
 
         switch (state) {

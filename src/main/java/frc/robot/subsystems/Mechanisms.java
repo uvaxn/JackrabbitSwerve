@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Variables;
 import frc.robot.subsystems.robot.FeedSubsystem;
 import frc.robot.subsystems.robot.IntakeDropSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
@@ -61,6 +62,7 @@ public class Mechanisms extends SubsystemBase {
         }
         feedMode = mode;
         shootState = ShootState.SPINNING_UP;
+        Variables.requestSpeedLimit("shooters", 0.3);
         NetworkTables.putRobotState("SPINNING UP (" + (mode == FeedMode.FULL_HOPPER ? "FH" : "R") + ")");
     }
 
@@ -75,6 +77,7 @@ public class Mechanisms extends SubsystemBase {
         shooters.stop();
         feeds.stop(); // also parks the intake-drop arm back down, see FeedSubsystem.stop()
         shootState = ShootState.IDLE;
+        Variables.clearSpeedLimit("shooters");
         NetworkTables.putRobotState("STOPPED FIRING");
     }
 

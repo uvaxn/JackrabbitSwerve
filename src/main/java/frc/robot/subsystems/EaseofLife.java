@@ -53,7 +53,7 @@ public class EaseofLife extends SubsystemBase {
     // Assumes direct drive (SensorToMechanismRatio = 1.0, see configureVelocityControl below)
     // on a Kraken X60/Falcon 500 class motor. If your actual free speed is different (check
     // Tuner X's self test), this is the one number to change, it scales every setSpeed() call.
-    private static final double MAX_VELOCITY_ROTATIONS_PER_SECOND = 105.0;
+    private static final double MAX_VELOCITY_ROTATIONS_PER_SECOND = 100.0;
 
     // one request object, reused for every call to avoid allocating on every periodic() tick
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);

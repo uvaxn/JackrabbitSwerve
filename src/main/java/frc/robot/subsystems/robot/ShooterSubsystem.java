@@ -62,7 +62,6 @@ public class ShooterSubsystem extends SubsystemBase {
         config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     }
 
-    /** Applies a config with a few retries, since a single CAN frame can occasionally drop. */
     private void applyConfig(TalonFX motor, TalonFXConfiguration config) {
         StatusCode status = null;
         boolean success = false;
@@ -80,9 +79,7 @@ public class ShooterSubsystem extends SubsystemBase {
     public void start() {
         IS_SHOOTING = true;
         shooterUpdateTimer.restart();
-        // Command velocity immediately instead of waiting for the throttled periodic()
-        // update below -- previously this left the shooter at its old output (usually 0)
-        // for up to SHOOTER_UPDATE_PERIOD (100ms) after every start() call.
+        Variables.requestSpeedLimit("shooters", 0.45);
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
         // periodic() continues to refresh this every SHOOTER_UPDATE_PERIOD as distance/target changes.
@@ -90,6 +87,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public void stop() {
         IS_SHOOTING = false;
+        Variables.requestSpeedLimit("shooters", 0);
         MotorMode.stop(shooterR);
         MotorMode.stop(shooterL);
     }
@@ -109,11 +107,11 @@ public class ShooterSubsystem extends SubsystemBase {
             Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         }
         NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
-        NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
+        NetworkTables.putShooterVelocityRight(shooterR.getVelocity().getValueAsDouble());
+        NetworkTables.putShooterVelocityLeft(shooterL.getVelocity().getValueAsDouble());
 
-        if (IS_SHOOTING && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
-            MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
-            MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
-        }
+
+        MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
+        MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
     }
 }

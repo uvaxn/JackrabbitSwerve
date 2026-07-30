@@ -4,6 +4,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
 import frc.robot.subsystems.EaseofLife;
+import frc.robot.util.NetworkTables;
 
 /**
  * Ground intake rollers only 
@@ -26,15 +27,15 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public void start() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED, true);
-
-        Variables.requestSpeedLimit("intake", 0.45);
     }
 
     public void stop() {
         MotorMode.stop(intakeMotor);
-        Variables.clearSpeedLimit("intake");
     }
 
     @Override
-    public void periodic() {}
+    public void periodic() {
+        // Telemetry only, written every loop regardless of running state.
+        NetworkTables.putIntakeVelocity(intakeMotor.getVelocity().getValueAsDouble());
+    }
 }

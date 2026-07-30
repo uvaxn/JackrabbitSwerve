@@ -4,6 +4,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.Variables;
+import frc.robot.util.NetworkTables;
 
 public class FeedSubsystem extends SubsystemBase {
     private final IntakeDropSubsystem intakeDrop;
@@ -39,5 +40,10 @@ public class FeedSubsystem extends SubsystemBase {
     }
 
     @Override
-    public void periodic() {}
+    public void periodic() {
+        // Telemetry only, written every loop regardless of running state so the
+        // dashboard shows 0 rps when stopped rather than a stale last value.
+        NetworkTables.putFeedVelocityUpper(upperFeed.getVelocity().getValueAsDouble());
+        NetworkTables.putFeedVelocityLower(lowerFeed.getVelocity().getValueAsDouble());
+    }
 }

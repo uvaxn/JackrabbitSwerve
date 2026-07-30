@@ -16,11 +16,11 @@ public class ShooterCalculation {
 
         static {
             shooterTable.put(0.00, 55.0);// 0.00 meters | 55 rps
-            shooterTable.put(1.00, 60.0);
-            shooterTable.put(2.00, 68.0);
-            shooterTable.put(3.00, 76.0);// 3.00 meters | 80 rps
-            shooterTable.put(4.00, 88.0);
-            shooterTable.put(4.50, 98.0); // easy
+            shooterTable.put(1.00, 61.0);
+            shooterTable.put(2.00, 67.0);
+            shooterTable.put(3.00, 75.0);// 3.00 meters | 80 rps
+            shooterTable.put(4.00, 86.0);
+            shooterTable.put(4.50, 95.0); // easy
         }
         // the reason for the seemingly high rotations per second is because of the fact that the hood is shaped in a way that makes fuel lose a ton of kinetic energy.
         /**
