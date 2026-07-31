@@ -1,0 +1,57 @@
+diff a/src/main/java/frc/robot/commands/AutoAlign/AlignToAllianceWall.java b/src/main/java/frc/robot/commands/AutoAlign/AlignToAllianceWall.java	(rejected hunks)
+@@ -7,7 +7,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
+ import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
+ 
+ import edu.wpi.first.math.geometry.Rotation2d;
+-import edu.wpi.first.math.util.Units;
+ import edu.wpi.first.wpilibj.DriverStation;
+ import edu.wpi.first.wpilibj.DriverStation.Alliance;
+ import edu.wpi.first.wpilibj2.command.Command;
+@@ -54,6 +53,19 @@ public class AlignToAllianceWall extends Command {
+         addRequirements(swerveDrive);
+     }
+ 
++    /**
++     * Pure angle math, no side effects -- shared with AlignWhileShooting so the two commands
++     * can never drift out of sync on how this is computed. Alliance-color only, no field
++     * position involved, so this (and therefore AlignToAllianceWall as a whole) is odometry
++     * only -- there's nothing here for vision to correct.
++     */
++    public static Rotation2d computeTargetDirection() {
++        return Rotation2d.fromRadians(
++            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
++                ? 0.0
++                : Math.PI);
++    }
++
+     @Override
+     public void execute() {
+ 
+@@ -62,24 +74,17 @@ public class AlignToAllianceWall extends Command {
+             easeOfLife.getAlignWallI(),
+             easeOfLife.getAlignWallD()
+         );
+-        double targetAngle =
+-            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+-                ? 0.0
+-                : Math.PI;
+ 
++        Rotation2d targetDirection = computeTargetDirection();
+ 
+-        NetworkTables.putTargetAngle(
+-            Units.radiansToDegrees(targetAngle)
+-        );
++        NetworkTables.putTargetAngle(targetDirection.getDegrees());
+ 
+         swerveDrive.setControl(
+             request
+                 .withDeadband(Variables.getMaxSpeed() * 0.1)
+                 .withVelocityX(forwardSupplier.getAsDouble())
+                 .withVelocityY(leftSupplier.getAsDouble())
+-                .withTargetDirection(
+-                    Rotation2d.fromRadians(targetAngle)
+-                )
++                .withTargetDirection(targetDirection)
+         );
+     }
+     @Override

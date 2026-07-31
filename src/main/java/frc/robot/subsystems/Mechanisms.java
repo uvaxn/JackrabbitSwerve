@@ -81,6 +81,15 @@ public class Mechanisms extends SubsystemBase {
         NetworkTables.putRobotState("STOPPED FIRING");
     }
 
+    /**
+     * @return true whenever a firing sequence is in progress (spinning up or actively firing),
+     * regardless of feed mode. Used to gate auto-align-while-shooting -- see RobotContainer's
+     * AlignWhileShooting binding.
+     */
+    public boolean isShooting() {
+        return shootState != ShootState.IDLE;
+    }
+
     public void requestIntake() {
         intakeState = IntakeState.DROPPING;
         intakeDrop.requestDown();

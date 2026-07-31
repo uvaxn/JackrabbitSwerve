@@ -83,12 +83,15 @@ public class NetworkTables {
     private static final DoublePublisher shiftTimeRemaining = infoTable.getDoubleTopic("EaseofLife/ShiftTimeRemaining").publish();
     private static final BooleanPublisher isHubActivePub = infoTable.getBooleanTopic("EaseofLife/IsHubActive").publish();
     private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
+    // Whether auto-align-while-shooting (AlignWhileShooting, toggled by the Y button) is on.
+    private static final BooleanPublisher alignModePub = infoTable.getBooleanTopic("AlignMode").publish();
 
     static {
         // Seed defaults so both entries show up on the dashboard immediately,
         // rather than only appearing after the robot happens to publish once.
         shooterSpeedSetpointPub.set(Variables.SHOOTER_SPEED);
         manualShooterOverridePub.set(false);
+        alignModePub.set(true); // matches EaseofLife's autoAlignEnabled default
     }
 
     // ---- Robot ----
@@ -138,4 +141,6 @@ public class NetworkTables {
     public static void putShiftTime(double time) { shiftTimeRemaining.set(time); }
     public static void putIsHubActive(boolean active) { isHubActivePub.set(active); }
     public static void putDisttoHub(double dist) { distToHubPublisher.set(dist); }
+    /** Whether auto-align-while-shooting is currently toggled on. */
+    public static void putAlignMode(boolean enabled) { alignModePub.set(enabled); }
 }

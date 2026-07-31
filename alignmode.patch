@@ -1,0 +1,620 @@
+diff --git a/src/main/java/frc/robot/RobotContainer.java b/src/main/java/frc/robot/RobotContainer.java
+index ca531e9..9b67ddd 100644
+--- a/src/main/java/frc/robot/RobotContainer.java
++++ b/src/main/java/frc/robot/RobotContainer.java
+@@ -9,8 +9,8 @@ package frc.robot;
+  * Right Trigger  -- Shoot (lifts intake and shoots)
+  * Right Bumper & Trigger -- Continously lifts intake up and down while shooting
+  * Left Bumper    -- Reset field-centric heading
+- * X Button       -- Auto-align to nearest AprilTag
+- * Y Button       -- Auto-align to alliance Wall
++ * Y Button       -- Toggle auto-align mode (on by default): while shooting, faces the HUB when
++ *                    inside our alliance zone, otherwise faces our alliance wall
+  * A Button       -- Points wheels based on joystick direction
+  * 
+  * d-pad UP       -- lift intake
+@@ -35,9 +35,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
+ import edu.wpi.first.wpilibj2.command.InstantCommand;
+ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
++import edu.wpi.first.wpilibj2.command.button.Trigger;
+ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+-import frc.robot.commands.AutoAlign.AlignToAllianceWall;
+-import frc.robot.commands.AutoAlign.AlignToHub;
++import frc.robot.commands.AutoAlign.AlignWhileShooting;
+ import frc.robot.constants.Constants;
+ import frc.robot.generated.TunerConstants;
+ import frc.robot.subsystems.CommandSwerveDrivetrain;
+@@ -162,21 +162,22 @@ public class RobotContainer {
+         // Reset field centric heading, odometry points toward alliance wall.
+         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+ 
+-        // autoalign to nearest AprilTag
+-        joystick.x().whileTrue(new AlignToHub(
+-            cameraSubsystem,
+-            easeOfLife,
+-            drivetrain,
+-            driveInputs::getX,
+-            driveInputs::getY
+-        ));
+-        // align to alliance wall is the exact same thing btw, just toward your alliance wall ^
+-        joystick.y().whileTrue(new AlignToAllianceWall(
+-            drivetrain,
+-            easeOfLife,
+-            driveInputs::getX,
+-            driveInputs::getY
+-        ));
++        // Y toggles auto-align mode on/off (on by default -- see EaseofLife.autoAlignEnabled).
++        // Published live to NetworkTables as Info/AlignMode.
++        joystick.y().onTrue(new InstantCommand(easeOfLife::toggleAutoAlign));
++
++        // While a firing sequence is spinning up or actively firing (either feed mode, see
++        // Mechanisms.isShooting()) and auto-align is enabled: face the HUB when we're in our
++        // own alliance zone, or our own alliance wall otherwise -- even from inside the
++        // opposing alliance's zone. Re-checked every cycle, see AlignWhileShooting.
++        new Trigger(() -> mechanisms.isShooting() && easeOfLife.isAutoAlignEnabled())
++            .whileTrue(new AlignWhileShooting(
++                cameraSubsystem,
++                easeOfLife,
++                drivetrain,
++                driveInputs::getX,
++                driveInputs::getY
++            ));
+         // Intake
+         joystick.leftTrigger()
+             .onTrue(new InstantCommand(mechanisms::requestIntake, mechanisms))
+diff --git a/src/main/java/frc/robot/commands/AutoAlign/AlignToAllianceWall.java b/src/main/java/frc/robot/commands/AutoAlign/AlignToAllianceWall.java
+index f5da904..1eab0bb 100644
+--- a/src/main/java/frc/robot/commands/AutoAlign/AlignToAllianceWall.java
++++ b/src/main/java/frc/robot/commands/AutoAlign/AlignToAllianceWall.java
+@@ -7,7 +7,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
+ import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
+ 
+ import edu.wpi.first.math.geometry.Rotation2d;
+-import edu.wpi.first.math.util.Units;
+ import edu.wpi.first.wpilibj.DriverStation;
+ import edu.wpi.first.wpilibj.DriverStation.Alliance;
+ import edu.wpi.first.wpilibj2.command.Command;
+@@ -54,6 +53,19 @@ public class AlignToAllianceWall extends Command {
+         addRequirements(swerveDrive);
+     }
+ 
++    /**
++     * Pure angle math, no side effects -- shared with AlignWhileShooting so the two commands
++     * can never drift out of sync on how this is computed. Alliance-color only, no field
++     * position involved, so this (and therefore AlignToAllianceWall as a whole) is odometry
++     * only -- there's nothing here for vision to correct.
++     */
++    public static Rotation2d computeTargetDirection() {
++        return Rotation2d.fromRadians(
++            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
++                ? 0.0
++                : Math.PI);
++    }
++
+     @Override
+     public void execute() {
+ 
+@@ -62,24 +74,17 @@ public class AlignToAllianceWall extends Command {
+             easeOfLife.getAlignWallI(),
+             easeOfLife.getAlignWallD()
+         );
+-        double targetAngle =
+-            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+-                ? 0.0
+-                : Math.PI;
+ 
++        Rotation2d targetDirection = computeTargetDirection();
+ 
+-        NetworkTables.putTargetAngle(
+-            Units.radiansToDegrees(targetAngle)
+-        );
++        NetworkTables.putTargetAngle(targetDirection.getDegrees());
+ 
+         swerveDrive.setControl(
+             request
+                 .withDeadband(Variables.getMaxSpeed() * 0.1)
+                 .withVelocityX(forwardSupplier.getAsDouble())
+                 .withVelocityY(leftSupplier.getAsDouble())
+-                .withTargetDirection(
+-                    Rotation2d.fromRadians(targetAngle)
+-                )
++                .withTargetDirection(targetDirection)
+         );
+     }
+     @Override
+diff --git a/src/main/java/frc/robot/commands/AutoAlign/AlignToHub.java b/src/main/java/frc/robot/commands/AutoAlign/AlignToHub.java
+index 39076e8..a36d450 100644
+--- a/src/main/java/frc/robot/commands/AutoAlign/AlignToHub.java
++++ b/src/main/java/frc/robot/commands/AutoAlign/AlignToHub.java
+@@ -1,8 +1,6 @@
+ package frc.robot.commands.AutoAlign;
+ 
+-import java.util.Optional;
+ import java.util.function.DoubleSupplier;
+-import com.ctre.phoenix6.Utils;
+ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+ import com.ctre.phoenix6.swerve.SwerveRequest;
+ import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
+@@ -56,9 +54,19 @@ public class AlignToHub extends Command {
+         addRequirements(swerveDrive);
+     }
+ 
++    /**
++     * Pure angle-to-hub math, no side effects -- shared with AlignWhileShooting so the two
++     * commands can never drift out of sync on how this is computed.
++     */
++    public static Rotation2d computeTargetDirection(Pose2d robotPose) {
++        Translation2d hub = Constants.getTeamHubTranslation();
++        Translation2d toHub = hub.minus(robotPose.getTranslation());
++        return Rotation2d.fromRadians(Math.atan2(toHub.getY(), toHub.getX()));
++    }
++
+     @Override
+     public void initialize() {
+-        cameraSubsystem.setAlignMode(true);
++        cameraSubsystem.setHubPrecisionMode(true);
+     }
+ 
+     @Override
+@@ -72,45 +80,24 @@ public class AlignToHub extends Command {
+         double velocityX = forwardSupplier.getAsDouble();
+         double velocityY = leftSupplier.getAsDouble();
+ 
+-        // No real Limelight exists under simulation, so getCameraOnlyPose() would never
+-        // return a value there and this command would be untestable on the desktop sim.
+-        // Fall back to the drivetrain's own (simulated) pose in that case; on the real
+-        // robot this reads the camera-only pose exactly as before.
+-        Optional<Pose2d> alignPose = Utils.isSimulation()
+-                ? Optional.of(swerveDrive.getState().Pose)
+-                : cameraSubsystem.getCameraOnlyPose();
+-
+-        if (alignPose.isPresent()) {
+-
+-            Pose2d robotPose = alignPose.get();
+-
+-            Translation2d hub = Constants.getTeamHubTranslation();
+-            Translation2d toHub = hub.minus(robotPose.getTranslation());
+-        Rotation2d targetDirection =
+-            Rotation2d.fromRadians(
+-                Math.atan2(toHub.getY(), toHub.getX()));
+-                
+-
+-            NetworkTables.putTargetAngle(targetDirection.getDegrees());
+-
+-            swerveDrive.setControl(
+-                    request
+-                            .withDeadband(Variables.getMaxSpeed() * 0.1)
+-                            .withVelocityX(velocityX)
+-                            .withVelocityY(velocityY)
+-                            .withTargetDirection(targetDirection));
+-                                
+-
+-        } else {
+-
+-            // No camera pose this cycle.
+-            // Continue driving while keeping the previous heading target.
+-            swerveDrive.setControl(
+-                    request
+-                            .withDeadband(Variables.getMaxSpeed() * 0.1)
+-                            .withVelocityX(velocityX)
+-                            .withVelocityY(velocityY));
+-        }
++        // The drivetrain's own pose estimate: wheel odometry, continuously corrected by vision
++        // (Limelight.getMeasurement() -> Robot.robotPeriodic() -> swerveDrive.addVisionMeasurement()),
++        // using the flat HUB_ALIGN_POS_STD_DEV_M/HUB_ALIGN_ROTATION_STD_DEV std dev while hub
++        // precision mode is on (set above in initialize()). This replaces reading
++        // cameraSubsystem.getCameraOnlyPose() directly, which also removes the old sim-only
++        // fallback branch -- getState().Pose is always populated, in sim and on the real robot
++        // alike, so there's no more "no camera pose this cycle" case to handle.
++        Pose2d robotPose = swerveDrive.getState().Pose;
++        Rotation2d targetDirection = computeTargetDirection(robotPose);
++
++        NetworkTables.putTargetAngle(targetDirection.getDegrees());
++
++        swerveDrive.setControl(
++                request
++                        .withDeadband(Variables.getMaxSpeed() * 0.1)
++                        .withVelocityX(velocityX)
++                        .withVelocityY(velocityY)
++                        .withTargetDirection(targetDirection));
+     }
+ 
+     @Override
+@@ -120,6 +107,6 @@ public class AlignToHub extends Command {
+ 
+     @Override
+     public void end(boolean interrupted) {
+-        cameraSubsystem.setAlignMode(false);
++        cameraSubsystem.setHubPrecisionMode(false);
+     }
+ }
+\ No newline at end of file
+diff --git a/src/main/java/frc/robot/commands/AutoAlign/AlignWhileShooting.java b/src/main/java/frc/robot/commands/AutoAlign/AlignWhileShooting.java
+new file mode 100644
+index 0000000..7dd88ac
+--- /dev/null
++++ b/src/main/java/frc/robot/commands/AutoAlign/AlignWhileShooting.java
+@@ -0,0 +1,128 @@
++package frc.robot.commands.AutoAlign;
++
++import java.util.function.DoubleSupplier;
++
++import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
++import com.ctre.phoenix6.swerve.SwerveRequest;
++import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
++
++import edu.wpi.first.math.geometry.Pose2d;
++import edu.wpi.first.math.geometry.Rotation2d;
++import edu.wpi.first.wpilibj2.command.Command;
++
++import frc.robot.Variables;
++import frc.robot.constants.Constants;
++import frc.robot.subsystems.CommandSwerveDrivetrain;
++import frc.robot.subsystems.EaseofLife;
++import frc.robot.util.NetworkTables;
++import frc.robot.vision.Limelight;
++
++/**
++ * Runs while a firing sequence is spinning up or actively firing, in either feed mode -- see
++ * Mechanisms.isShooting() -- and picks a target heading every cycle based on where the robot
++ * actually is:
++ * <ul>
++ *   <li>inside our own alliance zone (Constants.isInOwnAllianceZone) -&gt; face the HUB, same
++ *       math as AlignToHub, odometry fused with the flat HUB_ALIGN_* vision std devs</li>
++ *   <li>anywhere else, including standing in the opposing alliance's own zone -&gt; face our
++ *       own alliance wall instead, same math as AlignToAllianceWall, odometry only</li>
++ * </ul>
++ * Position is re-checked every execute() cycle rather than decided once at schedule time, so
++ * driving across the zone boundary mid-shot switches targets instead of committing to
++ * whichever was true the instant the trigger was first pulled. The angle math itself is not
++ * duplicated here -- both branches call the same static computeTargetDirection() helpers that
++ * AlignToHub / AlignToAllianceWall use on their own, so retuning one place retunes both.
++ * <p>
++ * Bound in RobotContainer to a Trigger that combines the right-trigger shooting state with
++ * EaseofLife.isAutoAlignEnabled() (toggled by the Y button, on by default, published to
++ * NetworkTables as Info/AlignMode).
++ */
++public class AlignWhileShooting extends Command {
++
++    private final SwerveRequest.FieldCentricFacingAngle request =
++        new SwerveRequest.FieldCentricFacingAngle()
++            .withTargetDirectionPerspective(TargetDirectionPerspectiveValue.BlueAlliance)
++            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
++
++    private final Limelight cameraSubsystem;
++    private final EaseofLife easeOfLife;
++    private final CommandSwerveDrivetrain swerveDrive;
++
++    private final DoubleSupplier forwardSupplier;
++    private final DoubleSupplier leftSupplier;
++
++    public AlignWhileShooting(
++            Limelight cameraSubsystem,
++            EaseofLife easeOfLife,
++            CommandSwerveDrivetrain swerveDrive,
++            DoubleSupplier forwardSupplier,
++            DoubleSupplier leftSupplier) {
++
++        this.cameraSubsystem = cameraSubsystem;
++        this.easeOfLife = easeOfLife;
++        this.swerveDrive = swerveDrive;
++        this.forwardSupplier = forwardSupplier;
++        this.leftSupplier = leftSupplier;
++
++        // Seed with the HUB gains; execute() picks the right ones every cycle regardless, this
++        // just avoids one cycle of stale/zeroed gains before the first execute() runs.
++        request.HeadingController.setPID(
++                Variables.AlignToHubP,
++                Variables.AlignToHubI,
++                Variables.AlignToHubD);
++
++        request.HeadingController.enableContinuousInput(
++                -Math.PI,
++                Math.PI);
++
++        addRequirements(swerveDrive);
++    }
++
++    @Override
++    public void execute() {
++
++        Pose2d robotPose = swerveDrive.getState().Pose;
++        boolean inOwnZone = Constants.isInOwnAllianceZone(robotPose.getTranslation());
++
++        // Only the HUB-facing branch wants the Limelight's flat, less-careful vision std devs
++        // (LimelightConstants.HUB_ALIGN_*) blended into the pose estimate -- wall-facing is
++        // odometry only, same as AlignToAllianceWall on its own.
++        cameraSubsystem.setHubPrecisionMode(inOwnZone);
++
++        Rotation2d targetDirection;
++        if (inOwnZone) {
++            request.HeadingController.setPID(
++                    easeOfLife.getAlignP(),
++                    easeOfLife.getAlignI(),
++                    easeOfLife.getAlignD());
++            targetDirection = AlignToHub.computeTargetDirection(robotPose);
++        } else {
++            request.HeadingController.setPID(
++                    easeOfLife.getAlignWallP(),
++                    easeOfLife.getAlignWallI(),
++                    easeOfLife.getAlignWallD());
++            targetDirection = AlignToAllianceWall.computeTargetDirection();
++        }
++
++        NetworkTables.putTargetAngle(targetDirection.getDegrees());
++
++        swerveDrive.setControl(
++                request
++                        .withDeadband(Variables.getMaxSpeed() * 0.1)
++                        .withVelocityX(forwardSupplier.getAsDouble())
++                        .withVelocityY(leftSupplier.getAsDouble())
++                        .withTargetDirection(targetDirection));
++    }
++
++    @Override
++    public boolean isFinished() {
++        return false;
++    }
++
++    @Override
++    public void end(boolean interrupted) {
++        // Safe to call unconditionally even if we ended mid wall-facing branch, where it was
++        // already false.
++        cameraSubsystem.setHubPrecisionMode(false);
++    }
++}
+diff --git a/src/main/java/frc/robot/constants/Constants.java b/src/main/java/frc/robot/constants/Constants.java
+index 7f1d36c..97caa4d 100644
+--- a/src/main/java/frc/robot/constants/Constants.java
++++ b/src/main/java/frc/robot/constants/Constants.java
+@@ -32,6 +32,38 @@ public class Constants {
+         // defaults to redhubPOS
+     }
+ 
++    // ---- Alliance zones (blue-origin field coords, verified against the 2026 REBUILT field:
++    // ~16.54m x ~8.07m overall, rulebook ALLIANCE ZONE is 158.6in/~4.03m deep -- these corners
++    // extend that depth by the TRENCH, ~47in/~1.19m, so "own zone" means "at or before our own
++    // trench", not just the bare rulebook zone). Used by AlignWhileShooting to decide whether
++    // we're close enough to face the HUB, or should just face our own alliance wall instead.
++    public static final Translation2d BLUE_ALLIANCE_ZONE_CORNER_1 = new Translation2d(0.0, 0.0);
++    public static final Translation2d BLUE_ALLIANCE_ZONE_CORNER_2 = new Translation2d(5.215, 8.104);
++    public static final Translation2d RED_ALLIANCE_ZONE_CORNER_1 = new Translation2d(11.342, 0.0);
++    public static final Translation2d RED_ALLIANCE_ZONE_CORNER_2 = new Translation2d(16.561, 8.104);
++
++    /**
++     * @param position a field position in meters, blue-origin field coordinates
++     *                  (e.g. drivetrain.getState().Pose.getTranslation())
++     * @return true if position is inside the current alliance's own alliance zone.
++     * Defaults to the red zone if alliance color isn't known yet, matching getTeamHubTranslation().
++     */
++    public static boolean isInOwnAllianceZone(Translation2d position) {
++        Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
++        boolean isBlue = alliance.isPresent() && alliance.get() == DriverStation.Alliance.Blue;
++
++        Translation2d corner1 = isBlue ? BLUE_ALLIANCE_ZONE_CORNER_1 : RED_ALLIANCE_ZONE_CORNER_1;
++        Translation2d corner2 = isBlue ? BLUE_ALLIANCE_ZONE_CORNER_2 : RED_ALLIANCE_ZONE_CORNER_2;
++
++        double minX = Math.min(corner1.getX(), corner2.getX());
++        double maxX = Math.max(corner1.getX(), corner2.getX());
++        double minY = Math.min(corner1.getY(), corner2.getY());
++        double maxY = Math.max(corner1.getY(), corner2.getY());
++
++        return position.getX() >= minX && position.getX() <= maxX
++            && position.getY() >= minY && position.getY() <= maxY;
++    }
++
+     // Motors
+     public final static int m_ShooterR   = 23;
+     public final static int m_ShooterL   = 22;
+diff --git a/src/main/java/frc/robot/constants/LimelightConstants.java b/src/main/java/frc/robot/constants/LimelightConstants.java
+index d41c92f..0ab4583 100644
+--- a/src/main/java/frc/robot/constants/LimelightConstants.java
++++ b/src/main/java/frc/robot/constants/LimelightConstants.java
+@@ -46,6 +46,11 @@ public final class LimelightConstants {
+     public static final double AGREED_TRANSLATION_EPSILON_M = 0.20;
+     public static final int DEFAULT_STABLE_UPDATE_THRESHOLD = 50; // ~1s at a 50Hz robotPeriodic()
+ 
+-    // ---- align mode: trust vision position more while a precision alignment command is running
+-    public static final double ALIGN_STD_DEV_SCALE = 1.0 / 3.0;
++    // ---- hub precision mode: while AlignToHub/AlignWhileShooting is actively aiming at the
++    // HUB, skip PoseFusion's adaptive distance/tag-count std dev model in favor of a flat,
++    // simpler ("less careful") one. Position is trusted less than the adaptive model usually
++    // grants at typical shooting range; rotation is left to the gyro entirely (same idea as
++    // UNTRUSTED_ROTATION_STD_DEV above, just spelled out separately here on purpose).
++    public static final double HUB_ALIGN_POS_STD_DEV_M = 0.2;
++    public static final double HUB_ALIGN_ROTATION_STD_DEV = 999999;
+ }
+\ No newline at end of file
+diff --git a/src/main/java/frc/robot/subsystems/EaseofLife.java b/src/main/java/frc/robot/subsystems/EaseofLife.java
+index 3742425..66e3105 100644
+--- a/src/main/java/frc/robot/subsystems/EaseofLife.java
++++ b/src/main/java/frc/robot/subsystems/EaseofLife.java
+@@ -24,6 +24,10 @@ public class EaseofLife extends SubsystemBase {
+  
+     private final Limelight cam;
+     public final ShiftManager shifts = new ShiftManager();
++
++    // Auto-align-while-shooting (AlignWhileShooting): on by default, the Y button toggles it
++    // (see RobotContainer), published live to NetworkTables as Info/AlignMode below.
++    private boolean autoAlignEnabled = true;
+     
+     NetworkTable table = NetworkTableInstance.getDefault().getTable(Constants.LL_NAME);
+     StructSubscriber<Pose2d> poseSubscriber = table.getStructTopic("EstimatedPose", Pose2d.struct).subscribe(new Pose2d());
+@@ -46,9 +50,19 @@ public class EaseofLife extends SubsystemBase {
+     @Override
+     public void periodic() {
+         NetworkTables.putIsHubActive(isHubActive());
++        NetworkTables.putAlignMode(autoAlignEnabled);
+         shifts.periodic();
+         NetworkTables.putDisttoHub(cam.getDistanceToHub());
+     }
++
++    /** Flips auto-align-while-shooting on/off. Bound to the Y button in RobotContainer. */
++    public void toggleAutoAlign() {
++        autoAlignEnabled = !autoAlignEnabled;
++    }
++
++    public boolean isAutoAlignEnabled() {
++        return autoAlignEnabled;
++    }
+     // Free spin speed used to translate a 0.0-1.0 percent into an actual velocity target.
+     // Assumes direct drive (SensorToMechanismRatio = 1.0, see configureVelocityControl below)
+     // on a Kraken X60/Falcon 500 class motor. If your actual free speed is different (check
+diff --git a/src/main/java/frc/robot/subsystems/Mechanisms.java b/src/main/java/frc/robot/subsystems/Mechanisms.java
+index 6039234..f3ef8ff 100644
+--- a/src/main/java/frc/robot/subsystems/Mechanisms.java
++++ b/src/main/java/frc/robot/subsystems/Mechanisms.java
+@@ -81,6 +81,15 @@ public class Mechanisms extends SubsystemBase {
+         NetworkTables.putRobotState("STOPPED FIRING");
+     }
+ 
++    /**
++     * @return true whenever a firing sequence is in progress (spinning up or actively firing),
++     * regardless of feed mode. Used to gate auto-align-while-shooting -- see RobotContainer's
++     * AlignWhileShooting binding.
++     */
++    public boolean isShooting() {
++        return shootState != ShootState.IDLE;
++    }
++
+     public void requestIntake() {
+         intakeState = IntakeState.DROPPING;
+         intakeDrop.requestDown();
+diff --git a/src/main/java/frc/robot/util/NetworkTables.java b/src/main/java/frc/robot/util/NetworkTables.java
+index 8a1bf4a..391c4a8 100644
+--- a/src/main/java/frc/robot/util/NetworkTables.java
++++ b/src/main/java/frc/robot/util/NetworkTables.java
+@@ -85,12 +85,15 @@ public class NetworkTables {
+     private static final DoublePublisher shiftTimeRemaining = infoTable.getDoubleTopic("EaseofLife/ShiftTimeRemaining").publish();
+     private static final BooleanPublisher isHubActivePub = infoTable.getBooleanTopic("EaseofLife/IsHubActive").publish();
+     private static final DoublePublisher distToHubPublisher = infoTable.getDoubleTopic("EaseofLife/DistanceToHub").publish();
++    // Whether auto-align-while-shooting (AlignWhileShooting, toggled by the Y button) is on.
++    private static final BooleanPublisher alignModePub = infoTable.getBooleanTopic("AlignMode").publish();
+ 
+     static {
+         // Seed defaults so both entries show up on the dashboard immediately,
+         // rather than only appearing after the robot happens to publish once.
+         shooterSpeedSetpointPub.set(Variables.SHOOTER_SPEED);
+         manualShooterOverridePub.set(false);
++        alignModePub.set(true); // matches EaseofLife's autoAlignEnabled default
+     }
+ 
+     // ---- Robot ----
+@@ -140,4 +143,6 @@ public class NetworkTables {
+     public static void putShiftTime(double time) { shiftTimeRemaining.set(time); }
+     public static void putIsHubActive(boolean active) { isHubActivePub.set(active); }
+     public static void putDisttoHub(double dist) { distToHubPublisher.set(dist); }
++    /** Whether auto-align-while-shooting is currently toggled on. */
++    public static void putAlignMode(boolean enabled) { alignModePub.set(enabled); }
+ }
+\ No newline at end of file
+diff --git a/src/main/java/frc/robot/vision/Limelight.java b/src/main/java/frc/robot/vision/Limelight.java
+index 7db31ce..fbc3324 100644
+--- a/src/main/java/frc/robot/vision/Limelight.java
++++ b/src/main/java/frc/robot/vision/Limelight.java
+@@ -1,8 +1,9 @@
+ package frc.robot.vision;
+ 
+ import static frc.robot.constants.LimelightConstants.AGREED_TRANSLATION_EPSILON_M;
+-import static frc.robot.constants.LimelightConstants.ALIGN_STD_DEV_SCALE;
+ import static frc.robot.constants.LimelightConstants.DEFAULT_STABLE_UPDATE_THRESHOLD;
++import static frc.robot.constants.LimelightConstants.HUB_ALIGN_POS_STD_DEV_M;
++import static frc.robot.constants.LimelightConstants.HUB_ALIGN_ROTATION_STD_DEV;
+ import static frc.robot.constants.LimelightConstants.MAX_ESTIMATE_AGE_SECONDS;
+ 
+ import java.util.Optional;
+@@ -26,7 +27,7 @@ import frc.robot.vision.PoseFusion.FusionResult;
+  * The Limelight subsystem. Talks to LimelightHelpers, hands the raw MT1/MT2 estimates to
+  * PoseFusion for the actual fusion/rejection math (see that file), and owns everything
+  * stateful: caching the latest accepted pose, tracking pose stability, publishing telemetry,
+- * and toggling align mode. Every tunable number lives in LimelightConstants.java.
++ * and toggling hub precision mode. Every tunable number lives in LimelightConstants.java.
+  */
+ public class Limelight extends SubsystemBase {
+ 
+@@ -43,7 +44,7 @@ public class Limelight extends SubsystemBase {
+     private double latestCameraHubDist = 0.0;
+ 
+     private int numStableUpdates = 0;
+-    private boolean alignMode = false;
++    private boolean hubPrecisionMode = false;
+ 
+     public Limelight(String name) {
+         this.name = name;
+@@ -80,13 +81,6 @@ public class Limelight extends SubsystemBase {
+         }
+         stableUpdatesPublisher.set(numStableUpdates);
+ 
+-        // align mode is subsystem state, not fusion math, so it's applied here on top of
+-        // PoseFusion's intrinsic (distance/tag-count based) std dev, not inside PoseFusion.
+-        double posStdDev = fusion.posStdDevBase;
+-        if (alignMode) {
+-            posStdDev *= ALIGN_STD_DEV_SCALE;
+-        }
+-
+         if (fusion.cameraOnlyPose.isPresent() && fusion.mt1TranslationForHubDistance.isPresent()) {
+             latestCameraOnlyPose = fusion.cameraOnlyPose;
+             latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
+@@ -94,7 +88,13 @@ public class Limelight extends SubsystemBase {
+                     .getDistance(Constants.getTeamHubTranslation());
+         }
+ 
+-        final Matrix<N3, N1> standardDeviations = VecBuilder.fill(posStdDev, posStdDev, fusion.rotationStdDevRad);
++        // hub precision mode is subsystem state, not fusion math, so it's applied here on top
++        // of PoseFusion's result rather than inside PoseFusion: while it's on, skip the
++        // intrinsic (distance/tag-count based) std dev entirely in favor of a flat, simpler
++        // number (see LimelightConstants.HUB_ALIGN_*).
++        final Matrix<N3, N1> standardDeviations = hubPrecisionMode
++                ? VecBuilder.fill(HUB_ALIGN_POS_STD_DEV_M, HUB_ALIGN_POS_STD_DEV_M, HUB_ALIGN_ROTATION_STD_DEV)
++                : VecBuilder.fill(fusion.posStdDevBase, fusion.posStdDevBase, fusion.rotationStdDevRad);
+         posePublisher.set(fusion.fusedPose);
+ 
+         latestEstimate = Optional.of(fusion.fusedPose);
+@@ -156,15 +156,22 @@ public class Limelight extends SubsystemBase {
+     }
+ 
+     /**
+-     * Trusts vision position more (tighter std devs, scaled by ALIGN_STD_DEV_SCALE) while a
+-     * precision alignment command is running. Call with true from that command's initialize()
+-     * and false from its end(), rotation trust is untouched, this only affects position.
++     * Switches position std dev to the flat HUB_ALIGN_POS_STD_DEV_M value (see
++     * LimelightConstants) instead of PoseFusion's adaptive distance/tag-count model, while a
++     * HUB-targeting alignment command is actively running. Call with true whenever a cycle is
++     * aiming at the HUB (e.g. AlignToHub.initialize(), or AlignWhileShooting while it's in its
++     * HUB-facing branch) and false otherwise (that command's end(), or AlignWhileShooting's
++     * wall-facing branch). Rotation trust is untouched, this only affects position.
++     * <p>
++     * Not to be confused with the driver-facing "AlignMode" NetworkTables toggle published by
++     * EaseofLife -- that one is "should we auto-aim at all", this is "how much do we trust
++     * vision position while we do."
+      */
+-    public void setAlignMode(boolean aligning) {
+-        this.alignMode = aligning;
++    public void setHubPrecisionMode(boolean aligning) {
++        this.hubPrecisionMode = aligning;
+     }
+ 
+-    public boolean isAlignMode() {
+-        return alignMode;
++    public boolean isHubPrecisionMode() {
++        return hubPrecisionMode;
+     }
+ }
+\ No newline at end of file
+diff --git a/src/main/java/frc/robot/vision/PoseFusion.java b/src/main/java/frc/robot/vision/PoseFusion.java
+index fc9c60c..071edda 100644
+--- a/src/main/java/frc/robot/vision/PoseFusion.java
++++ b/src/main/java/frc/robot/vision/PoseFusion.java
+@@ -124,8 +124,9 @@ public final class PoseFusion {
+ 
+     /**
+      * Everything Limelight.java needs out of one fusion cycle to update its own state and
+-     * hand a Measurement back to its caller. posStdDevBase has NOT had align mode applied,
+-     * that's subsystem state, not fusion math, Limelight.java scales it on top of this.
++     * hand a Measurement back to its caller. posStdDevBase has NOT had hub precision mode
++     * applied -- that's subsystem state, not fusion math; Limelight.java overrides it with a
++     * flat value on top of this when that mode is on (see Limelight.setHubPrecisionMode).
+      */
+     public static final class FusionResult {
+         public final Pose2d fusedPose;

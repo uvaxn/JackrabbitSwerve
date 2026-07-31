@@ -1,8 +1,9 @@
 package frc.robot.vision;
 
 import static frc.robot.constants.LimelightConstants.AGREED_TRANSLATION_EPSILON_M;
-import static frc.robot.constants.LimelightConstants.ALIGN_STD_DEV_SCALE;
 import static frc.robot.constants.LimelightConstants.DEFAULT_STABLE_UPDATE_THRESHOLD;
+import static frc.robot.constants.LimelightConstants.HUB_ALIGN_POS_STD_DEV_M;
+import static frc.robot.constants.LimelightConstants.HUB_ALIGN_ROTATION_STD_DEV;
 import static frc.robot.constants.LimelightConstants.MAX_ESTIMATE_AGE_SECONDS;
 
 import java.util.Optional;
@@ -26,7 +27,7 @@ import frc.robot.vision.PoseFusion.FusionResult;
  * The Limelight subsystem. Talks to LimelightHelpers, hands the raw MT1/MT2 estimates to
  * PoseFusion for the actual fusion/rejection math (see that file), and owns everything
  * stateful: caching the latest accepted pose, tracking pose stability, publishing telemetry,
- * and toggling align mode. Every tunable number lives in LimelightConstants.java.
+ * and toggling hub precision mode. Every tunable number lives in LimelightConstants.java.
  */
 public class Limelight extends SubsystemBase {
 
@@ -43,7 +44,7 @@ public class Limelight extends SubsystemBase {
     private double latestCameraHubDist = 0.0;
 
     private int numStableUpdates = 0;
-    private boolean alignMode = false;
+    private boolean hubPrecisionMode = false;
 
     public Limelight(String name) {
         this.name = name;
@@ -80,13 +81,6 @@ public class Limelight extends SubsystemBase {
         }
         stableUpdatesPublisher.set(numStableUpdates);
 
-        // align mode is subsystem state, not fusion math, so it's applied here on top of
-        // PoseFusion's intrinsic (distance/tag-count based) std dev, not inside PoseFusion.
-        double posStdDev = fusion.posStdDevBase;
-        if (alignMode) {
-            posStdDev *= ALIGN_STD_DEV_SCALE;
-        }
-
         if (fusion.cameraOnlyPose.isPresent() && fusion.mt1TranslationForHubDistance.isPresent()) {
             latestCameraOnlyPose = fusion.cameraOnlyPose;
             latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
@@ -94,7 +88,13 @@ public class Limelight extends SubsystemBase {
                     .getDistance(Constants.getTeamHubTranslation());
         }
 
-        final Matrix<N3, N1> standardDeviations = VecBuilder.fill(posStdDev, posStdDev, fusion.rotationStdDevRad);
+        // hub precision mode is subsystem state, not fusion math, so it's applied here on top
+        // of PoseFusion's result rather than inside PoseFusion: while it's on, skip the
+        // intrinsic (distance/tag-count based) std dev entirely in favor of a flat, simpler
+        // number (see LimelightConstants.HUB_ALIGN_*).
+        final Matrix<N3, N1> standardDeviations = hubPrecisionMode
+                ? VecBuilder.fill(HUB_ALIGN_POS_STD_DEV_M, HUB_ALIGN_POS_STD_DEV_M, HUB_ALIGN_ROTATION_STD_DEV)
+                : VecBuilder.fill(fusion.posStdDevBase, fusion.posStdDevBase, fusion.rotationStdDevRad);
         posePublisher.set(fusion.fusedPose);
 
         latestEstimate = Optional.of(fusion.fusedPose);
@@ -156,15 +156,22 @@ public class Limelight extends SubsystemBase {
     }
 
     /**
-     * Trusts vision position more (tighter std devs, scaled by ALIGN_STD_DEV_SCALE) while a
-     * precision alignment command is running. Call with true from that command's initialize()
-     * and false from its end(), rotation trust is untouched, this only affects position.
+     * Switches position std dev to the flat HUB_ALIGN_POS_STD_DEV_M value (see
+     * LimelightConstants) instead of PoseFusion's adaptive distance/tag-count model, while a
+     * HUB-targeting alignment command is actively running. Call with true whenever a cycle is
+     * aiming at the HUB (e.g. AlignToHub.initialize(), or AlignWhileShooting while it's in its
+     * HUB-facing branch) and false otherwise (that command's end(), or AlignWhileShooting's
+     * wall-facing branch). Rotation trust is untouched, this only affects position.
+     * <p>
+     * Not to be confused with the driver-facing "AlignMode" NetworkTables toggle published by
+     * EaseofLife -- that one is "should we auto-aim at all", this is "how much do we trust
+     * vision position while we do."
      */
-    public void setAlignMode(boolean aligning) {
-        this.alignMode = aligning;
+    public void setHubPrecisionMode(boolean aligning) {
+        this.hubPrecisionMode = aligning;
     }
 
-    public boolean isAlignMode() {
-        return alignMode;
+    public boolean isHubPrecisionMode() {
+        return hubPrecisionMode;
     }
 }

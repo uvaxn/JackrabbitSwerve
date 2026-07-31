@@ -124,8 +124,9 @@ public final class PoseFusion {
 
     /**
      * Everything Limelight.java needs out of one fusion cycle to update its own state and
-     * hand a Measurement back to its caller. posStdDevBase has NOT had align mode applied,
-     * that's subsystem state, not fusion math, Limelight.java scales it on top of this.
+     * hand a Measurement back to its caller. posStdDevBase has NOT had hub precision mode
+     * applied -- that's subsystem state, not fusion math; Limelight.java overrides it with a
+     * flat value on top of this when that mode is on (see Limelight.setHubPrecisionMode).
      */
     public static final class FusionResult {
         public final Pose2d fusedPose;
