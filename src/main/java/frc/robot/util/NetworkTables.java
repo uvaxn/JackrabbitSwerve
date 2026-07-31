@@ -14,8 +14,6 @@ public class NetworkTables {
     private static final NetworkTable rbtTable = ntInst.getTable("Robot");
     private static final NetworkTable infoTable = ntInst.getTable("Info");
 
-    // Per-mechanism subtables under "Robot". Each mechanism owns its own NT
-    // branch instead of everything being flattened under "EaseofLife".
     private static final NetworkTable shooterTable   = rbtTable.getSubTable("Shooter");
     private static final NetworkTable feedTable      = rbtTable.getSubTable("Feed");
     private static final NetworkTable intakeMotorTable = rbtTable.getSubTable("Intake");
@@ -48,7 +46,7 @@ public class NetworkTables {
     private static final DoubleSubscriber alignWallDSub = alignWallTable.getDoubleTopic("D").subscribe(Variables.AlignToAllianceWallD);
 
     // ---- Shooter ----
-    // Telemetry only — written unconditionally every periodic() loop, so nothing
+    // Telemetry only written unconditionally every periodic() loop, so nothing
     // should ever read these back as inputs (that's what the setpoint sub below is for).
     private static final DoublePublisher shooterVelocitySetpoint = shooterTable.getDoubleTopic("VelocitySetpointRPS").publish();
     // shooterR and shooterL are separate physical motors driven at negated targets
