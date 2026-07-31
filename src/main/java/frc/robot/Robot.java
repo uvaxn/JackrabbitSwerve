@@ -43,6 +43,7 @@ public class Robot extends TimedRobot {
     }
     @Override
     public void autonomousInit() {
+        robotContainer.cameraSubsystem.setHubPrecisionMode(false);
         m_autonomousCommand = robotContainer.getAutonomousCommand();
         SignalLogger.writeString("Robot/SelectedAuto",
             m_autonomousCommand != null ? m_autonomousCommand.getName() : "None");
@@ -53,6 +54,7 @@ public class Robot extends TimedRobot {
     }
     @Override
     public void teleopInit() {
+        robotContainer.cameraSubsystem.setHubPrecisionMode(true);
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
