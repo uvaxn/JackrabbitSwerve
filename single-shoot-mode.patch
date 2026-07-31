@@ -1,0 +1,131 @@
+diff --git a/src/main/java/frc/robot/RobotContainer.java b/src/main/java/frc/robot/RobotContainer.java
+index 9b67ddd..0cfd7e0 100644
+--- a/src/main/java/frc/robot/RobotContainer.java
++++ b/src/main/java/frc/robot/RobotContainer.java
+@@ -6,8 +6,7 @@ package frc.robot;
+  * Left Joystick  -- Moves robot
+  * Right Joystick -- Rotates robot
+  * Left Trigger   -- Intake (drops down and intakes)
+- * Right Trigger  -- Shoot (lifts intake and shoots)
+- * Right Bumper & Trigger -- Continously lifts intake up and down while shooting
++ * Right Trigger  -- Shoot (spins up and fires; regular/full-hopper distinction removed)
+  * Left Bumper    -- Reset field-centric heading
+  * Y Button       -- Toggle auto-align mode (on by default): while shooting, faces the HUB when
+  *                    inside our alliance zone, otherwise faces our alliance wall
+@@ -120,7 +119,7 @@ public class RobotContainer {
+     );
+     // Commands
+     public RobotContainer() {
+-        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.FULL_HOPPER)));
++        NamedCommands.registerCommand("shoot",      new InstantCommand(mechanisms::startShooting));
+         NamedCommands.registerCommand("stop shoot", new InstantCommand(mechanisms::stopShooting));
+         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
+         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
+@@ -183,17 +182,12 @@ public class RobotContainer {
+             .onTrue(new InstantCommand(mechanisms::requestIntake, mechanisms))
+             .onFalse(new InstantCommand(mechanisms::stopIntake, mechanisms));
+ 
+-        // Shooter spins for as long as right trigger is held, full stop only when it's released.
+-        // Feed mode (FH vs Regular) is decided by the bumper at the moment the trigger is first
+-        // pressed, in the same startShooting() call -- see Mechanisms.java for why that used to
+-        // be two separate calls racing on the same button edge.
++        // Shooter spins for as long as right trigger is held, stops on release. Regular-mode
++        // feed (the right-bumper distinction) has been removed -- there's only one shooting
++        // behavior now, so this is just a plain onTrue/onFalse pair, no compound triggers.
+         joystick.rightTrigger()
++            .onTrue(new InstantCommand(mechanisms::startShooting, mechanisms))
+             .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
+-        joystick.rightTrigger().and(joystick.rightBumper())
+-            .onTrue(new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.FULL_HOPPER), mechanisms));
+-        joystick.rightTrigger().and(joystick.rightBumper().negate())
+-            .onTrue(new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.REGULAR), mechanisms));
+-            
+         joystick.povDown()
+             .onTrue(new InstantCommand(intakeDrop::requestDown, intakeDrop));
+         joystick.povUp()
+diff --git a/src/main/java/frc/robot/subsystems/Mechanisms.java b/src/main/java/frc/robot/subsystems/Mechanisms.java
+index f3ef8ff..d4878e4 100644
+--- a/src/main/java/frc/robot/subsystems/Mechanisms.java
++++ b/src/main/java/frc/robot/subsystems/Mechanisms.java
+@@ -19,16 +19,13 @@ import frc.robot.util.NetworkTables;
+  * driver hold left trigger (intake) and right trigger (shoot) at once, so this does not force
+  * them to be mutually exclusive. What this refactor does NOT decide for you is that both
+  * machines can still try to command IntakeDropSubsystem's arm at the same time -- ground-intake
+- * wants it down, a full-hopper fire wants it bouncing. That conflict exists in the old code too;
+- * it's a game-strategy call, not something an enum can resolve on its own. If you want one side
+- * to win, the cheapest place to arbitrate is right here (e.g. requestIntake() could refuse to
+- * drop the arm while shootState == FIRING and feedMode == FULL_HOPPER).
++ * wants it down, a firing sequence wants it bouncing (see FeedSubsystem.start()). That conflict
++ * exists in the old code too; it's a game-strategy call, not something an enum can resolve on
++ * its own. If you want one side to win, the cheapest place to arbitrate is right here (e.g.
++ * requestIntake() could refuse to drop the arm while shootState == FIRING).
+  */
+ public class Mechanisms extends SubsystemBase {
+ 
+-    /** Which feed behavior a firing sequence uses. Chosen once, when shooting starts. */
+-    public enum FeedMode { REGULAR, FULL_HOPPER }
+-
+     private enum ShootState { IDLE, SPINNING_UP, FIRING }
+     private enum IntakeState { IDLE, DROPPING, COLLECTING }
+ 
+@@ -38,7 +35,6 @@ public class Mechanisms extends SubsystemBase {
+     private final FeedSubsystem feeds;
+ 
+     private ShootState shootState = ShootState.IDLE;
+-    private FeedMode feedMode = FeedMode.REGULAR;
+     private IntakeState intakeState = IntakeState.IDLE;
+ 
+     public Mechanisms(ShooterSubsystem shooterSubsystem, IntakeSubsystem intakeSubsystem,
+@@ -52,18 +48,17 @@ public class Mechanisms extends SubsystemBase {
+     // ==================== requests -- call these from RobotContainer bindings ====================
+ 
+     /**
+-     * Starts (or keeps running) the shooter in the given mode. Safe to call on every trigger
+-     * press; it only actually (re)commands the motors on the IDLE -> SPINNING_UP edge, so
+-     * tapping the same mode twice in a row doesn't reset a shot that's already in progress.
++     * Starts (or keeps running) the shooter. Safe to call on every trigger press; it only
++     * actually (re)commands the motors on the IDLE -> SPINNING_UP edge, so tapping the trigger
++     * again while already shooting doesn't reset a shot that's already in progress.
+      */
+-    public void startShooting(FeedMode mode) {
++    public void startShooting() {
+         if (shootState == ShootState.IDLE) {
+             shooters.start();
+         }
+-        feedMode = mode;
+         shootState = ShootState.SPINNING_UP;
+         Variables.requestSpeedLimit("shooters", 0.3);
+-        NetworkTables.putRobotState("SPINNING UP (" + (mode == FeedMode.FULL_HOPPER ? "FH" : "R") + ")");
++        NetworkTables.putRobotState("SPINNING UP");
+     }
+ 
+     /**
+@@ -82,9 +77,8 @@ public class Mechanisms extends SubsystemBase {
+     }
+ 
+     /**
+-     * @return true whenever a firing sequence is in progress (spinning up or actively firing),
+-     * regardless of feed mode. Used to gate auto-align-while-shooting -- see RobotContainer's
+-     * AlignWhileShooting binding.
++     * @return true whenever a firing sequence is in progress (spinning up or actively firing).
++     * Used to gate auto-align-while-shooting -- see RobotContainer's AlignWhileShooting binding.
+      */
+     public boolean isShooting() {
+         return shootState != ShootState.IDLE;
+@@ -119,14 +113,9 @@ public class Mechanisms extends SubsystemBase {
+         switch (shootState) {
+             case SPINNING_UP -> {
+                 if (shooters.atSpeed()) {
+-                    if (feedMode == FeedMode.FULL_HOPPER) {
+-                        feeds.start();
+-                    } else {
+-                        feeds.rollersStart();
+-                        intakeDrop.requestUp();
+-                    }
++                    feeds.start();
+                     shootState = ShootState.FIRING;
+-                    NetworkTables.putRobotState((feedMode == FeedMode.FULL_HOPPER ? "FH" : "R") + " SHOOTER READY");
++                    NetworkTables.putRobotState("SHOOTER READY");
+                 }
+             }
+             case IDLE, FIRING -> {}

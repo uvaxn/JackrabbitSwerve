@@ -8,9 +8,11 @@ import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Variables;
 import frc.robot.constants.Constants;
+import frc.robot.constants.LimelightConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
@@ -28,6 +30,11 @@ public class AlignToHub extends Command {
 
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
+
+    // Autonomous-alignment reseed: latches true the one time cameraSubsystem.checkAutonomousReseed
+    // actually fires for THIS command instance, so it can only ever happen once per alignment
+    // command (see initialize(), execute(), and Limelight.checkAutonomousReseed's doc).
+    private boolean hasReseeded = false;
 
     public AlignToHub(
             Limelight cameraSubsystem,
@@ -67,6 +74,7 @@ public class AlignToHub extends Command {
     @Override
     public void initialize() {
         cameraSubsystem.setHubPrecisionMode(true);
+        hasReseeded = false;
     }
 
     @Override
@@ -82,13 +90,33 @@ public class AlignToHub extends Command {
 
         // The drivetrain's own pose estimate: wheel odometry, continuously corrected by vision
         // (Limelight.getMeasurement() -> Robot.robotPeriodic() -> swerveDrive.addVisionMeasurement()),
-        // using the flat HUB_ALIGN_POS_STD_DEV_M/HUB_ALIGN_ROTATION_STD_DEV std dev while hub
-        // precision mode is on (set above in initialize()). This replaces reading
+        // using the flat HUB_ALIGN_POS_STD_DEV_M std dev (rotation is always
+        // LimelightConstants.VISION_ROTATION_STD_DEV, regardless of mode) while hub precision
+        // mode is on (set above in initialize()). This replaces reading
         // cameraSubsystem.getCameraOnlyPose() directly, which also removes the old sim-only
         // fallback branch -- getState().Pose is always populated, in sim and on the real robot
         // alike, so there's no more "no camera pose this cycle" case to handle.
         Pose2d robotPose = swerveDrive.getState().Pose;
         Rotation2d targetDirection = computeTargetDirection(robotPose);
+
+        // Autonomous alignment reseed: once we're both close to on-target and the vision pose
+        // is stable, hard-reset odometry to the vision estimate -- once, ever, per command
+        // instance (hasReseeded). Deliberately does not run in teleop: a sudden pose snap
+        // mid-drive isn't something a driver should have to account for, this is specifically
+        // an autonomous-routine confidence boost. See Limelight.checkAutonomousReseed's doc
+        // for exactly what "reseed" means here (a resetPose(), not a soft vision nudge).
+        if (DriverStation.isAutonomousEnabled() && !hasReseeded) {
+            double headingErrorDegrees = Math.abs(
+                    targetDirection.minus(robotPose.getRotation()).getDegrees());
+
+            cameraSubsystem
+                    .checkAutonomousReseed(
+                            headingErrorDegrees, hasReseeded, LimelightConstants.TRUST_PERCENT_AUTONOMOUS)
+                    .ifPresent(reseedPose -> {
+                        swerveDrive.resetPose(reseedPose);
+                        hasReseeded = true;
+                    });
+        }
 
         NetworkTables.putTargetAngle(targetDirection.getDegrees());
 

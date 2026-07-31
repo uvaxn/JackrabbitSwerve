@@ -6,8 +6,7 @@ package frc.robot;
  * Left Joystick  -- Moves robot
  * Right Joystick -- Rotates robot
  * Left Trigger   -- Intake (drops down and intakes)
- * Right Trigger  -- Shoot (lifts intake and shoots)
- * Right Bumper & Trigger -- Continously lifts intake up and down while shooting
+ * Right Trigger  -- Shoot (spins up and fires; regular/full-hopper distinction removed)
  * Left Bumper    -- Reset field-centric heading
  * Y Button       -- Toggle auto-align mode (on by default): while shooting, faces the HUB when
  *                    inside our alliance zone, otherwise faces our alliance wall
@@ -120,7 +119,7 @@ public class RobotContainer {
     );
     // Commands
     public RobotContainer() {
-        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.FULL_HOPPER)));
+        NamedCommands.registerCommand("shoot",      new InstantCommand(mechanisms::startShooting));
         NamedCommands.registerCommand("stop shoot", new InstantCommand(mechanisms::stopShooting));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
@@ -183,17 +182,12 @@ public class RobotContainer {
             .onTrue(new InstantCommand(mechanisms::requestIntake, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopIntake, mechanisms));
 
-        // Shooter spins for as long as right trigger is held, full stop only when it's released.
-        // Feed mode (FH vs Regular) is decided by the bumper at the moment the trigger is first
-        // pressed, in the same startShooting() call -- see Mechanisms.java for why that used to
-        // be two separate calls racing on the same button edge.
+        // Shooter spins for as long as right trigger is held, stops on release. Regular-mode
+        // feed (the right-bumper distinction) has been removed -- there's only one shooting
+        // behavior now, so this is just a plain onTrue/onFalse pair, no compound triggers.
         joystick.rightTrigger()
+            .onTrue(new InstantCommand(mechanisms::startShooting, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
-        joystick.rightTrigger().and(joystick.rightBumper())
-            .onTrue(new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.FULL_HOPPER), mechanisms));
-        joystick.rightTrigger().and(joystick.rightBumper().negate())
-            .onTrue(new InstantCommand(() -> mechanisms.startShooting(Mechanisms.FeedMode.REGULAR), mechanisms));
-            
         joystick.povDown()
             .onTrue(new InstantCommand(intakeDrop::requestDown, intakeDrop));
         joystick.povUp()

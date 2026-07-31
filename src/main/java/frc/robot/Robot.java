@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.constants.Constants;
+import frc.robot.constants.LimelightConstants;
 import frc.robot.vision.LimelightHelpers;
 import com.ctre.phoenix6.SignalLogger;
 public class Robot extends TimedRobot {
@@ -17,6 +18,7 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         robotContainer = new RobotContainer();
+        robotContainer.cameraSubsystem.setVisionTrustPercent(LimelightConstants.TRUST_PERCENT_NORMAL);
     }
     @Override
     public void robotPeriodic() {
@@ -43,7 +45,7 @@ public class Robot extends TimedRobot {
     }
     @Override
     public void autonomousInit() {
-        robotContainer.cameraSubsystem.setHubPrecisionMode(false);
+        robotContainer.cameraSubsystem.setVisionTrustPercent(LimelightConstants.TRUST_PERCENT_AUTONOMOUS);
         m_autonomousCommand = robotContainer.getAutonomousCommand();
         SignalLogger.writeString("Robot/SelectedAuto",
             m_autonomousCommand != null ? m_autonomousCommand.getName() : "None");
@@ -54,7 +56,7 @@ public class Robot extends TimedRobot {
     }
     @Override
     public void teleopInit() {
-        robotContainer.cameraSubsystem.setHubPrecisionMode(true);
+        robotContainer.cameraSubsystem.setVisionTrustPercent(LimelightConstants.TRUST_PERCENT_TELEOP);
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
@@ -62,6 +64,7 @@ public class Robot extends TimedRobot {
         LimelightHelpers.SetIMUMode(LL_NAME, 4); // use the ll4 imu, and swerves gyro.
     }
     @Override public void disabledInit() {
+        robotContainer.cameraSubsystem.setVisionTrustPercent(LimelightConstants.TRUST_PERCENT_NORMAL);
         LimelightHelpers.SetIMUMode(LL_NAME, 1); // re-seed 
     }
     @Override public void disabledPeriodic() {}
