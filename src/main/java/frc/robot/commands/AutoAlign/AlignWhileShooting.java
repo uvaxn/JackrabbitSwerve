@@ -8,10 +8,12 @@ import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import frc.robot.Variables;
 import frc.robot.constants.Constants;
+import frc.robot.constants.LimelightConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
@@ -33,9 +35,22 @@ import frc.robot.vision.Limelight;
  * duplicated here -- both branches call the same static computeTargetDirection() helpers that
  * AlignToHub / AlignToAllianceWall use on their own, so retuning one place retunes both.
  * <p>
+ * While HUB-facing during autonomous, this also runs the once-per-shot reseed check (see
+ * Limelight.checkAutonomousReseed) -- but note the binding below is teleop-gated (see
+ * RobotContainer), so today this only actually happens if something explicitly schedules this
+ * command during auto. A plain Trigger can't safely do that itself: a PathPlanner auto's
+ * SequentialCommandGroup holds drivetrain as a requirement for its entire scheduled lifetime
+ * (every sub-command's requirements, unioned, not just whichever step is currently active), so
+ * an externally-triggered command racing it for drivetrain would cancel the whole auto, not
+ * hand off cleanly. To use this during auto, compose it INSIDE the auto's own command tree
+ * instead -- e.g. register this as its own NamedCommand (translation suppliers as () -> 0.0,
+ * driving is PathPlanner's job during auto) and wrap the existing shoot/wait/stop-shoot steps
+ * in a "deadline" group racing against it, so its requirement is part of the same group from
+ * the start rather than an external claim on drivetrain.
+ * <p>
  * Bound in RobotContainer to a Trigger that combines the right-trigger shooting state with
  * EaseofLife.isAutoAlignEnabled() (toggled by the Y button, on by default, published to
- * NetworkTables as Info/AlignMode).
+ * NetworkTables as Info/AlignMode) and DriverStation.isTeleopEnabled() (see above).
  */
 public class AlignWhileShooting extends Command {
 
@@ -50,6 +65,12 @@ public class AlignWhileShooting extends Command {
 
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
+
+    // Autonomous-alignment reseed: latches true the one time cameraSubsystem.checkAutonomousReseed
+    // actually fires for THIS run of the command, so it can only ever happen once per shot (see
+    // initialize(), execute(), and Limelight.checkAutonomousReseed's doc). Only meaningful in the
+    // HUB-facing branch below -- reseeding while facing the wall isn't a thing.
+    private boolean hasReseeded = false;
 
     public AlignWhileShooting(
             Limelight cameraSubsystem,
@@ -79,6 +100,11 @@ public class AlignWhileShooting extends Command {
     }
 
     @Override
+    public void initialize() {
+        hasReseeded = false;
+    }
+
+    @Override
     public void execute() {
 
         Pose2d robotPose = swerveDrive.getState().Pose;
@@ -96,6 +122,24 @@ public class AlignWhileShooting extends Command {
                     easeOfLife.getAlignI(),
                     easeOfLife.getAlignD());
             targetDirection = AlignToHub.computeTargetDirection(robotPose);
+
+            // Autonomous alignment reseed -- same rules as AlignToHub: autonomous only (never
+            // fires in teleop, no surprise pose snaps mid-drive), once per run of this command,
+            // once we're both close to on-target and the vision pose is stable. This is the
+            // path that actually matters for real autos: AlignToHub itself isn't bound to
+            // anything, this command is what runs whenever "shoot" fires, in auto or teleop.
+            if (DriverStation.isAutonomousEnabled() && !hasReseeded) {
+                double headingErrorDegrees = Math.abs(
+                        targetDirection.minus(robotPose.getRotation()).getDegrees());
+
+                cameraSubsystem
+                        .checkAutonomousReseed(
+                                headingErrorDegrees, hasReseeded, LimelightConstants.TRUST_PERCENT_AUTONOMOUS)
+                        .ifPresent(reseedPose -> {
+                            swerveDrive.resetPose(reseedPose);
+                            hasReseeded = true;
+                        });
+            }
         } else {
             request.HeadingController.setPID(
                     easeOfLife.getAlignWallP(),

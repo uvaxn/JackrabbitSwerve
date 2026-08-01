@@ -1,21 +1,5 @@
 package frc.robot;
 
-/*
- * CONTROLS 
- * 
- * Left Joystick  -- Moves robot
- * Right Joystick -- Rotates robot
- * Left Trigger   -- Intake (drops down and intakes)
- * Right Trigger  -- Shoot (spins up and fires; regular/full-hopper distinction removed)
- * Left Bumper    -- Reset field-centric heading
- * Y Button       -- Toggle auto-align mode (on by default): while shooting, faces the HUB when
- *                    inside our alliance zone, otherwise faces our alliance wall
- * A Button       -- Points wheels based on joystick direction
- * 
- * d-pad UP       -- lift intake
- * d-pad DOWN     -- drop intake
- */
-
 import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.MathUtil;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -26,6 +10,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -169,7 +154,20 @@ public class RobotContainer {
         // Mechanisms.isShooting()) and auto-align is enabled: face the HUB when we're in our
         // own alliance zone, or our own alliance wall otherwise -- even from inside the
         // opposing alliance's zone. Re-checked every cycle, see AlignWhileShooting.
-        new Trigger(() -> mechanisms.isShooting() && easeOfLife.isAutoAlignEnabled())
+        //
+        // Teleop-gated on purpose: this Trigger schedules AlignWhileShooting independently of
+        // whatever's currently running, which requires drivetrain. A PathPlanner auto's whole
+        // SequentialCommandGroup holds drivetrain as a requirement for its ENTIRE scheduled
+        // lifetime (the union of every sub-command's requirements, not just whichever step is
+        // currently active) -- so if this fired during autonomous, the moment "shoot" made
+        // isShooting() true, this would forcibly cancel the ENTIRE auto, not just hand off
+        // cleanly, because the scheduler sees two competing claims on drivetrain. See the
+        // "shootWithAlign"-style NamedCommand note in AlignWhileShooting's class doc for how
+        // to get this same behavior safely during auto (composed inside the auto's own command
+        // tree instead of racing it from outside).
+        new Trigger(() -> DriverStation.isTeleopEnabled()
+                && mechanisms.isShooting()
+                && easeOfLife.isAutoAlignEnabled())
             .whileTrue(new AlignWhileShooting(
                 cameraSubsystem,
                 easeOfLife,

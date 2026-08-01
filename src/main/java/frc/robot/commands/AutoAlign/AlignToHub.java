@@ -31,7 +31,7 @@ public class AlignToHub extends Command {
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
 
-    // Autonomous-alignment reseed: latches true the one time cameraSubsystem.checkAutonomousReseed
+    // latches true the one time cameraSubsystem.checkAutonomousReseed
     // actually fires for THIS command instance, so it can only ever happen once per alignment
     // command (see initialize(), execute(), and Limelight.checkAutonomousReseed's doc).
     private boolean hasReseeded = false;
@@ -60,11 +60,6 @@ public class AlignToHub extends Command {
 
         addRequirements(swerveDrive);
     }
-
-    /**
-     * Pure angle-to-hub math, no side effects -- shared with AlignWhileShooting so the two
-     * commands can never drift out of sync on how this is computed.
-     */
     public static Rotation2d computeTargetDirection(Pose2d robotPose) {
         Translation2d hub = Constants.getTeamHubTranslation();
         Translation2d toHub = hub.minus(robotPose.getTranslation());

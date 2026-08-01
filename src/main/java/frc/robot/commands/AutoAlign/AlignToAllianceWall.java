@@ -78,7 +78,7 @@ public class AlignToAllianceWall extends Command {
         Rotation2d targetDirection = computeTargetDirection();
 
         NetworkTables.putTargetAngle(targetDirection.getDegrees());
-
+  
         swerveDrive.setControl(
             request
                 .withDeadband(Variables.getMaxSpeed() * 0.1)
