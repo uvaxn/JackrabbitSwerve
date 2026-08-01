@@ -57,7 +57,7 @@ public class Mechanisms extends SubsystemBase {
             shooters.start();
         }
         shootState = ShootState.SPINNING_UP;
-        Variables.requestSpeedLimit("shooters", 0.3);
+        Variables.requestSpeedLimit("shooters", 0.2);
         NetworkTables.putRobotState("SPINNING UP");
     }
 
