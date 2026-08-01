@@ -181,7 +181,7 @@ public class IntakeDropSubsystem extends SubsystemBase {
     }
 
     /**
-     * Converts our 0 (up) - 45 (down) degree convention into the rotation count the TalonFX
+     * Converts our 0 (up) 45 (down) degree convention into the rotation count the TalonFX
      * needs. Feedback.SensorToMechanismRatio already handles the gearing, this only handles
      * the horizontal offset that Arm_Cosine needs, see note 2 in the class javadoc.
      */
@@ -191,7 +191,7 @@ public class IntakeDropSubsystem extends SubsystemBase {
     }
 
     /** Inverse of userDegreesToMechanismRotations, for turning a live measured position back
-     *  into our 0 (up) - 45 (down) degree convention for telemetry. */
+     *  into our 0 (up) 45 (down) degree convention for telemetry. */
     private static double mechanismRotationsToUserDegrees(double mechanismRotations) {
         return UP_ANGLE_ABOVE_HORIZONTAL_DEGREES - (mechanismRotations * 360.0);
     }
