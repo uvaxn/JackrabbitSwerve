@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
+import frc.robot.constants.MotorGains;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
 import frc.robot.util.ShooterCalculation;
@@ -34,12 +35,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private void configureShooter(TalonFX right, TalonFX left) {
         TalonFXConfiguration sharedConfig = new TalonFXConfiguration();
-        sharedConfig.Slot0.kS = 0.5;
-        sharedConfig.Slot0.kV = 0.115;
-        sharedConfig.Slot0.kA = 0.01;
-        sharedConfig.Slot0.kP = 0.1;
-        sharedConfig.Slot0.kI = 0.0;
-        sharedConfig.Slot0.kD = 0.0;
+        sharedConfig.Slot0 = MotorGains.SHOOTER.slot0();
 
         sharedConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
 

@@ -44,38 +44,18 @@
       "linkedName": "2 (C) L End"
     }
   ],
-  "rotationTargets": [],
-  "constraintZones": [
+  "rotationTargets": [
     {
-      "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.9440559440559434,
-      "maxWaypointRelativePos": 2,
-      "constraints": {
-        "maxVelocity": 0.7,
-        "maxAcceleration": 2.0,
-        "maxAngularVelocity": 540.0,
-        "maxAngularAcceleration": 720.0,
-        "nominalVoltage": 12.0,
-        "unlimited": false
-      }
+      "waypointRelativePos": 0.9763779527559047,
+      "rotationDegrees": 63.96127004456166
     }
   ],
+  "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "requestDown",
-      "waypointRelativePos": 0.29370629370629264,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "requestDown"
-        }
-      }
-    },
-    {
       "name": "intake",
-      "waypointRelativePos": 0.9580419580419577,
+      "waypointRelativePos": 0.0,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",

@@ -3,6 +3,7 @@ package frc.robot.subsystems.robot;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.EaseofLife;
+import frc.robot.constants.MotorGains;
 import frc.robot.util.NetworkTables;
 
 /**
@@ -21,7 +22,7 @@ public class IntakeSubsystem extends SubsystemBase {
     public IntakeSubsystem(TalonFX intakeMotor, EaseofLife EaseOfLife) {
         this.intakeMotor = intakeMotor;
         this.MotorMode = EaseOfLife;
-        MotorMode.configureVelocityControl(intakeMotor);
+        MotorMode.configureVelocityControl(intakeMotor, MotorGains.INTAKE_ROLLERS);
     }
 
     public void start() {

@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
+import frc.robot.constants.MotorGains;
 import frc.robot.controls.ShiftManager;
 import frc.robot.util.NetworkTables;
 import frc.robot.vision.Limelight;
@@ -105,20 +106,12 @@ public class EaseofLife extends SubsystemBase {
     }
 
     /**
-     * Applies the same PIDSVA velocity config pattern the shooters use (see
-     * ShooterSubsystem.configureShooter) to a direct drive TalonFX so it can be driven with
-     * setSpeed() above. These are the shooter's tuned gains reused as a starting point, a
-     * roller has different inertia and friction than a flywheel, retune kS/kV/kA/kP on the
-     * actual mechanism rather than trusting these blindly.
+     * Applies the given PIDSV gains to a direct drive TalonFX so it can be driven with
+     * setSpeed() above. See MotorGains for where the gains come from.
      */
-    public void configureVelocityControl(TalonFX motor) {
+    public void configureVelocityControl(TalonFX motor, MotorGains.PIDSV gains) {
         TalonFXConfiguration config = new TalonFXConfiguration();
-        config.Slot0.kS = 0.5;
-        config.Slot0.kV = 0.11;
-        config.Slot0.kA = 0.01;
-        config.Slot0.kP = 0.1;
-        config.Slot0.kI = 0.0;
-        config.Slot0.kD = 0.0;
+        config.Slot0 = gains.slot0();
 
         config.Feedback.SensorToMechanismRatio = 1.0; // direct drive
 

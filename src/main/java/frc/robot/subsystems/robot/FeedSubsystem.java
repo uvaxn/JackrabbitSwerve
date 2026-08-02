@@ -4,6 +4,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.Variables;
+import frc.robot.constants.MotorGains;
 import frc.robot.util.NetworkTables;
 
 public class FeedSubsystem extends SubsystemBase {
@@ -18,8 +19,8 @@ public class FeedSubsystem extends SubsystemBase {
         this.easeOfLife = easeOfLife;
         this.lowerFeed = lowerFeed;
         this.upperFeed = upperFeed;
-        easeOfLife.configureVelocityControl(lowerFeed);
-        easeOfLife.configureVelocityControl(upperFeed);
+        easeOfLife.configureVelocityControl(lowerFeed, MotorGains.LOWER_FEED);
+        easeOfLife.configureVelocityControl(upperFeed, MotorGains.UPPER_FEED);
     }
 
     public void start() {
