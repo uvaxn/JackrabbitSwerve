@@ -19,15 +19,16 @@ public final class LimelightConstants {
     public static final double FIELD_WIDTH_M = FIELD.getFieldWidth();
 
     // ---- rejection tunables ----
-    public static final double MAX_SINGLE_TAG_AMBIGUITY = 0.32;
-    public static final double MAX_ANGULAR_VEL_DEG_PER_SEC = 540.0;
-    public static final double MAX_ACCEPT_DIST_M = 5.0;
+    public static final double MAX_SINGLE_TAG_AMBIGUITY = 0.5;     
+    public static final double MAX_ANGULAR_VEL_DEG_PER_SEC = 720.0; 
+    public static final double MAX_ACCEPT_DIST_M = 6.5;             
 
-    // ---- position (x/y) stddev model, scaled by MT2 distance/tag count ----
+    // Lower distance penalty and a looser ceiling
+    // instead of being clamped down hard or excluded from swinging the pose estimator.
     public static final double POS_STD_DEV_FLOOR = 0.1;
-    public static final double POS_STD_DEV_DIST_COEFF = 0.08;
+    public static final double POS_STD_DEV_DIST_COEFF = 0.05;      // was 0.08
     public static final double MULTI_TAG_STD_DEV_SCALE = 0.5;
-    public static final double MAX_ACCEPTED_POS_STD_DEV = 3.0;
+    public static final double MAX_ACCEPTED_POS_STD_DEV = 4.5;     // was 3.0
 
     // ---- rotation stddev for the MT1-sourced drift correction ----
     // MT2's own rotation just echoes the gyro heading it was fed, it is NOT an independent
@@ -38,13 +39,12 @@ public final class LimelightConstants {
     public static final double UNTRUSTED_ROTATION_STD_DEV = 9999999;
 
     // ---- staleness: how long a fused pose stays valid with nothing refreshing it ----
-    public static final double MAX_ESTIMATE_AGE_SECONDS = 0.25;
+    public static final double MAX_ESTIMATE_AGE_SECONDS = 0.4;     // was 0.25
 
     // ---- pose stability: has vision agreed with where we already thought we were for a
     // while?
-    // (e.g. don't start a scoring sequence off a vision pose that only just showed up).
-    public static final double AGREED_TRANSLATION_EPSILON_M = 0.20;
-    public static final int DEFAULT_STABLE_UPDATE_THRESHOLD = 50; // ~1s at a 50Hz robotPeriodic()
+    public static final double AGREED_TRANSLATION_EPSILON_M = 0.35; // was 0.20
+    public static final int DEFAULT_STABLE_UPDATE_THRESHOLD = 25;   
 
     // ---- hub precision mode: while AlignToHub/AlignWhileShooting is actively aiming at the
     // HUB, skip the trust-percentage system below entirely in favor of one flat, simpler
@@ -85,5 +85,5 @@ public final class LimelightConstants {
 
     // ---- autonomous alignment reseed: how close to the target heading counts as "aligned
     // enough to trust a hard pose reset" (see Limelight.checkAutonomousReseed) ----
-    public static final double AUTONOMOUS_RESEED_HEADING_TOLERANCE_DEG = 2.0;
+    public static final double AUTONOMOUS_RESEED_HEADING_TOLERANCE_DEG = 4.0; // was 2.0
 }

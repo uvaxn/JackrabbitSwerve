@@ -6,7 +6,7 @@ CONTROLS
  Left Trigger   -- Intake (drops down and intakes)
  Right Trigger  -- Shoot (spins up and fires  along with the intake bouncing up and down)
  Left Bumper    -- Reset field-centric heading
- Y Button       -- Toggle auto-align mode (on by default): while shooting, faces the HUB when
+ Y Button       -- Toggle auto-align mode (on by default)while shooting, faces the HUB when
                     inside our alliance zone, otherwise faces our alliance wall
  A Button       -- Points wheels based on joystick direction
  
