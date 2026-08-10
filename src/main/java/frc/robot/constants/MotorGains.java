@@ -4,8 +4,6 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 /**
- * PID and feedforward gains for every motor except drive and steer (those live in the Tuner X
- * project instead). One place to tune, two ways to fill it in.
  *
  * By SysId: run a Phoenix 6 SysId characterization on the real mechanism. It reports kS, kV,
  * and kA directly (kG too, for arm mechanisms, if GravityType is set before the run). Still
@@ -37,7 +35,6 @@ public final class MotorGains {
         }
     }
 
-    // Intake pivot. Still placeholder gains, see IntakeDropSubsystem's boot warning.
     public static final PIDSVAG INTAKE_DROP  = new PIDSVAG(5.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0);
 
     public static final PIDSV SHOOTER        = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
