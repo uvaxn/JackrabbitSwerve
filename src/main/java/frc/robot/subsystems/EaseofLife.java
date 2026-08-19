@@ -176,7 +176,7 @@ public class EaseofLife extends SubsystemBase {
             case TRANSITION, ENDGAME -> true;
             case SHIFT_1, SHIFT_3    -> shift1Active;
             case SHIFT_2, SHIFT_4    -> !shift1Active;
-            default                  -> true; // won't hit here unless theres a major bug (not even my fault in this case)
+            default                  -> true; // won't hit here unless theres a big bug (not even my fault in this case)
         };                                       
     }
 }
