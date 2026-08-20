@@ -49,8 +49,10 @@ import frc.robot.vision.Limelight;
  * the start rather than an external claim on drivetrain.
  * <p>
  * Bound in RobotContainer to a Trigger that combines the right-trigger shooting state with
- * EaseofLife.isAutoAlignEnabled() (toggled by the Y button, on by default, published to
- * NetworkTables as Info/AlignMode) and DriverStation.isTeleopEnabled() (see above).
+ * EaseofLife.isAutoAlignEnabled() (on by default; the Y button used to toggle it but that
+ * binding was reassigned to seedFieldCentric, so today this is permanently on unless
+ * toggleAutoAlign() gets rewired elsewhere -- see EaseofLife) and DriverStation.isTeleopEnabled()
+ * (see above).
  */
 public class AlignWhileShooting extends Command {
 

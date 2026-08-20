@@ -26,8 +26,11 @@ public class EaseofLife extends SubsystemBase {
     private final Limelight cam;
     public final ShiftManager shifts = new ShiftManager();
 
-    // Auto-align-while-shooting (AlignWhileShooting): on by default, the Y button toggles it
-    // (see RobotContainer), published live to NetworkTables as Info/AlignMode below.
+    // Auto-align-while-shooting (AlignWhileShooting): on by default. Was toggled by the Y
+    // button; that binding has been replaced (Y is now seedFieldCentric, see RobotContainer),
+    // so toggleAutoAlign() below is currently unreferenced -- rewire it to a button/dashboard
+    // widget if you still want an in-match way to disable this, otherwise it's permanently on.
+    // Current state still published live to NetworkTables as Info/AlignMode.
     private boolean autoAlignEnabled = true;
     
     NetworkTable table = NetworkTableInstance.getDefault().getTable(Constants.LL_NAME);
@@ -56,7 +59,7 @@ public class EaseofLife extends SubsystemBase {
         NetworkTables.putDisttoHub(cam.getDistanceToHub());
     }
 
-    /** Flips auto-align-while-shooting on/off. Bound to the Y button in RobotContainer. */
+    /** Flips auto-align-while-shooting on/off. Currently unbound -- see the field comment above. */
     public void toggleAutoAlign() {
         autoAlignEnabled = !autoAlignEnabled;
     }

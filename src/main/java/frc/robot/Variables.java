@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Variables {
     
-    
     public static final double AlignToHubP = 5.0;
     public static final double AlignToHubI = 0;
     public static final double AlignToHubD = 0.5;
@@ -19,11 +18,17 @@ public class Variables {
     public static final double AlignToAllianceWallD = 0.25;
     // controller stoff
 
-    public final static SlewRateLimiter xLimiter = new SlewRateLimiter(2);
-    public final static SlewRateLimiter yLimiter = new SlewRateLimiter(2);
+    public final static SlewRateLimiter xLimiter = new SlewRateLimiter(2.5);
+    public final static SlewRateLimiter yLimiter = new SlewRateLimiter(2.5);
     // no more controller stuph 
     public static double FEED_SPEED = 0.6; // in percentage (0.8 == 80%)
     public static double SHOOTER_SPEED = 30;
+    // Left-bumper backup shot -- bypasses vision/distance calc entirely, see
+    // ShooterSubsystem.startFixed(). Placeholder pulled from the middle of
+    // ShooterCalculation's table (roughly the 2m rung); tune this to wherever
+    // you actually plan to take this shot from. Live-tunable on the dashboard
+    // too, see NetworkTables.getFixedShooterSpeed().
+    public static double FIXED_SHOOTER_SPEED = 70;
 
     public static final double airTimeScalarSeconds = 1;
     public static final double MaxAngularRate = 1.5;

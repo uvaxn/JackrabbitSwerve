@@ -64,8 +64,8 @@ public class IntakeDropSubsystem extends SubsystemBase {
     private enum DropState { IDLE_UP, IDLE_DOWN, MOVING_UP, MOVING_DOWN, STALLED }
     private DropState state = DropState.MOVING_UP; // homes on boot by driving to the top sensor
 
-    private boolean hasSeededTop = false;
-    private boolean hasSeededBottom = false;
+    public boolean hasSeededTop = false;
+    public boolean hasSeededBottom = false;
 
     private enum BounceState { OFF, GOING_UP, GOING_DOWN }
     private BounceState bounceState = BounceState.OFF;

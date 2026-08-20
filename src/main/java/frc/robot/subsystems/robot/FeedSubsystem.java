@@ -35,7 +35,7 @@ public class FeedSubsystem extends SubsystemBase {
         easeOfLife.stop(lowerFeed);
         easeOfLife.stop(upperFeed);
         intakeDrop.stopBounce();
-        if (!intakeDrop.isAtBottom()) {
+        if (!intakeDrop.hasSeededBottom) {
             intakeDrop.requestDown();
         }
     }

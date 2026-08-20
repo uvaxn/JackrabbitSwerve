@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.commands.AutoAlign.AlignToAllianceWall;
 import frc.robot.commands.AutoAlign.AlignWhileShooting;
 import frc.robot.constants.Constants;
 import frc.robot.generated.TunerConstants;
@@ -143,28 +144,27 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // Reset field centric heading, odometry points toward alliance wall.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        // Left bumper: fixed-speed backup shot. Bypasses vision/distance calc entirely (see
+        // ShooterSubsystem.startFixed() / Variables.FIXED_SHOOTER_SPEED) -- always the same
+        // commanded speed regardless of what the Limelight is or isn't seeing right now.
+        joystick.leftBumper()
+            .onTrue(new InstantCommand(mechanisms::startShootingFixed, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
 
-        // Y toggles auto-align mode on/off (on by default -- see EaseofLife.autoAlignEnabled).
-        // Published live to NetworkTables as Info/AlignMode.
-        joystick.y().onTrue(new InstantCommand(easeOfLife::toggleAutoAlign));
+        // Y: reset field-centric heading (was the auto-align-while-shooting toggle -- that
+        // toggle binding has been removed, see note below).
+        joystick.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // While a firing sequence is spinning up or actively firing (either feed mode, see
-        // Mechanisms.isShooting()) and auto-align is enabled: face the HUB when we're in our
-        // own alliance zone, or our own alliance wall otherwise -- even from inside the
-        // opposing alliance's zone. Re-checked every cycle, see AlignWhileShooting.
-        //
-        // Teleop-gated on purpose: this Trigger schedules AlignWhileShooting independently of
-        // whatever's currently running, which requires drivetrain. A PathPlanner auto's whole
-        // SequentialCommandGroup holds drivetrain as a requirement for its ENTIRE scheduled
-        // lifetime (the union of every sub-command's requirements, not just whichever step is
-        // currently active) -- so if this fired during autonomous, the moment "shoot" made
-        // isShooting() true, this would forcibly cancel the ENTIRE auto, not just hand off
-        // cleanly, because the scheduler sees two competing claims on drivetrain. See the
-        // "shootWithAlign"-style NamedCommand note in AlignWhileShooting's class doc for how
-        // to get this same behavior safely during auto (composed inside the auto's own command
-        // tree instead of racing it from outside).
+        // Right bumper: manual "face our alliance wall" while held, independent of shooting --
+        // reuses the same AlignToAllianceWall command AlignWhileShooting calls internally when
+        // you're out of your own zone, just available on demand instead of only while firing.
+        joystick.rightBumper().whileTrue(new AlignToAllianceWall(
+            drivetrain,
+            easeOfLife,
+            driveInputs::getX,
+            driveInputs::getY
+        ));
+
         new Trigger(() -> DriverStation.isTeleopEnabled()
                 && mechanisms.isShooting()
                 && easeOfLife.isAutoAlignEnabled())
@@ -180,9 +180,10 @@ public class RobotContainer {
             .onTrue(new InstantCommand(mechanisms::requestIntake, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopIntake, mechanisms));
 
-        // Shooter spins for as long as right trigger is held, stops on release. Regular-mode
-        // feed (the right-bumper distinction) has been removed -- there's only one shooting
-        // behavior now, so this is just a plain onTrue/onFalse pair, no compound triggers.
+        // Shooter spins for as long as right trigger is held, stops on release. The old
+        // right-bumper feed-mode distinction (full-hopper vs regular) is gone -- right bumper
+        // is now the manual face-alliance-wall binding above, unrelated to feed mode -- so
+        // this is just a plain onTrue/onFalse pair, no compound triggers.
         joystick.rightTrigger()
             .onTrue(new InstantCommand(mechanisms::startShooting, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));

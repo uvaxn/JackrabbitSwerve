@@ -62,6 +62,21 @@ public class Mechanisms extends SubsystemBase {
     }
 
     /**
+     * Left-bumper backup: identical state machine to startShooting() (still waits for
+     * shooters.atSpeed() below before feeding), just spins the shooter to
+     * Variables.FIXED_SHOOTER_SPEED instead of the vision/distance-calculated target. See
+     * ShooterSubsystem.startFixed().
+     */
+    public void startShootingFixed() {
+        if (shootState == ShootState.IDLE) {
+            shooters.startFixed();
+        }
+        shootState = ShootState.SPINNING_UP;
+        Variables.requestSpeedLimit("shooters", 0.2);
+        NetworkTables.putRobotState("SPINNING UP");
+    }
+
+    /**
      * Stops the shooter and feed. Deliberately does NOT touch the intake -- the old StopShoot()
      * called intakes.stop() directly without resetting the intake's own request flags, so
      * releasing the shoot trigger while still holding the intake trigger would silently kill

@@ -26,6 +26,16 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterL;
     EaseofLife MotorMode;
     private final Timer shooterUpdateTimer = new Timer();
+
+    // Gates periodic() below. Without this, periodic() unconditionally recomputed and
+    // re-sent a velocity target every tick from robot boot onward -- meaning stop()'s neutral
+    // command got overwritten by the very next tick and the shooter never actually idled.
+    // Set true by start()/startFixed(), false by stop().
+    private boolean isShooting = false;
+
+    // Distinguishes startFixed() (Variables.FIXED_SHOOTER_SPEED, ignores vision/manual-override
+    // entirely) from a regular start() (vision distance calc, or the dashboard manual override).
+    private boolean fixedSpeedMode = false;
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
         this.shooterL  = shooterL;
@@ -69,14 +79,34 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void start() {
+        isShooting = true;
+        fixedSpeedMode = false;
         shooterUpdateTimer.restart();
         Variables.requestSpeedLimit("shooters", 0.45);
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
-        // periodic() continues to refresh this every SHOOTER_UPDATE_PERIOD as distance/target changes.
+        // periodic() continues to refresh this every tick as distance/target changes.
+    }
+
+    /**
+     * Left-bumper backup shot: spins to Variables.FIXED_SHOOTER_SPEED (live-tunable, see
+     * NetworkTables.getFixedShooterSpeed()) instead of the vision/distance-calculated target,
+     * so a bad vision read can never affect this shot. Otherwise identical to start() -- same
+     * speed-limit request, same atSpeed()/Mechanisms hookup.
+     */
+    public void startFixed() {
+        isShooting = true;
+        fixedSpeedMode = true;
+        shooterUpdateTimer.restart();
+        Variables.requestSpeedLimit("shooters", 0.45);
+        double fixedSpeed = NetworkTables.getFixedShooterSpeed();
+        MotorMode.setVelocity(shooterR, -fixedSpeed);
+        MotorMode.setVelocity(shooterL, fixedSpeed);
     }
 
     public void stop() {
+        isShooting = false;
+        fixedSpeedMode = false;
         Variables.requestSpeedLimit("shooters", 0);
         MotorMode.stop(shooterR);
         MotorMode.stop(shooterL);
@@ -91,18 +121,22 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void periodic() {
-        if (NetworkTables.isManualShooterOverride()) {
-            Variables.SHOOTER_SPEED = NetworkTables.getManualShooterSpeed();
-        } else {
-            Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
+        if (isShooting) {
+            if (fixedSpeedMode) {
+                Variables.SHOOTER_SPEED = NetworkTables.getFixedShooterSpeed();
+            } else if (NetworkTables.isManualShooterOverride()) {
+                Variables.SHOOTER_SPEED = NetworkTables.getManualShooterSpeed();
+            } else {
+                Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
+            }
+            MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
+            MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
         }
-        
-        NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
+
+        // Published unconditionally (even while idle) so the dashboard shows the real
+        // coast-down after stop() instead of freezing on the last commanded value.
+        NetworkTables.putTargetShooterSpeed(isShooting ? Variables.SHOOTER_SPEED : 0.0);
         NetworkTables.putShooterVelocityRight(shooterR.getVelocity().getValueAsDouble());
         NetworkTables.putShooterVelocityLeft(shooterL.getVelocity().getValueAsDouble());
-
-
-        MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
-        MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
     }
 }

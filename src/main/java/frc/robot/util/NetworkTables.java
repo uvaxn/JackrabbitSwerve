@@ -62,6 +62,14 @@ public class NetworkTables {
     private static final DoubleSubscriber shooterSpeedSetpointSub =
         shooterTable.getDoubleTopic("ManualVelocitySetpointRPS").subscribe(Variables.SHOOTER_SPEED);
 
+    // Left-bumper fixed/backup shot setpoint -- deliberately its own topic, not reusing
+    // ManualVelocitySetpointRPS above, so dialing in the fixed shot never depends on (or
+    // fights with) whatever the manual-override switch happens to be set to.
+    private static final DoublePublisher fixedShooterSpeedPub =
+        shooterTable.getDoubleTopic("FixedVelocitySetpointRPS").publish();
+    private static final DoubleSubscriber fixedShooterSpeedSub =
+        shooterTable.getDoubleTopic("FixedVelocitySetpointRPS").subscribe(Variables.FIXED_SHOOTER_SPEED);
+
     private static final BooleanPublisher manualShooterOverridePub =
         shooterTable.getBooleanTopic("ManualOverride").publish();
     private static final BooleanSubscriber manualShooterOverrideSub =
@@ -92,6 +100,7 @@ public class NetworkTables {
         // Seed defaults so both entries show up on the dashboard immediately,
         // rather than only appearing after the robot happens to publish once.
         shooterSpeedSetpointPub.set(Variables.SHOOTER_SPEED);
+        fixedShooterSpeedPub.set(Variables.FIXED_SHOOTER_SPEED);
         manualShooterOverridePub.set(false);
         alignModePub.set(true); // matches EaseofLife's autoAlignEnabled default
     }
@@ -127,11 +136,12 @@ public class NetworkTables {
     /** Manually-entered shooter speed setpoint from the dashboard (used when manual override is on). */
     public static double getManualShooterSpeed() { return shooterSpeedSetpointSub.get(); }
     public static boolean isManualShooterOverride() { return manualShooterOverrideSub.get(); }
+    /** Live-tunable target for the left-bumper fixed/backup shot, see ShooterSubsystem.startFixed(). */
+    public static double getFixedShooterSpeed() { return fixedShooterSpeedSub.get(); }
 
     // ---- Feed ----
     public static void putFeedVelocityUpper(double rps) { feedVelocityUpperRPS.set(rps); }
     public static void putFeedVelocityLower(double rps) { feedVelocityLowerRPS.set(rps); }
-
     // ---- Intake (rollers) ----
     public static void putIntakeVelocity(double rps) { intakeVelocityRPS.set(rps); }
 
