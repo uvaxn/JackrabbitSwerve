@@ -20,9 +20,10 @@ import frc.robot.util.NetworkTables;
 import frc.robot.vision.Limelight;
 
 /**
- * Runs while a firing sequence is spinning up or actively firing, in either feed mode -- see
- * Mechanisms.isShooting() -- and picks a target heading every cycle based on where the robot
- * actually is:
+ * Runs while a VISION-based firing sequence is spinning up or actively firing -- see
+ * Mechanisms.isShootingWithVision(), which is deliberately false during the left-bumper
+ * fixed/backup shot so that shot never drags a heading correction along with it -- and picks
+ * a target heading every cycle based on where the robot actually is:
  * <ul>
  *   <li>inside our own alliance zone (Constants.isInOwnAllianceZone) -&gt; face the HUB, same
  *       math as AlignToHub, odometry fused with the flat HUB_ALIGN_* vision std devs</li>

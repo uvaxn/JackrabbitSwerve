@@ -35,7 +35,7 @@ public final class MotorGains {
         }
     }
 
-    public static final PIDSVAG INTAKE_DROP  = new PIDSVAG(5.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0);
+    public static final PIDSVAG INTAKE_DROP  = new PIDSVAG(0.5, 0.0, 0.5, 0.5, 1.0, 0.0, 1.0);
 
     public static final PIDSV SHOOTER        = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
 

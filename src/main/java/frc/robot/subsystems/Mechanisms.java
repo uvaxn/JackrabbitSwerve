@@ -36,6 +36,11 @@ public class Mechanisms extends SubsystemBase {
 
     private ShootState shootState = ShootState.IDLE;
     private IntakeState intakeState = IntakeState.IDLE;
+    // True only while the left-bumper fixed/backup shot (startShootingFixed()) is active.
+    // shootState alone can't tell startShooting() and startShootingFixed() apart -- both drive
+    // the same SPINNING_UP/FIRING machine below -- so this is what isShootingWithVision() uses
+    // to exclude the fixed shot from auto-align. See that method for why.
+    private boolean fixedShotActive = false;
 
     public Mechanisms(ShooterSubsystem shooterSubsystem, IntakeSubsystem intakeSubsystem,
                        IntakeDropSubsystem intakeDropSubsystem, FeedSubsystem feedSubsystem) {
@@ -57,6 +62,7 @@ public class Mechanisms extends SubsystemBase {
             shooters.start();
         }
         shootState = ShootState.SPINNING_UP;
+        fixedShotActive = false;
         Variables.requestSpeedLimit("shooters", 0.2);
         NetworkTables.putRobotState("SPINNING UP");
     }
@@ -65,15 +71,17 @@ public class Mechanisms extends SubsystemBase {
      * Left-bumper backup: identical state machine to startShooting() (still waits for
      * shooters.atSpeed() below before feeding), just spins the shooter to
      * Variables.FIXED_SHOOTER_SPEED instead of the vision/distance-calculated target. See
-     * ShooterSubsystem.startFixed().
+     * ShooterSubsystem.startFixed(). Also flags fixedShotActive so isShootingWithVision() below
+     * excludes this from auto-align -- see that method for why.
      */
     public void startShootingFixed() {
         if (shootState == ShootState.IDLE) {
             shooters.startFixed();
         }
         shootState = ShootState.SPINNING_UP;
+        fixedShotActive = true;
         Variables.requestSpeedLimit("shooters", 0.2);
-        NetworkTables.putRobotState("SPINNING UP");
+        NetworkTables.putRobotState("SPINNING UP (FIXED)");
     }
 
     /**
@@ -87,16 +95,31 @@ public class Mechanisms extends SubsystemBase {
         shooters.stop();
         feeds.stop(); // also parks the intake-drop arm back down, see FeedSubsystem.stop()
         shootState = ShootState.IDLE;
+        fixedShotActive = false;
         Variables.clearSpeedLimit("shooters");
         NetworkTables.putRobotState("STOPPED FIRING");
     }
 
     /**
-     * @return true whenever a firing sequence is in progress (spinning up or actively firing).
-     * Used to gate auto-align-while-shooting -- see RobotContainer's AlignWhileShooting binding.
+     * @return true whenever a firing sequence is in progress (spinning up or actively firing),
+     * fixed shot or vision shot alike. General-purpose "is the shooter doing anything right
+     * now" signal -- if you need to gate auto-align specifically, use isShootingWithVision()
+     * below instead, not this one.
      */
     public boolean isShooting() {
         return shootState != ShootState.IDLE;
+    }
+
+    /**
+     * @return true only while a VISION-based shot (right trigger, startShooting()) is spinning
+     * up or firing -- false during the left-bumper fixed/backup shot (startShootingFixed()),
+     * even though isShooting() above is true for both. This is what actually gates
+     * auto-align-while-shooting in RobotContainer: the fixed shot exists specifically so
+     * shooting still works when vision is misbehaving, so it shouldn't also trigger a
+     * vision-driven heading correction -- left bumper should just shoot and nothing else move.
+     */
+    public boolean isShootingWithVision() {
+        return shootState != ShootState.IDLE && !fixedShotActive;
     }
 
     public void requestIntake() {

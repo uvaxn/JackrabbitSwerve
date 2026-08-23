@@ -42,8 +42,7 @@ public class RobotContainer {
     private static final double ROTATION_STICK_DEADBAND = 0.08; // matches DriveInputs' X/Y deadband
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-        // .withDeadband(Vars.MaxSpeed * 0.03) -- this has 3 percent deadband
-        .withRotationalDeadband(MaxAngularRate * 0.03) // was 0.03 (3%)
+        .withRotationalDeadband(MaxAngularRate * 0.03) 
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
@@ -146,7 +145,9 @@ public class RobotContainer {
 
         // Left bumper: fixed-speed backup shot. Bypasses vision/distance calc entirely (see
         // ShooterSubsystem.startFixed() / Variables.FIXED_SHOOTER_SPEED) -- always the same
-        // commanded speed regardless of what the Limelight is or isn't seeing right now.
+        // commanded speed regardless of what the Limelight is or isn't seeing right now. Also
+        // does NOT trigger auto-align-while-shooting (see Mechanisms.isShootingWithVision() and
+        // the Trigger below) -- this is meant to just shoot, nothing else moves.
         joystick.leftBumper()
             .onTrue(new InstantCommand(mechanisms::startShootingFixed, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
@@ -165,8 +166,27 @@ public class RobotContainer {
             driveInputs::getY
         ));
 
+        // While a VISION-based firing sequence is spinning up or actively firing (right
+        // trigger, see Mechanisms.isShootingWithVision()) and auto-align is enabled: face the
+        // HUB when we're in our own alliance zone, or our own alliance wall otherwise -- even
+        // from inside the opposing alliance's zone. Re-checked every cycle, see
+        // AlignWhileShooting. Deliberately isShootingWithVision(), not isShooting() -- the
+        // left-bumper fixed/backup shot (startShootingFixed()) exists specifically to keep
+        // shooting working when vision is misbehaving, so it should just shoot, full stop, with
+        // no vision-driven heading correction riding along with it.
+        //
+        // Teleop-gated on purpose: this Trigger schedules AlignWhileShooting independently of
+        // whatever's currently running, which requires drivetrain. A PathPlanner auto's whole
+        // SequentialCommandGroup holds drivetrain as a requirement for its ENTIRE scheduled
+        // lifetime (the union of every sub-command's requirements, not just whichever step is
+        // currently active) -- so if this fired during autonomous, the moment "shoot" made
+        // isShootingWithVision() true, this would forcibly cancel the ENTIRE auto, not just hand
+        // off cleanly, because the scheduler sees two competing claims on drivetrain. See the
+        // "shootWithAlign"-style NamedCommand note in AlignWhileShooting's class doc for how
+        // to get this same behavior safely during auto (composed inside the auto's own command
+        // tree instead of racing it from outside).
         new Trigger(() -> DriverStation.isTeleopEnabled()
-                && mechanisms.isShooting()
+                && mechanisms.isShootingWithVision()
                 && easeOfLife.isAutoAlignEnabled())
             .whileTrue(new AlignWhileShooting(
                 cameraSubsystem,
