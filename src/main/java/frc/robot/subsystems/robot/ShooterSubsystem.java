@@ -47,7 +47,13 @@ public class ShooterSubsystem extends SubsystemBase {
         TalonFXConfiguration sharedConfig = new TalonFXConfiguration();
         sharedConfig.Slot0 = MotorGains.SHOOTER.slot0();
 
-        sharedConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
+        // 2 motor rotations : 1 flywheel rotation, measured on robot (was wrongly configured
+        // as 1.0/direct-drive). getVelocity() now reports FLYWHEEL RPS directly -- ShooterCalculation's
+        // table below was tuned/measured while the code thought it was direct-drive, so those
+        // RPS numbers were really motor RPS the whole time (2x real flywheel RPS). Re-verify or
+        // re-tune that table now that the ratio is correct, same speed setpoint means something
+        // different than it did before this fix.
+        sharedConfig.Feedback.SensorToMechanismRatio = 2.0;
 
         applyCurrentLimitsAndNeutral(sharedConfig);
         applyConfig(right, sharedConfig);

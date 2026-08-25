@@ -37,17 +37,17 @@ public class Variables {
     // too, see NetworkTables.getFixedShooterSpeed().
     public static double FIXED_SHOOTER_SPEED = 70;
 
-    // Rough average field-relative speed the note leaves the shooter at, in m/s. Used ONLY to
+    // Rough average field-relative speed the fuel leaves the shooter at, in m/s. Used ONLY to
     // lead-compensate AlignToHub/AlignWhileShooting's aim direction for the robot's own motion
     // (see AlignToHub.computeTargetDirection) -- this is NOT the same number as
     // ShooterCalculation's RPS table. That table is flywheel surface speed, and this hood
-    // design loses a lot of that before it reaches the note (see ShooterCalculation's own
+    // design loses a lot of that before it reaches the fuel (see ShooterCalculation's own
     // comment on that), so RPS * wheel circumference would overstate the real exit speed.
     // This is a single placeholder average across all distances instead of a real measurement.
     // To tune it: strafe at a known speed while aiming at the HUB and adjust this number until
     // stationary shots land dead-on instead of drifting toward whichever way you were moving.
-    // Live-tunable on the dashboard too, see NetworkTables.getNoteExitSpeedMps().
-    public static double NOTE_EXIT_SPEED_MPS = 9.0;
+    // Live-tunable on the dashboard too, see NetworkTables.getFuelExitSpeedMps().
+    public static double FUEL_EXIT_SPEED_MPS = 9.0;
 
     public static final double airTimeScalarSeconds = 1;
     public static final double MaxAngularRate = 1.5;

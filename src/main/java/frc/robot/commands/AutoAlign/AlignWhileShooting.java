@@ -38,7 +38,7 @@ import frc.robot.vision.Limelight;
  * duplicated here -- both branches call the same static computeTargetDirection() helpers that
  * AlignToHub / AlignToAllianceWall use on their own, so retuning one place retunes both. The
  * HUB branch uses the velocity-compensated overload (current field-relative speed +
- * EaseofLife.getNoteExitSpeedMps()), same "shoot on the move" lead correction AlignToHub uses
+ * EaseofLife.getFuelExitSpeedMps()), same "shoot on the move" lead correction AlignToHub uses
  * on its own -- see AlignToHub.computeTargetDirection's doc.
  * <p>
  * While HUB-facing during autonomous, this also runs the once-per-shot reseed check (see
@@ -138,7 +138,7 @@ public class AlignWhileShooting extends Command {
                     fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
 
             targetDirection = AlignToHub.computeTargetDirection(
-                    robotPose, fieldRelativeVelocityMPS, easeOfLife.getNoteExitSpeedMps());
+                    robotPose, fieldRelativeVelocityMPS, easeOfLife.getFuelExitSpeedMps());
 
             // Autonomous alignment reseed -- same rules as AlignToHub: autonomous only (never
             // fires in teleop, no surprise pose snaps mid-drive), once per run of this command,

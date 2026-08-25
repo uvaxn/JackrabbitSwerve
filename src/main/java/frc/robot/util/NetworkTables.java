@@ -39,11 +39,11 @@ public class NetworkTables {
     private static final DoubleSubscriber alignDSub = alignHubTable.getDoubleTopic("D").subscribe(Variables.AlignToHubD);
 
     // Lead-compensation exit speed for AlignToHub/AlignWhileShooting's shoot-on-the-move
-    // aiming, see Variables.NOTE_EXIT_SPEED_MPS for what this is (and isn't).
-    private static final DoublePublisher noteExitSpeedPub =
-        alignHubTable.getDoubleTopic("NoteExitSpeedMPS").publish();
-    private static final DoubleSubscriber noteExitSpeedSub =
-        alignHubTable.getDoubleTopic("NoteExitSpeedMPS").subscribe(Variables.NOTE_EXIT_SPEED_MPS);
+    // aiming, see Variables.FUEL_EXIT_SPEED_MPS for what this is (and isn't).
+    private static final DoublePublisher fuelExitSpeedPub =
+        alignHubTable.getDoubleTopic("FuelExitSpeedMPS").publish();
+    private static final DoubleSubscriber fuelExitSpeedSub =
+        alignHubTable.getDoubleTopic("FuelExitSpeedMPS").subscribe(Variables.FUEL_EXIT_SPEED_MPS);
 
     // AlignToAllianceWall PID (kept on its own topics, see prior note: reusing
     // the AlignToHub topics here caused tuning one to silently retune the other)
@@ -110,8 +110,8 @@ public class NetworkTables {
         fixedShooterSpeedPub.set(Variables.FIXED_SHOOTER_SPEED);
         manualShooterOverridePub.set(false);
         alignModePub.set(true); // matches EaseofLife's autoAlignEnabled default
-        noteExitSpeedPub.set(Variables.NOTE_EXIT_SPEED_MPS);
-
+        fuelExitSpeedPub.set(Variables.FUEL_EXIT_SPEED_MPS);
+    }
     // ---- Robot ----
     public static void putRobotState(String state) { robotState.set(state); }
 
@@ -136,8 +136,8 @@ public class NetworkTables {
     public static double getAlignWallI() { return alignWallISub.get(); }
     public static double getAlignWallD() { return alignWallDSub.get(); }
 
-    public static void putNoteExitSpeedMps(double mps) { noteExitSpeedPub.set(mps); }
-    public static double getNoteExitSpeedMps() { return noteExitSpeedSub.get(); }
+    public static void putFuelExitSpeedMps(double mps) { fuelExitSpeedPub.set(mps); }
+    public static double getFuelExitSpeedMps() { return fuelExitSpeedSub.get(); }
 
     // ---- Shooter ----
     public static void putTargetShooterSpeed(double rps) { shooterVelocitySetpoint.set(rps); }

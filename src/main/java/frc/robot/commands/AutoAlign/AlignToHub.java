@@ -68,15 +68,15 @@ public class AlignToHub extends Command {
     }
 
     /**
-     * "Shoot on the move" lead compensation. The note leaves the shooter carrying the robot's
+     * "Shoot on the move" lead compensation. The fuel leaves the shooter carrying the robot's
      * own field-relative velocity along with it -- same idea as a ball thrown from a moving
      * car keeping the car's speed -- so aiming straight at the HUB's real position drifts the
      * shot toward whichever way the robot is currently traveling. Instead, this aims the shot's
      * RELATIVE-to-robot velocity so that once the robot's own velocity adds back on top of it
      * in the field frame, the resultant vector points at the real HUB.
      *
-     * noteExitSpeedMps is a single averaged speed used only for this angle correction, not
-     * ShooterCalculation's per-distance RPS table -- see Variables.NOTE_EXIT_SPEED_MPS for why
+     * fuelExitSpeedMps is a single averaged speed used only for this angle correction, not
+     * ShooterCalculation's per-distance RPS table -- see Variables.FUEL_EXIT_SPEED_MPS for why
      * those two numbers are deliberately not the same thing. Standing still (fieldRelativeVelocityMPS
      * near zero) this reduces to the same heading as the plain overload above.
      *
@@ -84,10 +84,10 @@ public class AlignToHub extends Command {
      * @param fieldRelativeVelocityMPS current FIELD-relative (vx, vy) chassis velocity, not
      *        robot-relative -- see CommandSwerveDrivetrain's getState().Speeds doc, that's
      *        robot-relative and needs rotating by robotPose.getRotation() first.
-     * @param noteExitSpeedMps averaged note exit speed, see Variables.NOTE_EXIT_SPEED_MPS
+     * @param fuelExitSpeedMps averaged fuel exit speed, see Variables.FUEL_EXIT_SPEED_MPS
      */
     public static Rotation2d computeTargetDirection(
-            Pose2d robotPose, Translation2d fieldRelativeVelocityMPS, double noteExitSpeedMps) {
+            Pose2d robotPose, Translation2d fieldRelativeVelocityMPS, double fuelExitSpeedMps) {
         Translation2d hub = Constants.getTeamHubTranslation();
         Translation2d toHub = hub.minus(robotPose.getTranslation());
         double distanceMeters = toHub.getNorm();
@@ -100,8 +100,8 @@ public class AlignToHub extends Command {
         }
 
         // The field-frame velocity the shot needs once it leaves the robot, pointed straight
-        // at the HUB at noteExitSpeedMps...
-        Translation2d desiredFieldVelocity = toHub.times(noteExitSpeedMps / distanceMeters);
+        // at the HUB at fuelExitSpeedMps...
+        Translation2d desiredFieldVelocity = toHub.times(fuelExitSpeedMps / distanceMeters);
         // ...minus the velocity the robot is already contributing, leaves the velocity (and so
         // the direction) the shooter itself still needs to add.
         Translation2d requiredRelativeShotVelocity = desiredFieldVelocity.minus(fieldRelativeVelocityMPS);
@@ -145,7 +145,7 @@ public class AlignToHub extends Command {
                 fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
 
         Rotation2d targetDirection = computeTargetDirection(
-                robotPose, fieldRelativeVelocityMPS, easeOfLife.getNoteExitSpeedMps());
+                robotPose, fieldRelativeVelocityMPS, easeOfLife.getFuelExitSpeedMps());
 
         // Autonomous alignment reseed: once we're both close to on-target and the vision pose
         // is stable, hard-reset odometry to the vision estimate -- once, ever, per command

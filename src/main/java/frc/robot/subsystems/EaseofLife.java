@@ -44,7 +44,7 @@ public class EaseofLife extends SubsystemBase {
         NetworkTables.putAlignWallP(NetworkTables.getAlignWallP());
         NetworkTables.putAlignWallI(NetworkTables.getAlignWallI());
         NetworkTables.putAlignWallD(NetworkTables.getAlignWallD());
-        NetworkTables.putNoteExitSpeedMps(NetworkTables.getNoteExitSpeedMps());
+        NetworkTables.putFuelExitSpeedMps(NetworkTables.getFuelExitSpeedMps());
         NetworkTables.putDisttoHub(0);
     }
  
@@ -156,9 +156,9 @@ public class EaseofLife extends SubsystemBase {
     public double getAlignWallI() { return NetworkTables.getAlignWallI(); }
     public double getAlignWallD() { return NetworkTables.getAlignWallD(); }
 
-    /** Live-tunable average note exit speed, used only for AlignToHub/AlignWhileShooting's
-     *  shoot-on-the-move lead compensation. See Variables.NOTE_EXIT_SPEED_MPS. */
-    public double getNoteExitSpeedMps() { return NetworkTables.getNoteExitSpeedMps(); }
+    /** Live-tunable average fuel exit speed, used only for AlignToHub/AlignWhileShooting's
+     *  shoot-on-the-move lead compensation. See Variables.FUEL_EXIT_SPEED_MPS. */
+    public double getFuelExitSpeedMps() { return NetworkTables.getFuelExitSpeedMps(); }
  
     public double getDistToHub() {
         return cam.getDistanceToHub();
