@@ -38,6 +38,13 @@ public class NetworkTables {
     private static final DoubleSubscriber alignISub = alignHubTable.getDoubleTopic("I").subscribe(Variables.AlignToHubI);
     private static final DoubleSubscriber alignDSub = alignHubTable.getDoubleTopic("D").subscribe(Variables.AlignToHubD);
 
+    // Lead-compensation exit speed for AlignToHub/AlignWhileShooting's shoot-on-the-move
+    // aiming, see Variables.NOTE_EXIT_SPEED_MPS for what this is (and isn't).
+    private static final DoublePublisher noteExitSpeedPub =
+        alignHubTable.getDoubleTopic("NoteExitSpeedMPS").publish();
+    private static final DoubleSubscriber noteExitSpeedSub =
+        alignHubTable.getDoubleTopic("NoteExitSpeedMPS").subscribe(Variables.NOTE_EXIT_SPEED_MPS);
+
     // AlignToAllianceWall PID (kept on its own topics, see prior note: reusing
     // the AlignToHub topics here caused tuning one to silently retune the other)
     private static final DoublePublisher AligntoWallP = alignWallTable.getDoubleTopic("P").publish();
@@ -83,8 +90,8 @@ public class NetworkTables {
     private static final DoublePublisher intakeVelocityRPS = intakeMotorTable.getDoubleTopic("VelocityRPS").publish();
 
     // ---- IntakeDrop (the pivoting arm, IntakeDropSubsystem) ----
-    // Position: 0 = up, 45 = down. Telemetry only. This is an arm angle, not a
-    // motor's own rotation, so it stays in degrees rather than RPS.
+    // Position: -15 = up, 90 = down (measured from horizontal). Telemetry only. This is an arm
+    // angle, not a motor's own rotation, so it stays in degrees rather than RPS.
     private static final DoublePublisher intakeDropPositionDeg =
         intakeTable.getDoubleTopic("PositionDeg").publish();
 
@@ -103,7 +110,7 @@ public class NetworkTables {
         fixedShooterSpeedPub.set(Variables.FIXED_SHOOTER_SPEED);
         manualShooterOverridePub.set(false);
         alignModePub.set(true); // matches EaseofLife's autoAlignEnabled default
-    }
+        noteExitSpeedPub.set(Variables.NOTE_EXIT_SPEED_MPS);
 
     // ---- Robot ----
     public static void putRobotState(String state) { robotState.set(state); }
@@ -128,6 +135,9 @@ public class NetworkTables {
     public static double getAlignWallP() { return alignWallPSub.get(); }
     public static double getAlignWallI() { return alignWallISub.get(); }
     public static double getAlignWallD() { return alignWallDSub.get(); }
+
+    public static void putNoteExitSpeedMps(double mps) { noteExitSpeedPub.set(mps); }
+    public static double getNoteExitSpeedMps() { return noteExitSpeedSub.get(); }
 
     // ---- Shooter ----
     public static void putTargetShooterSpeed(double rps) { shooterVelocitySetpoint.set(rps); }

@@ -1,7 +1,7 @@
 package frc.robot;
 
 import frc.robot.generated.TunerConstants;
-import frc.robot.util.DriveEasing;
+import frc.robot.util.FalloffRateLimiter;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Map;
@@ -16,9 +16,17 @@ public class Variables {
     public static final double AlignToAllianceWallP = 7.0;
     public static final double AlignToAllianceWallI = 0.0;
     public static final double AlignToAllianceWallD = 0.25;
+    // controller stoff
 
-    public final static DriveEasing xLimiter = new DriveEasing(2.5, 0.075, 10, 1.0);
-    public final static DriveEasing yLimiter = new DriveEasing(2.5, 0.075, 10, 1.0);
+    // Same feel as MoSim's DriveController falloff curve: quick punch off zero, soft taper
+    // near max speed instead of a flat ramp. 2.5 carried over from the old SlewRateLimiter's
+    // rate - re-tune once you drive it, it's the "how hard off the line" knob.
+    // falloffPercent/falloffExponent are the game's defaults, tune those for how late/soft
+    // the top-end taper feels. maxOutput MUST match whatever this limiter's input/output units
+    // are - getX()/getY() multiply this limiter's [-1, 1] output by getMaxSpeed() afterward,
+    // so maxOutput here stays 1.0, not BASE_SPEED.
+    public final static FalloffRateLimiter xLimiter = new FalloffRateLimiter(2.5, 0.075, 10, 1.0);
+    public final static FalloffRateLimiter yLimiter = new FalloffRateLimiter(2.5, 0.075, 10, 1.0);
     // no more controller stuph 
     public static double FEED_SPEED = 0.6; // in percentage (0.8 == 80%)
     public static double SHOOTER_SPEED = 30;
@@ -28,6 +36,18 @@ public class Variables {
     // you actually plan to take this shot from. Live-tunable on the dashboard
     // too, see NetworkTables.getFixedShooterSpeed().
     public static double FIXED_SHOOTER_SPEED = 70;
+
+    // Rough average field-relative speed the note leaves the shooter at, in m/s. Used ONLY to
+    // lead-compensate AlignToHub/AlignWhileShooting's aim direction for the robot's own motion
+    // (see AlignToHub.computeTargetDirection) -- this is NOT the same number as
+    // ShooterCalculation's RPS table. That table is flywheel surface speed, and this hood
+    // design loses a lot of that before it reaches the note (see ShooterCalculation's own
+    // comment on that), so RPS * wheel circumference would overstate the real exit speed.
+    // This is a single placeholder average across all distances instead of a real measurement.
+    // To tune it: strafe at a known speed while aiming at the HUB and adjust this number until
+    // stationary shots land dead-on instead of drifting toward whichever way you were moving.
+    // Live-tunable on the dashboard too, see NetworkTables.getNoteExitSpeedMps().
+    public static double NOTE_EXIT_SPEED_MPS = 9.0;
 
     public static final double airTimeScalarSeconds = 1;
     public static final double MaxAngularRate = 1.5;

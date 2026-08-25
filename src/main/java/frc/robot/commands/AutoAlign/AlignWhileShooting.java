@@ -8,6 +8,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 
@@ -34,7 +36,10 @@ import frc.robot.vision.Limelight;
  * driving across the zone boundary mid-shot switches targets instead of committing to
  * whichever was true the instant the trigger was first pulled. The angle math itself is not
  * duplicated here -- both branches call the same static computeTargetDirection() helpers that
- * AlignToHub / AlignToAllianceWall use on their own, so retuning one place retunes both.
+ * AlignToHub / AlignToAllianceWall use on their own, so retuning one place retunes both. The
+ * HUB branch uses the velocity-compensated overload (current field-relative speed +
+ * EaseofLife.getNoteExitSpeedMps()), same "shoot on the move" lead correction AlignToHub uses
+ * on its own -- see AlignToHub.computeTargetDirection's doc.
  * <p>
  * While HUB-facing during autonomous, this also runs the once-per-shot reseed check (see
  * Limelight.checkAutonomousReseed) -- but note the binding below is teleop-gated (see
@@ -124,7 +129,16 @@ public class AlignWhileShooting extends Command {
                     easeOfLife.getAlignP(),
                     easeOfLife.getAlignI(),
                     easeOfLife.getAlignD());
-            targetDirection = AlignToHub.computeTargetDirection(robotPose);
+
+            // Same lead compensation as AlignToHub -- see its computeTargetDirection doc.
+            // getState().Speeds is robot-relative, rotate into the field frame first.
+            ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
+                    swerveDrive.getState().Speeds, robotPose.getRotation());
+            Translation2d fieldRelativeVelocityMPS = new Translation2d(
+                    fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
+
+            targetDirection = AlignToHub.computeTargetDirection(
+                    robotPose, fieldRelativeVelocityMPS, easeOfLife.getNoteExitSpeedMps());
 
             // Autonomous alignment reseed -- same rules as AlignToHub: autonomous only (never
             // fires in teleop, no surprise pose snaps mid-drive), once per run of this command,
