@@ -1,7 +1,7 @@
 package frc.robot;
 
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import frc.robot.generated.TunerConstants;
+import frc.robot.util.DriveEasing;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Map;
@@ -16,10 +16,9 @@ public class Variables {
     public static final double AlignToAllianceWallP = 7.0;
     public static final double AlignToAllianceWallI = 0.0;
     public static final double AlignToAllianceWallD = 0.25;
-    // controller stoff
 
-    public final static SlewRateLimiter xLimiter = new SlewRateLimiter(2.5);
-    public final static SlewRateLimiter yLimiter = new SlewRateLimiter(2.5);
+    public final static DriveEasing xLimiter = new DriveEasing(2.5, 0.075, 10, 1.0);
+    public final static DriveEasing yLimiter = new DriveEasing(2.5, 0.075, 10, 1.0);
     // no more controller stuph 
     public static double FEED_SPEED = 0.6; // in percentage (0.8 == 80%)
     public static double SHOOTER_SPEED = 30;

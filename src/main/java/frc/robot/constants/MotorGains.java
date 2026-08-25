@@ -35,11 +35,12 @@ public final class MotorGains {
         }
     }
 
+    // re-tune kS/kV/kA/kG by hand before trusting Motion Magic again.
     public static final PIDSVAG INTAKE_DROP  = new PIDSVAG(0.5, 0.0, 0.5, 0.5, 1.0, 0.0, 1.0);
 
     public static final PIDSV SHOOTER        = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
 
     public static final PIDSV INTAKE_ROLLERS = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
     public static final PIDSV LOWER_FEED     = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
-    public static final PIDSV UPPER_FEED     = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
+    public static final PIDSV UPPER_FEED     = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11 );
 }

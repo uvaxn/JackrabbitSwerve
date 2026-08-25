@@ -18,14 +18,22 @@ import frc.robot.constants.MotorGains;
 import frc.robot.util.NetworkTables;
 
 /**
- * The intake drop arm. Sweeps from 0 degrees (up) to 45 degrees (down) using Motion Magic
- * Expo. Gains live in MotorGains.INTAKE_DROP, tune them there.
+ * The intake drop arm. Sweeps from -15 degrees (up) to 90 degrees (down), measured directly
+ * from horizontal, using Motion Magic Expo. Gains live in MotorGains.INTAKE_DROP, tune them
+ * there.
+ *
+ * Measured on the robot (8/24):
+ * - Gear ratio: 50 motor rotations per 1 arm rotation.
+ * - Up position: -15 degrees from horizontal. Down position: 90 degrees from horizontal.
+ * - With the old placeholder GEAR_REDUCTION of 1.0, a full up move took ~1.6s and a full down
+ *   move took ~2s. Now that the ratio is fixed to the real 50:1, those times WILL change (the
+ *   motor sees ~50x the mechanism rotations it did before to cover the same real angle) -
+ *   MotorGains.INTAKE_DROP has NOT been re-tuned for that yet, re-run SysId or re-tune by hand
+ *   before trusting the timing again.
  *
  * Still placeholders, check before trusting this on the robot:
- * - GEAR_REDUCTION: measure the real gearbox ratio. 1.0 (direct drive) is almost certainly wrong.
- * - UP_ANGLE_ABOVE_HORIZONTAL_DEGREES: measure with an angle gauge at the real up position.
- *   Arm_Cosine gravity compensation needs to know where horizontal actually is.
  * - MotorGains.INTAKE_DROP: run SysId with the arm fully built, or tune by hand, see that file.
+ *   These gains were tuned against the wrong gear ratio and are very likely wrong now.
  *
  * The top and bottom sensors are wired to the RoboRIO, not the TalonFX, so periodic() checks
  * them here instead of using a hardware limit switch config. A tripped sensor always overrides
@@ -44,10 +52,12 @@ public class IntakeDropSubsystem extends SubsystemBase {
     private final CoastOut coastOut = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
 
-    private static final double UP_POSITION_DEGREES = 0.0;
-    private static final double DOWN_POSITION_DEGREES = 45.0;
-    private static final double UP_ANGLE_ABOVE_HORIZONTAL_DEGREES = 0.0; // TODO measure on robot
-    private static final double GEAR_REDUCTION = 1.0; // TODO measure, probably not 1:1
+    // Measured directly from horizontal, so these double as the Arm_Cosine reference angles too -
+    // no separate offset needed (see UP_ANGLE_ABOVE_HORIZONTAL_DEGREES below).
+    private static final double UP_POSITION_DEGREES = -15.0;
+    private static final double DOWN_POSITION_DEGREES = 90.0;
+    private static final double UP_ANGLE_ABOVE_HORIZONTAL_DEGREES = 0.0; // see note above, degrees are already horizontal-referenced
+    private static final double GEAR_REDUCTION = 50.0; // 50 motor rotations : 1 arm rotation, measured on robot
 
     private static final double POSITION_TOLERANCE_ROTATIONS = 0.01; // about 3.6 degrees
     private static final double SENSOR_DEBOUNCE_SECONDS = 0.02;
