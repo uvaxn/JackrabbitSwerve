@@ -191,6 +191,20 @@ public class RobotContainer {
             .onTrue(new InstantCommand(intakeDrop::requestDown, intakeDrop));
         joystick.povUp()
             .onTrue(new InstantCommand(intakeDrop::requestUp, intakeDrop));
+
+        // D-pad left: shooter + feeds, arm stays put (no bounce). The arm only moves via
+        // d-pad up/down above -- this binding never touches IntakeDropSubsystem. Routes
+        // through Mechanisms.startShooterAndFeeds(), which runs the feed rollers directly
+        // (no arm bounce) and sets a flag so the SPINNING_UP->FIRING auto-feed is skipped.
+        joystick.povLeft()
+            .onTrue(new InstantCommand(mechanisms::startShooterAndFeeds, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::stopShooterAndFeeds, mechanisms));
+
+        // D-pad right: feeds only (no shooter, no arm). Just the upper+lower feed rollers,
+        // started/stopped without bouncing or parking the intake-drop arm.
+        joystick.povRight()
+            .onTrue(new InstantCommand(feeds::rollersStart, feeds))
+            .onFalse(new InstantCommand(feeds::rollersStop, feeds));
         drivetrain.registerTelemetry(logger::telemeterize);
         
     }

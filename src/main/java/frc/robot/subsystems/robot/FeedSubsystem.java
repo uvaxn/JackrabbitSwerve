@@ -32,12 +32,18 @@ public class FeedSubsystem extends SubsystemBase {
         easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED, false);
     }
     public void stop() {
-        easeOfLife.stop(lowerFeed);
-        easeOfLife.stop(upperFeed);
+        rollersStop();
         intakeDrop.stopBounce();
         if (!intakeDrop.hasSeededBottom) {
             intakeDrop.requestDown();
         }
+    }
+    /** Stops just the feed rollers without touching the intake-drop arm. Used by the
+     *  d-pad-right (feeds only) and d-pad-left (shooter+feeds, no arm) bindings so the arm
+     *  never moves as a side effect of feeding. */
+    public void rollersStop() {
+        easeOfLife.stop(lowerFeed);
+        easeOfLife.stop(upperFeed);
     }
 
     @Override

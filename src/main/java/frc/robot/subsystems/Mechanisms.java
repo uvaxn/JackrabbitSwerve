@@ -41,6 +41,12 @@ public class Mechanisms extends SubsystemBase {
     // the same SPINNING_UP/FIRING machine below -- so this is what isShootingWithVision() uses
     // to exclude the fixed shot from auto-align. See that method for why.
     private boolean fixedShotActive = false;
+    // True only while d-pad-left manual fire (startShooterAndFeeds()) is active. The normal
+    // right-trigger firing path calls feeds.start(), which bounces the intake-drop arm. The
+    // d-pad-left binding must NOT move the arm, so it runs the feed rollers directly via
+    // feeds.rollersStart() and sets this flag so the SPINNING_UP->FIRING transition below
+    // skips the bouncing feeds.start().
+    private boolean manualFire = false;
 
     public Mechanisms(ShooterSubsystem shooterSubsystem, IntakeSubsystem intakeSubsystem,
                        IntakeDropSubsystem intakeDropSubsystem, FeedSubsystem feedSubsystem) {
@@ -96,8 +102,39 @@ public class Mechanisms extends SubsystemBase {
         feeds.stop(); // also parks the intake-drop arm back down, see FeedSubsystem.stop()
         shootState = ShootState.IDLE;
         fixedShotActive = false;
+        manualFire = false;
         Variables.clearSpeedLimit("shooters");
         NetworkTables.putRobotState("STOPPED FIRING");
+    }
+
+    /**
+     * D-pad-left manual fire: spins the shooter AND runs the feed rollers, but does NOT
+     * touch the intake-drop arm -- no bounce, no requestDown. The arm only ever moves via
+     * its own d-pad up/down bindings. Uses feeds.rollersStart() (rollers only) instead of
+     * feeds.start() (which calls intakeDrop.startBounce()), and sets manualFire so the
+     * SPINNING_UP->FIRING transition below does not also call feeds.start().
+     */
+    public void startShooterAndFeeds() {
+        if (shootState == ShootState.IDLE) {
+            shooters.start();
+        }
+        feeds.rollersStart();
+        manualFire = true;
+        shootState = ShootState.SPINNING_UP;
+        Variables.requestSpeedLimit("shooters", 0.2);
+        NetworkTables.putRobotState("MANUAL FIRE");
+    }
+
+    /** Companion to startShooterAndFeeds(): stops the shooter and the feed rollers, still
+     * without touching the arm. */
+    public void stopShooterAndFeeds() {
+        shooters.stop();
+        feeds.rollersStop();
+        manualFire = false;
+        shootState = ShootState.IDLE;
+        fixedShotActive = false;
+        Variables.clearSpeedLimit("shooters");
+        NetworkTables.putRobotState("STOPPED MANUAL FIRE");
     }
 
     /**
@@ -151,7 +188,12 @@ public class Mechanisms extends SubsystemBase {
         switch (shootState) {
             case SPINNING_UP -> {
                 if (shooters.atSpeed()) {
-                    feeds.start();
+                    // Only the right-trigger (non-manual) path auto-feeds with the arm bounce.
+                    // The d-pad-left manual path already started the rollers itself and must
+                    // not bounce the arm, so it skips feeds.start() here.
+                    if (!manualFire) {
+                        feeds.start();
+                    }
                     shootState = ShootState.FIRING;
                     NetworkTables.putRobotState("SHOOTER READY");
                 }

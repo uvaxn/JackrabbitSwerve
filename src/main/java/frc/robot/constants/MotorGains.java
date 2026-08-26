@@ -35,11 +35,15 @@ public final class MotorGains {
         }
     }
 
-    // TODO: tuned against the old (wrong) 1:1 placeholder gear ratio in IntakeDropSubsystem.
-    // Now that GEAR_REDUCTION is fixed to the real 50:1, the motor moves ~50x further per real
-    // arm rotation, so these are almost certainly wrong - re-run SysId (see phoenix6-frc skill,
-    // pattern 3) or re-tune kS/kV/kA/kG by hand before trusting Motion Magic again.
-    public static final PIDSVAG INTAKE_DROP  = new PIDSVAG(0.5, 0.0, 0.5, 0.5, 1.0, 0.0, 1.0);
+    // PLACEHOLDER starting values for the real 50:1 ratio. Bumped up from the stale
+    // 1:1-tuned numbers (kP 0.5->1.0, kD 0.5->0.2, kS 0.5->0.6, kG 1.0->1.2) so the arm has
+    // more holding authority, but this is NOT a real SysId characterization. Re-run a
+    // Phoenix 6 SysId routine on the built arm with GravityType=Arm_Cosine set before the
+    // run (it reports kS, kV, kA, and kG directly), then hand-tune kP/kI/kD afterward:
+    // raise kS until it just barely moves, estimate kV from top speed / voltage, leave kA
+    // at 0 to start, raise kP until it tracks without much overshoot, add kD only if it
+    // oscillates, leave kI at 0 unless there is steady-state error kP alone can't fix.
+    public static final PIDSVAG INTAKE_DROP  = new PIDSVAG(1.0, 0.0, 0.2, 0.6, 1.0, 0.0, 1.2);
 
     public static final PIDSV SHOOTER        = new PIDSV(0.1, 0.0, 0.0, 0.5, 0.11);
 
