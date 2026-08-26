@@ -27,17 +27,11 @@ public class IntakeSubsystem extends SubsystemBase {
     private double DROP_SPEED      = 0.15;
     private double LIFT_SPEED      = 0.15;
 
-    private static final double INTAKE_COLLECT_SPEED = -0.6; // collecting from ground
+    private static final double INTAKE_COLLECT_SPEED = -0.75; // collecting from ground
 
     private final CoastOut    coastOut    = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
 
-    // --- Position tracking (degrees) ---
-    // Top is always 0 -- the arm is assumed to start there on init. Bottom is NOT a fixed
-    // number: whatever degree value the arm reads the moment the bottom sensor first trips
-    // becomes the recorded bottom, and everything downstream (agitation) uses that recorded
-    // value instead of a hardcoded angle. This replaces the old SOFT_LIMIT_DOWN/SOFT_LIMIT_UP
-    // raw-rotation backstops entirely -- the sensors are now the only thing that stops a move.
     private static final double TOP_POSITION_DEGREES = 0.0;
     private double bottomPositionDegrees = 0.0; // overwritten for real the first time isAtBottom() trips
 
@@ -47,13 +41,13 @@ public class IntakeSubsystem extends SubsystemBase {
     // kA, kG) -- this snapshot predates that file existing, so there's nothing here to diff
     // against, but these are the real values, not new guesses. ONLY used for agitation's Motion
     // Magic below; the plain .set() travel above doesn't touch these at all.
-    private static final double AGITATE_kP = 1.0;
-    private static final double AGITATE_kI = 0.0;
-    private static final double AGITATE_kD = 0.2;
-    private static final double AGITATE_kS = 0.6;
-    private static final double AGITATE_kV = 1.0;
-    private static final double AGITATE_kA = 0.0;
-    private static final double AGITATE_kG = 1.2;
+    private static final double kP = 1.0;
+    private static final double kI = 0.0;
+    private static final double kD = 0.2;
+    private static final double kS = 0.6;
+    private static final double kV = 1.0;
+    private static final double kA = 0.0;
+    private static final double kG = 1.2;
 
     private static final double AGITATE_UP_DEGREES = 20.0; // how far above the learned bottom to agitate
     private static final double AGITATE_TOLERANCE_ROTATIONS = 0.01; // ~3.6 degrees, "close enough" to flip direction
@@ -95,17 +89,14 @@ public class IntakeSubsystem extends SubsystemBase {
     // mechanism (arm) rotations directly, which is what the degrees conversion below assumes.
     private void configureDropMotor() {
         TalonFXConfiguration config = new TalonFXConfiguration();
-        config.Slot0.kP = AGITATE_kP;
-        config.Slot0.kI = AGITATE_kI;
-        config.Slot0.kD = AGITATE_kD;
-        config.Slot0.kS = AGITATE_kS;
-        config.Slot0.kV = AGITATE_kV;
-        config.Slot0.kA = AGITATE_kA;
-        config.Slot0.kG = AGITATE_kG;
-        // Arm_Cosine assumes 0 rotations = horizontal. Here 0 = top-of-travel instead, which may
-        // or may not be horizontal on the real mechanism -- unverified. Agitation only swings
-        // through a small 20 degree window near the bottom though, so the cosine curve is close
-        // to flat across that range regardless of exactly where true horizontal falls.
+        config.Slot0.kP = kP;
+        config.Slot0.kI = kI;
+        config.Slot0.kD = kD;
+        config.Slot0.kS = kS;
+        config.Slot0.kV = kV;
+        config.Slot0.kA = kA;
+        config.Slot0.kG = kG;
+
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
         config.Feedback.SensorToMechanismRatio = GEAR_REDUCTION;
         config.MotionMagic.MotionMagicCruiseVelocity = AGITATE_SPEED_ROT_PER_SEC; // baseline; startAgitation() re-applies this fresh each time
@@ -151,29 +142,37 @@ public class IntakeSubsystem extends SubsystemBase {
         state = DropState.MOVING_UP;
 
     }
-
-    /** Starts agitating: up 20 degrees from the recorded bottom, then back down to the
-     *  recorded bottom, repeating, via Motion Magic. Assumes the arm is already at (or very
-     *  near) the recorded bottom when called -- it does NOT drive down to get there first,
-     *  same as the old startBounce() didn't drive anywhere before its first requestUp(). */
     public void startAgitation() {
-        // Re-applied here (not just once in configureDropMotor()) so editing
-        // AGITATE_SPEED_ROT_PER_SEC actually takes effect on the next agitation, not just
-        // whatever it happened to be when the robot booted.
         MotionMagicConfigs mmConfig = new MotionMagicConfigs();
         mmConfig.MotionMagicCruiseVelocity = AGITATE_SPEED_ROT_PER_SEC;
         dropMotor.getConfigurator().apply(mmConfig);
 
-        state = DropState.AGITATE_UP;
-        dropMotor.setControl(
-            agitateRequest.withPosition(degreesToMechanismRotations(bottomPositionDegrees + AGITATE_UP_DEGREES)));
+        startAgitateUp();
     }
-
     public void stopAgitation() {
         dropMotor.setControl(coastOut);
         state = DropState.IDLE;
     }
 
+    private void startAgitateUp() {
+        state = DropState.AGITATE_UP;
+
+        dropMotor.setControl(
+            agitateRequest.withPosition(
+                degreesToMechanismRotations(bottomPositionDegrees + AGITATE_UP_DEGREES)
+            )
+        );
+    }
+
+    private void startAgitateDown() {
+        state = DropState.AGITATE_DOWN;
+
+        dropMotor.setControl(
+            agitateRequest.withPosition(
+                degreesToMechanismRotations(bottomPositionDegrees)
+            )
+        );
+    }
     /** @return true when the arm is not moving useful for command isFinished() checks */
     public boolean isIdle() {
         return state == DropState.IDLE;
@@ -198,10 +197,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public void start() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED, false);
-
         Variables.requestSpeedLimit("intake", 0.15);
-
-    CommandScheduler.getInstance().schedule(DriveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
         
     }
     public void stop() {
@@ -221,7 +217,7 @@ public class IntakeSubsystem extends SubsystemBase {
             
         }
         if (isAtBottom() && !hasSeededBottom) {
-            bottomPositionDegrees = posDegrees; // record wherever we actually are, not a guess
+            bottomPositionDegrees = posDegrees; // record wherever we are
             hasSeededBottom = true;
             hasSeededTop    = false;
         }
@@ -245,20 +241,17 @@ public class IntakeSubsystem extends SubsystemBase {
                     dropMotor.set(LIFT_SPEED);
                 }
             }
-            case AGITATE_UP -> {
-                if (atAgitationGoal()) {
-                    dropMotor.setControl(
-                        agitateRequest.withPosition(degreesToMechanismRotations(bottomPositionDegrees)));
-                    state = DropState.AGITATE_DOWN;
-                }
+        case AGITATE_UP -> {
+            if (atAgitationGoal()) {
+                startAgitateDown();
             }
-            case AGITATE_DOWN -> {
-                if (atAgitationGoal()) {
-                    dropMotor.setControl(
-                        agitateRequest.withPosition(degreesToMechanismRotations(bottomPositionDegrees + AGITATE_UP_DEGREES)));
-                    state = DropState.AGITATE_UP;
-                }
+        }
+
+        case AGITATE_DOWN -> {
+            if (atAgitationGoal()) {
+                startAgitateUp();
             }
+        }
             case IDLE -> {}
         }
     }
