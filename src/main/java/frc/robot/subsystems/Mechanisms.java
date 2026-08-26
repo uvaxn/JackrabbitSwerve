@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
 import frc.robot.subsystems.robot.FeedSubsystem;
-import frc.robot.subsystems.robot.IntakeDropSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
 import frc.robot.util.NetworkTables;
@@ -31,7 +30,6 @@ public class Mechanisms extends SubsystemBase {
 
     private final ShooterSubsystem shooters;
     private final IntakeSubsystem intakes;
-    private final IntakeDropSubsystem intakeDrop;
     private final FeedSubsystem feeds;
 
     private ShootState shootState = ShootState.IDLE;
@@ -48,11 +46,9 @@ public class Mechanisms extends SubsystemBase {
     // skips the bouncing feeds.start().
     private boolean manualFire = false;
 
-    public Mechanisms(ShooterSubsystem shooterSubsystem, IntakeSubsystem intakeSubsystem,
-                       IntakeDropSubsystem intakeDropSubsystem, FeedSubsystem feedSubsystem) {
+    public Mechanisms(ShooterSubsystem shooterSubsystem, IntakeSubsystem intakeSubsystem, FeedSubsystem feedSubsystem) {
         this.shooters = shooterSubsystem;
         this.intakes = intakeSubsystem;
-        this.intakeDrop = intakeDropSubsystem;
         this.feeds = feedSubsystem;
     }
 
@@ -129,7 +125,7 @@ public class Mechanisms extends SubsystemBase {
      * without touching the arm. */
     public void stopShooterAndFeeds() {
         shooters.stop();
-        feeds.rollersStop();
+        feeds.stop();
         manualFire = false;
         shootState = ShootState.IDLE;
         fixedShotActive = false;
@@ -161,7 +157,7 @@ public class Mechanisms extends SubsystemBase {
 
     public void requestIntake() {
         intakeState = IntakeState.DROPPING;
-        intakeDrop.requestDown();
+        intakes.requestDown();
         NetworkTables.putRobotState("INTAKE");
     }
 
@@ -177,7 +173,7 @@ public class Mechanisms extends SubsystemBase {
     public void periodic() {
         switch (intakeState) {
             case DROPPING -> {
-                if (intakeDrop.isAtBottom()) {
+                if (intakes.isAtBottom()) {
                     intakes.start();
                     intakeState = IntakeState.COLLECTING;
                 }

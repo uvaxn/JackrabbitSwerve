@@ -30,7 +30,6 @@ import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.subsystems.Mechanisms;
 import frc.robot.subsystems.robot.FeedSubsystem;
-import frc.robot.subsystems.robot.IntakeDropSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
 import frc.robot.subsystems.robot.ShooterSubsystem;
 import frc.robot.vision.Limelight;
@@ -70,18 +69,10 @@ public class RobotContainer {
     public final TalonFX m_LowerFeed  = new TalonFX(Constants.m_LowerFeed);
     public final TalonFX m_UpperFeed  = new TalonFX(Constants.m_UpperFeed);
  
-    
-    
-    public final IntakeDropSubsystem intakeDrop = new IntakeDropSubsystem(
-        m_IntakeDrop,
-
-        new DigitalInput(0),
-        new DigitalInput(1)
-    );
     public final IntakeSubsystem intakes = new IntakeSubsystem(
         m_Intake,
 
-        easeOfLife
+        m_Intake, new DigitalInput(0), new DigitalInput(1), easeOfLife, driveInputs
     );
     public final ShooterSubsystem shooters = new ShooterSubsystem(
         m_ShooterR, 
@@ -90,7 +81,7 @@ public class RobotContainer {
         easeOfLife
     );
     public final FeedSubsystem feeds = new FeedSubsystem(
-        intakeDrop, 
+        intakes, 
         easeOfLife, 
 
         m_LowerFeed, 
@@ -99,7 +90,6 @@ public class RobotContainer {
     public final Mechanisms mechanisms = new Mechanisms(
         shooters, 
         intakes, 
-        intakeDrop,
         feeds
     );
     // Commands
@@ -108,8 +98,8 @@ public class RobotContainer {
         NamedCommands.registerCommand("stop shoot", new InstantCommand(mechanisms::stopShooting));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
-        NamedCommands.registerCommand("requestUp", new InstantCommand(intakeDrop::requestUp));
-        NamedCommands.registerCommand("requestDown", new InstantCommand(intakeDrop::requestDown));
+        NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
+        NamedCommands.registerCommand("requestDown", new InstantCommand(intakes::requestDown));
         drivetrain.configureAutoBuilder(); 
         configureBindings();
 
@@ -188,9 +178,9 @@ public class RobotContainer {
             .onTrue(new InstantCommand(mechanisms::startShooting, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
         joystick.povDown()
-            .onTrue(new InstantCommand(intakeDrop::requestDown, intakeDrop));
+            .onTrue(new InstantCommand(intakes::requestDown));
         joystick.povUp()
-            .onTrue(new InstantCommand(intakeDrop::requestUp, intakeDrop));
+            .onTrue(new InstantCommand(intakes::requestUp));
 
         // D-pad left: shooter + feeds, arm stays put (no bounce). The arm only moves via
         // d-pad up/down above -- this binding never touches IntakeDropSubsystem. Routes
@@ -204,7 +194,7 @@ public class RobotContainer {
         // started/stopped without bouncing or parking the intake-drop arm.
         joystick.povRight()
             .onTrue(new InstantCommand(feeds::rollersStart, feeds))
-            .onFalse(new InstantCommand(feeds::rollersStop, feeds));
+            .onFalse(new InstantCommand(feeds::stop, feeds));
         drivetrain.registerTelemetry(logger::telemeterize);
         
     }
