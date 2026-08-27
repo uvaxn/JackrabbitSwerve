@@ -10,7 +10,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
 
@@ -23,7 +22,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private final DigitalInput upperSensor;
     private final DigitalInput lowerSensor;
     EaseofLife MotorMode;
-    private final DriveInputs DriveInputs;
+
     private double DROP_SPEED      = 0.15;
     private double LIFT_SPEED      = 0.15;
 
@@ -85,7 +84,6 @@ public class IntakeSubsystem extends SubsystemBase {
         this.upperSensor = upperSensor;
         this.lowerSensor = lowerSensor;
         this.MotorMode = EaseOfLife;     
-        this.DriveInputs = DriveInputs;
 
         configureDropMotor();
         // Assume the arm starts at the top (0 deg) and DON'T move it to confirm that -- it
