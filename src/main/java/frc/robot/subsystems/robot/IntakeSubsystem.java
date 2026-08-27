@@ -32,7 +32,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private final CoastOut    coastOut    = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
 
-    private static final double TOP_POSITION_DEGREES = 0.0;
+    // Neither of these is a fixed constant anymore -- both get OVERWRITTEN with whatever the
+    // encoder actually reads the moment their sensor first confirms active, because the
+    // mechanism physically travels a bit past each sensor's activation point, so trusting an
+    // assumed round number for either one would be slightly wrong on the real robot.
+    // topPositionDegrees starts at the boot ASSUMPTION (0 deg, arm starts at top), then gets
+    // replaced with the real measured value the first time the top sensor actually confirms.
+    private double topPositionDegrees = 0.0;
     private double bottomPositionDegrees = 0.0; // overwritten for real the first time isAtBottom() trips
 
     private static final double GEAR_REDUCTION = 50.0; // 50 motor rotations : 1 arm rotation
@@ -49,7 +55,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double kA = 0.0;
     private static final double kG = 1.2;
 
-    private static final double AGITATE_UP_DEGREES = 20.0; // how far above the learned bottom to agitate
+    private static final double AGITATE_UP_DEGREES = 20.0; // how far above the recorded bottom to agitate
     private static final double AGITATE_TOLERANCE_ROTATIONS = 0.01; // ~3.6 degrees, "close enough" to flip direction
     // The speed knob for agitation specifically -- separate from kV/kA above (those shape the
     // profile, this caps top speed). public static + not final so it's a one-line edit between
@@ -59,7 +65,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private final MotionMagicExpoVoltage agitateRequest = new MotionMagicExpoVoltage(0).withSlot(0);
 
-    private enum DropState { IDLE, MOVING_DOWN, MOVING_UP, AGITATE_UP, AGITATE_DOWN }
+    private enum DropState { IDLE, MOVING_DOWN, MOVING_UP, AGITATE_UP, AGITATE_DOWN, RETURN_TO_BOTTOM }
 
     private DropState state = DropState.IDLE;
     // what "Seeded" means in these variables is basically has it set off the top sensor (it stores that) 
@@ -67,7 +73,10 @@ public class IntakeSubsystem extends SubsystemBase {
     // same thing except for it's the bottom sensor
     private boolean hasSeededBottom = false;
 
-
+    // startAgitation() was called while NOT at the bottom yet: drive down first (normal .set()
+    // path, same as a plain requestDown() would), and only actually start agitating once
+    // MOVING_DOWN naturally reaches isAtBottom(). Checked in the MOVING_DOWN case below.
+    private boolean startAgitationOnceAtBottom = false;
 
     public IntakeSubsystem(TalonFX intakeMotor, TalonFX dropMotor,
                         DigitalInput upperSensor, DigitalInput lowerSensor, EaseofLife EaseOfLife, DriveInputs DriveInputs) {
@@ -79,7 +88,9 @@ public class IntakeSubsystem extends SubsystemBase {
         this.DriveInputs = DriveInputs;
 
         configureDropMotor();
-        dropMotor.setPosition(degreesToMechanismRotations(TOP_POSITION_DEGREES));
+        // Assume the arm starts at the top (0 deg) and DON'T move it to confirm that -- it
+        // stays wherever it physically is until autonomous or the driver commands it down.
+        dropMotor.setPosition(degreesToMechanismRotations(topPositionDegrees));
         dropMotor.setControl(staticBrake);
 
     }
@@ -120,14 +131,14 @@ public class IntakeSubsystem extends SubsystemBase {
         return rotations * 360.0;
     }
 
-    /** Current tracked arm position in degrees. Top is 0, down is negative (matches the sign
+    /** Current tracked arm position in degrees. Top is ~0, down is negative (matches the sign
      *  .set(-DROP_SPEED)/.set(LIFT_SPEED) below already drive the raw encoder in). */
     public double getPositionDegrees() {
         return mechanismRotationsToDegrees(dropMotor.getPosition().getValueAsDouble());
     }
 
-    /** True once Motion Magic's closed loop error says agitation reached its current leg's
-     *  target (bottom, or bottom + 20). Only meaningful during AGITATE_UP/AGITATE_DOWN. */
+    /** True once Motion Magic's closed loop error says the current one-shot target (agitation
+     *  leg, or the return-to-bottom command) has been reached. */
     private boolean atAgitationGoal() {
         return Math.abs(dropMotor.getClosedLoopError().getValueAsDouble()) < AGITATE_TOLERANCE_ROTATIONS;
     }
@@ -142,16 +153,31 @@ public class IntakeSubsystem extends SubsystemBase {
         state = DropState.MOVING_UP;
 
     }
+
+    /** Starts agitating. Bottom sensor (not encoder position) decides whether we're already
+     *  down: if so, agitation starts immediately; if not, this drives down first via the
+     *  normal MOVING_DOWN path and only starts agitating once that actually reaches bottom. */
     public void startAgitation() {
         MotionMagicConfigs mmConfig = new MotionMagicConfigs();
         mmConfig.MotionMagicCruiseVelocity = AGITATE_SPEED_ROT_PER_SEC;
         dropMotor.getConfigurator().apply(mmConfig);
 
-        startAgitateUp();
+        if (isAtBottom()) {
+            startAgitateUp();
+        } else {
+            startAgitationOnceAtBottom = true;
+            requestDown();
+        }
     }
+
+    /** Does NOT stop in place. Commands one Motion Magic move back to the recorded bottom and
+     *  switches to RETURN_TO_BOTTOM -- periodic() flips to IDLE (still actively holding that
+     *  same command, Phoenix 6 keeps executing it) once it actually arrives. */
     public void stopAgitation() {
-        dropMotor.setControl(coastOut);
-        state = DropState.IDLE;
+        startAgitationOnceAtBottom = false; // in case stop lands during the pending-drive-down phase
+        state = DropState.RETURN_TO_BOTTOM;
+        dropMotor.setControl(
+            agitateRequest.withPosition(degreesToMechanismRotations(bottomPositionDegrees)));
     }
 
     private void startAgitateUp() {
@@ -179,11 +205,13 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     /** @return true when arm is fully down and intake is collecting -- also true while
-     *  agitating, since that's still fundamentally "collecting", just with the extra wiggle */
+     *  agitating or returning from agitation, since that's still fundamentally "collecting",
+     *  just with the extra wiggle (or settling back down after it). */
     public boolean isCollecting() {
         return (state == DropState.IDLE && isAtBottom())
             || state == DropState.AGITATE_UP
-            || state == DropState.AGITATE_DOWN;
+            || state == DropState.AGITATE_DOWN
+            || state == DropState.RETURN_TO_BOTTOM;
     }
 
     /** @return true when arm is fully up */
@@ -211,7 +239,10 @@ public class IntakeSubsystem extends SubsystemBase {
         double posDegrees = getPositionDegrees();
 
         if (isAtTop() && !hasSeededTop) {
-            dropMotor.setPosition(degreesToMechanismRotations(TOP_POSITION_DEGREES));
+            // Record wherever we actually are, NOT a fixed 0 -- the mechanism travels a little
+            // past the sensor's activation point, so the true top isn't exactly the boot
+            // assumption above.
+            topPositionDegrees = posDegrees;
             hasSeededTop    = true;
             hasSeededBottom = false;
             
@@ -225,9 +256,13 @@ public class IntakeSubsystem extends SubsystemBase {
         switch (state) {
             case MOVING_DOWN -> {
                 if (isAtBottom()) {
-                    dropMotor.setControl(coastOut);
-                    state = DropState.IDLE;
-                    
+                    if (startAgitationOnceAtBottom) {
+                        startAgitationOnceAtBottom = false;
+                        startAgitateUp(); // bottomPositionDegrees was just re-recorded above, same loop
+                    } else {
+                        dropMotor.setControl(coastOut);
+                        state = DropState.IDLE;
+                    }
                 } else {
                     dropMotor.set(-DROP_SPEED);
                 }
@@ -250,6 +285,12 @@ public class IntakeSubsystem extends SubsystemBase {
         case AGITATE_DOWN -> {
             if (atAgitationGoal()) {
                 startAgitateUp();
+            }
+        }
+
+        case RETURN_TO_BOTTOM -> {
+            if (atAgitationGoal()) {
+                state = DropState.IDLE; // keeps holding the same already-issued command, now settled
             }
         }
             case IDLE -> {}
