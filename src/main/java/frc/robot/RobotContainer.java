@@ -186,6 +186,11 @@ public class RobotContainer {
         // d-pad up/down above -- this binding never touches IntakeDropSubsystem. Routes
         // through Mechanisms.startShooterAndFeeds(), which runs the feed rollers directly
         // (no arm bounce) and sets a flag so the SPINNING_UP->FIRING auto-feed is skipped.
+        joystick.b()
+            .onTrue(new InstantCommand(intakes::startAgitation, intakes))
+            .onFalse(new InstantCommand(intakes::stopAgitation, intakes));
+ 
+
         joystick.povLeft()
             .onTrue(new InstantCommand(mechanisms::startShooterAndFeeds, mechanisms))
             .onFalse(new InstantCommand(mechanisms::stopShooterAndFeeds, mechanisms));
