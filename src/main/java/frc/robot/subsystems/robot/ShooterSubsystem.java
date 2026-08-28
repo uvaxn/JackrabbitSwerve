@@ -5,7 +5,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
 import frc.robot.subsystems.EaseofLife;
@@ -24,10 +23,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
     private final TalonFX shooterL;
     EaseofLife MotorMode;
-
-    private boolean IS_SHOOTING = false;
-    private final Timer shooterUpdateTimer = new Timer();
-    private static final double SHOOTER_UPDATE_PERIOD = 0.1; // seconds
 
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
@@ -78,18 +73,13 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void start() {
-        IS_SHOOTING = true;
-        shooterUpdateTimer.restart();
-        // Command velocity immediately instead of waiting for the throttled periodic()
-        // update below -- previously this left the shooter at its old output (usually 0)
-        // for up to SHOOTER_UPDATE_PERIOD (100ms) after every start() call.
+        Variables.requestSpeedLimit("intake", 0.15);
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
-        // periodic() continues to refresh this every SHOOTER_UPDATE_PERIOD as distance/target changes.
     }
 
     public void stop() {
-        IS_SHOOTING = false;
+        Variables.clearSpeedLimit("intake");
         MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(shooterL, 0);
     }
@@ -110,10 +100,7 @@ public class ShooterSubsystem extends SubsystemBase {
         }
         NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
         NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
-
-        if (IS_SHOOTING && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
-            MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
-            MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
-        }
+        MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
+        MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
     }
 }

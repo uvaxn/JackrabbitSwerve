@@ -4,9 +4,7 @@ import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Variables;
 
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
@@ -18,14 +16,14 @@ public class IntakeSubsystem extends SubsystemBase {
     private final DigitalInput upperSensor;
     private final DigitalInput lowerSensor;
     EaseofLife MotorMode;
-    private final DriveInputs DriveInputs;
-    private double DROP_SPEED      = 0.15;
-    private double LIFT_SPEED      = 0.15;
-    private static final double SOFT_LIMIT_DOWN = 50.0;
-    private static final double SOFT_LIMIT_UP   = 2.0;
+    private static final double DROP_SPEED = 0.15;
+    private static final double LIFT_SPEED = 0.15;
 
-    private static final double INTAKE_COLLECT_SPEED = -0.6; // collecting from ground
+    private static final double AGITATE_DROP_SPEED = 0.3;
+    private static final double AGITATE_LIFT_SPEED = 0.3;
 
+    private static final double INTAKE_COLLECT_SPEED = -0.8; // collecting from ground
+    private static final double INTAKE_FEED_SPEED = -0.5; // for pushing balls to shooter
     private final CoastOut    coastOut    = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
 
@@ -33,7 +31,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private final Timer bounceTimer = new Timer();
 
-    private static final double BOUNCE_UP_TIME = 0.6; // time held at top
+    private static final double BOUNCE_UP_TIME = 0.3; // time held at top
 
     private enum BounceState {
         OFF,
@@ -58,7 +56,6 @@ public class IntakeSubsystem extends SubsystemBase {
         this.upperSensor = upperSensor;
         this.lowerSensor = lowerSensor;
         this.MotorMode = EaseOfLife;     
-        this.DriveInputs = DriveInputs;
         dropMotor.setPosition(0.0);
         dropMotor.setControl(staticBrake);
 
@@ -76,7 +73,7 @@ public class IntakeSubsystem extends SubsystemBase {
     public void startBounce() {
         bouncing = true;
         bounceState = BounceState.GOING_UP;
-
+        MotorMode.setSpeed(intakeMotor, INTAKE_FEED_SPEED);
         requestUp();
         bounceTimer.restart();
     }
@@ -84,7 +81,7 @@ public class IntakeSubsystem extends SubsystemBase {
     public void stopBounce() {
         bouncing = false;
         bounceState = BounceState.OFF;
-
+        MotorMode.setSpeed(intakeMotor, 0);
         bounceTimer.stop();
         bounceTimer.reset();
     }
@@ -92,7 +89,6 @@ public class IntakeSubsystem extends SubsystemBase {
             if (!bouncing) return;
 
             switch (bounceState) {
-
                 case GOING_UP -> {
                     // Keep going up until the timer expires
                     if (bounceTimer.hasElapsed(BOUNCE_UP_TIME)) {
@@ -100,7 +96,6 @@ public class IntakeSubsystem extends SubsystemBase {
                         bounceState = BounceState.GOING_DOWN;
                     }
                 }
-
                 case GOING_DOWN -> {
                     // Once bottom sensor is hit, go back up
                     if (isAtBottom()) {
@@ -109,21 +104,15 @@ public class IntakeSubsystem extends SubsystemBase {
                         bounceState = BounceState.GOING_UP;
                     }
                 }
-
                 case OFF -> {}
             }
         }
     public void start() {
         MotorMode.setSpeed(intakeMotor, INTAKE_COLLECT_SPEED);
-
-        Variables.requestSpeedLimit("intake", 0.15);
-
-    CommandScheduler.getInstance().schedule(DriveInputs.rumblePulse(1, 0.5, 0.1, 0.2));
-        
     }
     public void stop() {
         MotorMode.setSpeed(intakeMotor, 0);
-        Variables.clearSpeedLimit("intake");
+        
     }
  
     /** @return true when the arm is not moving useful for command isFinished() checks */
@@ -156,30 +145,31 @@ public class IntakeSubsystem extends SubsystemBase {
             
         }
         if (isAtBottom() && !hasSeededBottom) {
-            dropMotor.setPosition(SOFT_LIMIT_DOWN);
             hasSeededBottom = true;
             hasSeededTop    = false;
         }
         
         switch (state) {
             case MOVING_DOWN -> {
-                if (isAtBottom() || pos >= SOFT_LIMIT_DOWN) {
+                if (isAtBottom()) {
                     dropMotor.setControl(coastOut);
                     state = DropState.IDLE;
-                    
                 } else {
-                    dropMotor.set(-DROP_SPEED);
+                    double speed = bouncing ? AGITATE_DROP_SPEED : DROP_SPEED;
+                    dropMotor.set(-speed);
                 }
             }
+
             case MOVING_UP -> {
-                if (isAtTop() || pos <= SOFT_LIMIT_UP) {
+                if (isAtTop()) {
                     dropMotor.setControl(staticBrake);
                     state = DropState.IDLE;
-                    
                 } else {
-                    dropMotor.set(LIFT_SPEED);
+                    double speed = bouncing ? AGITATE_LIFT_SPEED : LIFT_SPEED;
+                    dropMotor.set(speed);
                 }
             }
+
             case IDLE -> {}
         }
         updateBounce();
