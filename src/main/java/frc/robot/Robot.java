@@ -23,8 +23,7 @@ public class Robot extends TimedRobot {
         m_timeAndJoystickReplay.update();
 
     robotContainer.cameraSubsystem.getMeasurement(
-        robotContainer.drivetrain.getState().Pose,
-        robotContainer.drivetrain.getState().Speeds.omegaRadiansPerSecond
+        robotContainer.drivetrain.getState().Pose
     ).ifPresent(measurement ->
         robotContainer.drivetrain.addVisionMeasurement(
             measurement.pose,

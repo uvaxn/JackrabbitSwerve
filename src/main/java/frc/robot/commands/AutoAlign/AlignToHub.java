@@ -63,7 +63,7 @@ public class AlignToHub extends Command {
         double velocityX = forwardSupplier.getAsDouble();
         double velocityY = leftSupplier.getAsDouble();
 
-        Optional<Pose2d> cameraPose = cameraSubsystem.getCameraOnlyPose();
+        Optional<Pose2d> cameraPose = cameraSubsystem.getEstimatedPose();
 
         if (cameraPose.isPresent()) {
 
