@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Variables;
-import frc.robot.constants.MotorGains;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
 import frc.robot.util.ShooterCalculation;
@@ -25,17 +24,11 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
     private final TalonFX shooterL;
     EaseofLife MotorMode;
+
+    private boolean IS_SHOOTING = false;
     private final Timer shooterUpdateTimer = new Timer();
+    private static final double SHOOTER_UPDATE_PERIOD = 0.1; // seconds
 
-    // Gates periodic() below. Without this, periodic() unconditionally recomputed and
-    // re-sent a velocity target every tick from robot boot onward -- meaning stop()'s neutral
-    // command got overwritten by the very next tick and the shooter never actually idled.
-    // Set true by start()/startFixed(), false by stop().
-    private boolean isShooting = false;
-
-    // Distinguishes startFixed() (Variables.FIXED_SHOOTER_SPEED, ignores vision/manual-override
-    // entirely) from a regular start() (vision distance calc, or the dashboard manual override).
-    private boolean fixedSpeedMode = false;
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
         this.shooterL  = shooterL;
@@ -45,15 +38,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private void configureShooter(TalonFX right, TalonFX left) {
         TalonFXConfiguration sharedConfig = new TalonFXConfiguration();
-        sharedConfig.Slot0 = MotorGains.SHOOTER.slot0();
+        sharedConfig.Slot0.kS = 0.5;
+        sharedConfig.Slot0.kV = 0.11;
+        sharedConfig.Slot0.kA = 0.01;
+        sharedConfig.Slot0.kP = 0.1;
+        sharedConfig.Slot0.kI = 0.0;
+        sharedConfig.Slot0.kD = 0.0;
 
-        // 2 motor rotations : 1 flywheel rotation, measured on robot (was wrongly configured
-        // as 1.0/direct-drive). getVelocity() now reports FLYWHEEL RPS directly -- ShooterCalculation's
-        // table below was tuned/measured while the code thought it was direct-drive, so those
-        // RPS numbers were really motor RPS the whole time (2x real flywheel RPS). Re-verify or
-        // re-tune that table now that the ratio is correct, same speed setpoint means something
-        // different than it did before this fix.
-        sharedConfig.Feedback.SensorToMechanismRatio = 2.0;
+        sharedConfig.Feedback.SensorToMechanismRatio = 1.0; // direct drive
 
         applyCurrentLimitsAndNeutral(sharedConfig);
         applyConfig(right, sharedConfig);
@@ -70,6 +62,7 @@ public class ShooterSubsystem extends SubsystemBase {
         config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     }
 
+    /** Applies a config with a few retries, since a single CAN frame can occasionally drop. */
     private void applyConfig(TalonFX motor, TalonFXConfiguration config) {
         StatusCode status = null;
         boolean success = false;
@@ -85,37 +78,20 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void start() {
-        isShooting = true;
-        fixedSpeedMode = false;
+        IS_SHOOTING = true;
         shooterUpdateTimer.restart();
-        Variables.requestSpeedLimit("shooters", 0.45);
+        // Command velocity immediately instead of waiting for the throttled periodic()
+        // update below -- previously this left the shooter at its old output (usually 0)
+        // for up to SHOOTER_UPDATE_PERIOD (100ms) after every start() call.
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
-        // periodic() continues to refresh this every tick as distance/target changes.
-    }
-
-    /**
-     * Left-bumper backup shot: spins to Variables.FIXED_SHOOTER_SPEED (live-tunable, see
-     * NetworkTables.getFixedShooterSpeed()) instead of the vision/distance-calculated target,
-     * so a bad vision read can never affect this shot. Otherwise identical to start() -- same
-     * speed-limit request, same atSpeed()/Mechanisms hookup.
-     */
-    public void startFixed() {
-        isShooting = true;
-        fixedSpeedMode = true;
-        shooterUpdateTimer.restart();
-        Variables.requestSpeedLimit("shooters", 0.45);
-        double fixedSpeed = NetworkTables.getFixedShooterSpeed();
-        MotorMode.setVelocity(shooterR, -fixedSpeed);
-        MotorMode.setVelocity(shooterL, fixedSpeed);
+        // periodic() continues to refresh this every SHOOTER_UPDATE_PERIOD as distance/target changes.
     }
 
     public void stop() {
-        isShooting = false;
-        fixedSpeedMode = false;
-        Variables.requestSpeedLimit("shooters", 0);
-        MotorMode.stop(shooterR);
-        MotorMode.stop(shooterL);
+        IS_SHOOTING = false;
+        MotorMode.setSpeed(shooterR, 0);
+        MotorMode.setSpeed(shooterL, 0);
     }
 
     public boolean atSpeed() {
@@ -127,22 +103,17 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void periodic() {
-        if (isShooting) {
-            if (fixedSpeedMode) {
-                Variables.SHOOTER_SPEED = NetworkTables.getFixedShooterSpeed();
-            } else if (NetworkTables.isManualShooterOverride()) {
-                Variables.SHOOTER_SPEED = NetworkTables.getManualShooterSpeed();
-            } else {
-                Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
-            }
+        if (NetworkTables.isManualShooterOverride()) {
+            Variables.SHOOTER_SPEED = NetworkTables.getManualShooterSpeed();
+        } else {
+            Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
+        }
+        NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
+        NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
+
+        if (IS_SHOOTING && shooterUpdateTimer.advanceIfElapsed(SHOOTER_UPDATE_PERIOD)) {
             MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
             MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
         }
-
-        // Published unconditionally (even while idle) so the dashboard shows the real
-        // coast-down after stop() instead of freezing on the last commanded value.
-        NetworkTables.putTargetShooterSpeed(isShooting ? Variables.SHOOTER_SPEED : 0.0);
-        NetworkTables.putShooterVelocityRight(shooterR.getVelocity().getValueAsDouble());
-        NetworkTables.putShooterVelocityLeft(shooterL.getVelocity().getValueAsDouble());
     }
 }

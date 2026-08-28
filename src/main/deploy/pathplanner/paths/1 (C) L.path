@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 3.656760842540212,
-        "y": 5.446414733297716
+        "x": 3.527685714285714,
+        "y": 5.555357928179976
       },
       "prevControl": {
-        "x": 3.4945241910195257,
-        "y": 5.2562062453079434
+        "x": 3.295926428820882,
+        "y": 5.461615549285313
       },
       "nextControl": {
-        "x": 3.8686696501279187,
-        "y": 5.694859542193652
+        "x": 4.084290693708992,
+        "y": 5.78049443035335
       },
       "isLocked": false,
       "linkedName": null
@@ -48,37 +48,25 @@
     },
     {
       "anchor": {
-        "x": 6.132071428573685,
-        "y": 5.446414733297716
+        "x": 6.138775963225701,
+        "y": 4.987709797044506
       },
       "prevControl": {
-        "x": 5.400527003213196,
-        "y": 5.855388635810752
+        "x": 5.715234907919991,
+        "y": 5.547499023774842
       },
       "nextControl": null,
-      "isLocked": false,
+      "isLocked": true,
       "linkedName": "1 (C) L End"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [
-    {
-      "name": "requestDown",
-      "waypointRelativePos": 1.9720279720279712,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "requestDown"
-        }
-      }
-    }
-  ],
+  "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.5,
-    "maxAcceleration": 2.5,
+    "maxVelocity": 2.0,
+    "maxAcceleration": 2.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
@@ -86,7 +74,7 @@
   },
   "goalEndState": {
     "velocity": 1.5,
-    "rotation": -78.85785945640093
+    "rotation": -17.815856934997743
   },
   "reversed": false,
   "folder": "centerL",

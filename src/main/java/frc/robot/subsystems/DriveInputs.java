@@ -34,16 +34,16 @@ public class DriveInputs extends SubsystemBase {
         double rawY = MathUtil.applyDeadband(
             rawYSupplier.getAsDouble(), 0.08);
 
-        limitedX = Variables.xLimiter.calculate(rawX);
-        limitedY = Variables.yLimiter.calculate(rawY);
+        limitedX = Variables.xLimiter.calculate(-rawX);
+        limitedY = Variables.yLimiter.calculate(-rawY);
     }
 
     public double getX() {
-        return -limitedX * Variables.getMaxSpeed();
+        return limitedX * Variables.getMaxSpeed();
     }
 
     public double getY() {
-        return -limitedY * Variables.getMaxSpeed();
+        return limitedY * Variables.getMaxSpeed();
     }
     
 

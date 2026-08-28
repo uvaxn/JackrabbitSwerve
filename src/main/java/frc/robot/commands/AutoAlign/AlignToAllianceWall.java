@@ -4,9 +4,9 @@ import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.ctre.phoenix6.swerve.SwerveRequest.TargetDirectionPerspectiveValue;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -21,7 +21,6 @@ public class AlignToAllianceWall extends Command {
 
     private final SwerveRequest.FieldCentricFacingAngle request =
         new SwerveRequest.FieldCentricFacingAngle()
-            .withTargetDirectionPerspective(TargetDirectionPerspectiveValue.BlueAlliance)
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final CommandSwerveDrivetrain swerveDrive;
@@ -53,19 +52,6 @@ public class AlignToAllianceWall extends Command {
         addRequirements(swerveDrive);
     }
 
-    /**
-     * Pure angle math, no side effects -- shared with AlignWhileShooting so the two commands
-     * can never drift out of sync on how this is computed. Alliance-color only, no field
-     * position involved, so this (and therefore AlignToAllianceWall as a whole) is odometry
-     * only -- there's nothing here for vision to correct.
-     */
-    public static Rotation2d computeTargetDirection() {
-        return Rotation2d.fromRadians(
-            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-                ? 0.0
-                : Math.PI);
-    }
-
     @Override
     public void execute() {
 
@@ -74,17 +60,24 @@ public class AlignToAllianceWall extends Command {
             easeOfLife.getAlignWallI(),
             easeOfLife.getAlignWallD()
         );
+        double targetAngle =
+            DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+                ? Math.PI
+                : 0.0;
 
-        Rotation2d targetDirection = computeTargetDirection();
 
-        NetworkTables.putTargetAngle(targetDirection.getDegrees());
-  
+        NetworkTables.putTargetAngle(
+            Units.radiansToDegrees(targetAngle)
+        );
+
         swerveDrive.setControl(
             request
                 .withDeadband(Variables.getMaxSpeed() * 0.1)
                 .withVelocityX(forwardSupplier.getAsDouble())
                 .withVelocityY(leftSupplier.getAsDouble())
-                .withTargetDirection(targetDirection)
+                .withTargetDirection(
+                    Rotation2d.fromRadians(targetAngle)
+                )
         );
     }
     @Override

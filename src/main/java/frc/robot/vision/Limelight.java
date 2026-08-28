@@ -1,69 +1,74 @@
 package frc.robot.vision;
 
-import static frc.robot.constants.LimelightConstants.AGREED_TRANSLATION_EPSILON_M;
-import static frc.robot.constants.LimelightConstants.AUTONOMOUS_RESEED_HEADING_TOLERANCE_DEG;
-import static frc.robot.constants.LimelightConstants.DEFAULT_STABLE_UPDATE_THRESHOLD;
-import static frc.robot.constants.LimelightConstants.HUB_ALIGN_POS_STD_DEV_M;
-import static frc.robot.constants.LimelightConstants.MAX_ESTIMATE_AGE_SECONDS;
-import static frc.robot.constants.LimelightConstants.TRUST_CURVE_EXPONENT;
-import static frc.robot.constants.LimelightConstants.TRUST_PERCENT_RESEED;
-import static frc.robot.constants.LimelightConstants.VISION_ROTATION_STD_DEV;
-import static frc.robot.constants.LimelightConstants.VISION_TRUST_DISABLED_STD_DEV;
-
 import java.util.Optional;
 
-import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
-import frc.robot.vision.PoseFusion.FusionResult;
 
-/**
- * The Limelight subsystem. Talks to LimelightHelpers, hands the raw MT1/MT2 estimates to
- * PoseFusion for the actual fusion/rejection math (see that file), and owns everything
- * stateful: caching the latest accepted pose, tracking pose stability, publishing telemetry,
- * toggling hub precision mode, and converting a 0-100 vision trust percentage into the
- * position std dev actually handed to the pose estimator. Every tunable number lives in
- * LimelightConstants.java.
- */
 public class Limelight extends SubsystemBase {
+    private static final AprilTagFieldLayout Afield =
+            AprilTagFieldLayout.loadField(
+                AprilTagFields.k2026RebuiltAndymark
+            );
+    
+        // ---- field + rejection tunables ----
+    private static final double FIELD_LENGTH_M = Afield.getFieldLength();
+    private static final double FIELD_WIDTH_M = Afield.getFieldWidth();
+
+    private static final double MAX_SINGLE_TAG_AMBIGUITY = 0.32;
+    private static final double MAX_ANGULAR_VEL_DEG_PER_SEC = 540.0;
+    private static final double MAX_ACCEPT_DIST_M = 5.0;
+
+    // ---- position (x/y) stddev model, scaled by MT2 distance/tag count ----
+    private static final double POS_STD_DEV_FLOOR = 0.1;
+    private static final double POS_STD_DEV_DIST_COEFF = 0.08;
+    private static final double MULTI_TAG_STD_DEV_SCALE = 0.5;
+    private static final double MAX_ACCEPTED_POS_STD_DEV = 3.0;
+
+    // ---- rotation stddev for the MT1-sourced drift correction ----
+    // MT2's own rotation just echoes the gyro heading it was fed it is NOT an independent
+    // measurement so MT1 (which solves rotation from tag geometry alone) is the only thing
+    // here that can actually correct gyro drift. It only gets to do so when trustworthy.
+    private static final double MT1_ROTATION_STD_DEV_MULTI_TAG_RAD = 0.3;
+    private static final double MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD = 1.0;
+    private static final double UNTRUSTED_ROTATION_STD_DEV = 9999999;
+
+    // ---- staleness: how long a fused pose stays valid with nothing refreshing it ----
+    private static final double MAX_ESTIMATE_AGE_SECONDS = 0.25;
 
     private final String name;
     private final NetworkTable telemetryTable;
     private final StructPublisher<Pose2d> posePublisher;
-    private final IntegerPublisher stableUpdatesPublisher;
 
     private Optional<Pose2d> latestEstimate = Optional.empty();
     private double latestEstimateTimestamp = 0.0;
-
+    
     private Optional<Pose2d> latestCameraOnlyPose = Optional.empty();
     private double latestCameraOnlyTimestamp = 0.0;
     private double latestCameraHubDist = 0.0;
-
-    private int numStableUpdates = 0;
-    private boolean hubPrecisionMode = false;
-
-    // The knob: 0-100, see setVisionTrustPercent(). 50 is a deliberate no-op default -- it's
-    // the "Normal" operating mode percentage, and maps to an exact 1x multiplier below, so a
-    // freshly-constructed Limelight behaves identically to before this system existed until
-    // something calls setVisionTrustPercent().
-    private double visionTrustPercent = 50.0;
-
     public Limelight(String name) {
         this.name = name;
         this.telemetryTable = NetworkTableInstance.getDefault().getTable(name);
         this.posePublisher = telemetryTable.getStructTopic("EstimatedPose", Pose2d.struct).publish();
-        this.stableUpdatesPublisher = telemetryTable.getIntegerTopic("NumStableUpdates").publish();
+    }
+
+    private static boolean isInField(Translation2d t) {
+        return t.getX() >= 0 && t.getX() <= FIELD_LENGTH_M &&
+               t.getY() >= 0 && t.getY() <= FIELD_WIDTH_M;
     }
 
     /**
@@ -76,86 +81,100 @@ public class Limelight extends SubsystemBase {
 
         final PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
         final PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
-
-        final Optional<FusionResult> result = PoseFusion.fuse(mt1, mt2, angularVelocityRadPerSec);
-        if (result.isEmpty()) {
+        if (mt2 == null || mt2.tagCount == 0) {
             return Optional.empty();
         }
-        final FusionResult fusion = result.get();
 
-        // --- pose stability: has this cycle's fused pose landed near where we already
-        // thought we were? Consecutive agreement builds confidence, any miss resets it. A
-        // rejected/missing cycle (the isEmpty() check above) neither adds to nor resets this.
-        if (fusion.fusedPose.getTranslation().getDistance(currentRobotPose.getTranslation())
-                < AGREED_TRANSLATION_EPSILON_M) {
-            numStableUpdates++;
+        // --- MT2 gates whether we trust this cycle's position at all ---
+
+        if (mt2.tagCount == 1 && mt2.rawFiducials.length > 0
+                && mt2.rawFiducials[0].ambiguity > MAX_SINGLE_TAG_AMBIGUITY) {
+            return Optional.empty();
+        }
+        final Translation2d mt2Translation = mt2.pose.getTranslation();
+        if (!isInField(mt2Translation)) {
+            DriverStation.reportWarning(
+                "out of bounds!", false);
+            return Optional.empty();
+        }
+
+        if (mt2.avgTagDist > MAX_ACCEPT_DIST_M) {
+            return Optional.empty();
+        }
+
+        if (Math.toDegrees(Math.abs(angularVelocityRadPerSec)) > MAX_ANGULAR_VEL_DEG_PER_SEC) {
+            return Optional.empty();
+        }
+        // --- MT1 only gets to correct rotation when it's actually trustworthy this cycle ---
+
+        final boolean mt1RotationTrustworthy = mt1 != null &&
+            (mt1.tagCount > 1
+            || (mt1.rawFiducials.length > 0 
+            && mt1.rawFiducials[0].ambiguity <= MAX_SINGLE_TAG_AMBIGUITY));
+
+        final Pose2d fusedPose;
+        final double rotationStdDevRad;
+        if (mt1RotationTrustworthy) {
+            fusedPose = new Pose2d(mt2Translation, mt1.pose.getRotation());
+            rotationStdDevRad = (mt1.tagCount > 1)
+                ? MT1_ROTATION_STD_DEV_MULTI_TAG_RAD
+                : MT1_ROTATION_STD_DEV_SINGLE_TAG_RAD;
+                    final Translation2d mt1Translation = mt1.pose.getTranslation();
+        if (isInField(mt1Translation) && mt1.avgTagDist <= MAX_ACCEPT_DIST_M) {
+            latestCameraOnlyPose =
+            Optional.of(
+                new Pose2d(
+                    mt2.pose.getTranslation(),
+                    mt1.pose.getRotation()
+                )
+            );
+        latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
+        Translation2d robotPosition = mt1.pose.getTranslation();
+
+        Translation2d hubPosition = Constants.getTeamHubTranslation();
+
+        latestCameraHubDist =
+            robotPosition.getDistance(hubPosition);
+        }
         } else {
-            numStableUpdates = 0;
-        }
-        stableUpdatesPublisher.set(numStableUpdates);
-
-        if (fusion.cameraOnlyPose.isPresent() && fusion.mt1TranslationForHubDistance.isPresent()) {
-            latestCameraOnlyPose = fusion.cameraOnlyPose;
-            latestCameraOnlyTimestamp = Timer.getFPGATimestamp();
-            latestCameraHubDist = fusion.mt1TranslationForHubDistance.get()
-                    .getDistance(Constants.getTeamHubTranslation());
+            // Keep MT2's own (gyro-echoing) rotation and tell the estimator this measurement
+            // says nothing about rotation this cycle
+            fusedPose = mt2.pose;
+            rotationStdDevRad = UNTRUSTED_ROTATION_STD_DEV;
         }
 
-        // hub precision mode is subsystem state, not fusion math, so it's applied here on top
-        // of PoseFusion's result rather than inside PoseFusion: while it's on, skip the
-        // trust-percentage system below entirely in favor of one flat, simpler number (see
-        // LimelightConstants.HUB_ALIGN_POS_STD_DEV_M). Otherwise, scale PoseFusion's adaptive
-        // fusion.posStdDevBase by the current trust percentage -- see
-        // calculateVisionPositionStdDev() for the curve.
-        final double posStdDev = hubPrecisionMode
-                ? HUB_ALIGN_POS_STD_DEV_M
-                : calculateVisionPositionStdDev(fusion.posStdDevBase);
+        // --- position stddev, scaled by MT2 distance and tag count ---
 
-        // Rotation is never corrected by vision through this system, regardless of trust
-        // percentage or hub precision mode -- see VISION_ROTATION_STD_DEV's doc. PoseFusion
-        // still computes fusion.rotationStdDevRad above (MT1/MT2 fusion stays fully intact),
-        // it's just not surfaced into the measurement handed back below anymore.
-        final Matrix<N3, N1> standardDeviations =
-                VecBuilder.fill(posStdDev, posStdDev, VISION_ROTATION_STD_DEV);
-        posePublisher.set(fusion.fusedPose);
+        double posStdDev = POS_STD_DEV_FLOOR + POS_STD_DEV_DIST_COEFF * mt2.avgTagDist * mt2.avgTagDist;
+        if (mt2.tagCount > 1) {
+            posStdDev *= MULTI_TAG_STD_DEV_SCALE;
+        }
+        posStdDev = Math.min(posStdDev, MAX_ACCEPTED_POS_STD_DEV);
 
-        latestEstimate = Optional.of(fusion.fusedPose);
-        latestEstimateTimestamp = fusion.timestampSeconds;
+        final Matrix<N3, N1> standardDeviations = VecBuilder.fill(posStdDev, posStdDev, rotationStdDevRad);
+        posePublisher.set(fusedPose);
 
-        return Optional.of(new Measurement(fusion.fusedPose, fusion.timestampSeconds, standardDeviations));
+        latestEstimate = Optional.of(fusedPose);
+        latestEstimateTimestamp = mt2.timestampSeconds;
+
+        return Optional.of(
+            new Measurement(
+                fusedPose,
+                mt2.timestampSeconds,
+                standardDeviations
+            )
+        );
     }
 
-    /**
-     * Maps the current visionTrustPercent (0-100) onto a position std dev, by scaling
-     * posStdDevBase -- PoseFusion's adaptive, distance/tag-count-aware estimate -- with a
-     * logit/odds-ratio curve: {@code multiplier = ((1 - trust) / trust) ^ TRUST_CURVE_EXPONENT}
-     * where trust = visionTrustPercent / 100. That shape is what makes 50% land on exactly 1x
-     * and 25% land on exactly 2x (see TRUST_CURVE_EXPONENT's derivation), while still
-     * producing a smooth, monotonic multiplier everywhere else: it falls toward 0 as trust
-     * rises toward 100% (vision essentially unopposed) and rises toward infinity as trust
-     * falls toward 0% (vision effectively ignored), both real limits of one formula rather
-     * than a piecewise special case -- the explicit trust <= 0 branch below exists purely for
-     * readability, Math.min already saturates correctly on its own since Java's 1.0/0.0 is a
-     * well-defined (and here, harmless) IEEE 754 infinity, not a thrown exception.
-     */
-    private double calculateVisionPositionStdDev(double posStdDevBase) {
-        double trust = MathUtil.clamp(visionTrustPercent, 0.0, 100.0) / 100.0;
-        if (trust <= 0.0) {
-            return VISION_TRUST_DISABLED_STD_DEV;
-        }
-        double multiplier = Math.pow((1.0 - trust) / trust, TRUST_CURVE_EXPONENT);
-        return Math.min(posStdDevBase * multiplier, VISION_TRUST_DISABLED_STD_DEV);
+public Optional<Pose2d> getCameraOnlyPose() {
+    if (latestCameraOnlyPose.isEmpty()) {
+        return Optional.empty();
     }
-
-    public Optional<Pose2d> getCameraOnlyPose() {
-        if (latestCameraOnlyPose.isEmpty()) {
-            return Optional.empty();
-        }
-        if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
-            return Optional.empty();
-        }
-        return latestCameraOnlyPose;
+    if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
+        return Optional.empty();
     }
+    return latestCameraOnlyPose;
+}
 
     public double getDistanceToHub() {
         if (latestCameraOnlyPose.isEmpty()) {
@@ -164,11 +183,10 @@ public class Limelight extends SubsystemBase {
         if (Timer.getFPGATimestamp() - latestCameraOnlyTimestamp > MAX_ESTIMATE_AGE_SECONDS) {
             return 3.0;
         }
-        // MegaTag1 is used for hub distance (instead of MegaTag2) because though MegaTag2
-        // gives significantly better pose reads, MegaTag1 is substantially better for hub
-        // distance specifically: despite its own pose ambiguity, it holds distance-from-hub
-        // steady, and MegaTag2's distance can be thrown off if the robot's yaw estimate is off.
-        return latestCameraHubDist;
+        return latestCameraHubDist; // the reason behind using megatag1 for distance, is because though megatag2 gives significantly better pose reads
+                                    // megatag1 is substantially better for if we want the distance from the hub. Though there is pose ambiguity,
+                                    // atleast they retain around the same distance from the hub. Megatag2 also might have a problem if the robot's
+                                    // yaw is off.
     }
 
     public Optional<Pose2d> getEstimatedPose() {
@@ -181,104 +199,20 @@ public class Limelight extends SubsystemBase {
         return latestEstimate;
     }
 
-    /** @return how many consecutive accepted vision updates have landed within
-     *  AGREED_TRANSLATION_EPSILON_M of the pose we already had, resets to 0 on any miss.
-     *  A rejected/missing cycle neither adds to nor resets this, it just holds. */
-    public int getNumStableUpdates() {
-        return numStableUpdates;
-    }
+    public static class Measurement {
+        public final Pose2d pose;
+        public final double timestamp;
+        public final Matrix<N3,N1> standardDeviations;
 
-    /** @return true once the default number of consecutive updates have agreed. */
-    public boolean isPoseStable() {
-        return numStableUpdates >= DEFAULT_STABLE_UPDATE_THRESHOLD;
-    }
+        public Measurement(
+            Pose2d pose,
+            double timestamp,
+            Matrix<N3,N1> standardDeviations) {
 
-    /** @param updates a custom threshold, for callers that want to demand more or less
-     *  agreement than the default before trusting this camera. */
-    public boolean isPoseStable(int updates) {
-        return numStableUpdates >= updates;
-    }
-
-    /**
-     * Switches position std dev to the flat HUB_ALIGN_POS_STD_DEV_M value (see
-     * LimelightConstants) instead of PoseFusion's adaptive distance/tag-count model, while a
-     * HUB-targeting alignment command is actively running. Call with true whenever a cycle is
-     * aiming at the HUB (e.g. AlignToHub.initialize(), or AlignWhileShooting while it's in its
-     * HUB-facing branch) and false otherwise (that command's end(), or AlignWhileShooting's
-     * wall-facing branch). Rotation trust is untouched, this only affects position.
-     * <p>
-     * Not to be confused with the driver-facing "AlignMode" NetworkTables toggle published by
-     * EaseofLife -- that one is "should we auto-aim at all", this is "how much do we trust
-     * vision position while we do."
-     */
-    public void setHubPrecisionMode(boolean aligning) {
-        this.hubPrecisionMode = aligning;
-    }
-
-    public boolean isHubPrecisionMode() {
-        return hubPrecisionMode;
-    }
-
-    /**
-     * Sets how much the next vision measurements should be trusted, 0 (ignore vision) to 100
-     * (trust it essentially unopposed) -- see calculateVisionPositionStdDev() for the curve
-     * this feeds, and LimelightConstants.TRUST_PERCENT_* for the standard operating-mode
-     * values. Out-of-range input is clamped rather than left to produce odd behavior.
-     * Doesn't affect hub precision mode, that's a separate override -- see setHubPrecisionMode.
-     */
-    public void setVisionTrustPercent(double percent) {
-        this.visionTrustPercent = MathUtil.clamp(percent, 0.0, 100.0);
-    }
-
-    public double getVisionTrustPercent() {
-        return visionTrustPercent;
-    }
-
-    /**
-     * Autonomous-alignment reseed check. An alignment command's execute() should call this
-     * every cycle while it's running in autonomous; every other cycle this returns
-     * Optional.empty() and does nothing. The one cycle both alreadyReseeded is still false AND
-     * the robot is within AUTONOMOUS_RESEED_HEADING_TOLERANCE_DEG of its target heading AND
-     * isPoseStable(), this performs a single hard pose reset (not a soft addVisionMeasurement
-     * nudge) from the current vision estimate: it briefly raises visionTrustPercent to
-     * LimelightConstants.TRUST_PERCENT_RESEED for that one moment, hands back the pose to
-     * reset to, and immediately restores visionTrustPercent to normalOperatingTrustPercent --
-     * this is a one-shot bracket around a single reset, not a standing trust change.
-     * <p>
-     * This method does NOT track "have I already reseeded" itself -- alignment commands come
-     * and go (a fresh one starts a fresh attempt), so that latch has to live in the caller,
-     * reset in that command's own initialize(). Pass it back in every cycle; once this returns
-     * a present Optional, set your local latch to true and stop calling (or keep calling, it's
-     * a no-op once alreadyReseeded is true either way).
-     *
-     * @param headingErrorDegrees      |current heading - target heading|, from the caller's own math
-     * @param alreadyReseeded          the caller's own one-shot latch
-     * @param normalOperatingTrustPercent what to restore visionTrustPercent to right after
-     *                                 (typically whatever LimelightConstants.TRUST_PERCENT_*
-     *                                 matches the current operating mode)
-     * @return the pose to hard-reset the drivetrain to, only on the one cycle a reseed fires
-     */
-    public Optional<Pose2d> checkAutonomousReseed(
-            double headingErrorDegrees, boolean alreadyReseeded, double normalOperatingTrustPercent) {
-
-        if (alreadyReseeded
-                || headingErrorDegrees > AUTONOMOUS_RESEED_HEADING_TOLERANCE_DEG
-                || !isPoseStable()) {
-            return Optional.empty();
+            this.pose = pose;
+            this.timestamp = timestamp;
+            this.standardDeviations = standardDeviations;
         }
-
-        // getEstimatedPose(), not the raw latestEstimate field: isPoseStable() alone doesn't
-        // guarantee freshness on its own -- a gap of rejected/missing cycles holds the stable
-        // count rather than resetting it (see its doc above), so it's still possible to be
-        // "stable" while latestEstimate has quietly gone stale. Too consequential a reset to
-        // skip that check.
-        Optional<Pose2d> reseedPose = getEstimatedPose();
-        if (reseedPose.isEmpty()) {
-            return Optional.empty();
-        }
-
-        setVisionTrustPercent(TRUST_PERCENT_RESEED);
-        setVisionTrustPercent(normalOperatingTrustPercent);
-        return reseedPose;
+        
     }
 }

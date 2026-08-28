@@ -1,5 +1,22 @@
 package frc.robot;
 
+/*
+ * CONTROLS 
+ * 
+ * Left Joystick  -- Moves robot
+ * Right Joystick -- Rotates robot
+ * Left Trigger   -- Intake (drops down and intakes)
+ * Right Trigger  -- Shoot (lifts intake and shoots)
+ * Right Bumper & Trigger -- Continously lifts intake up and down while shooting
+ * Left Bumper    -- Reset field-centric heading
+ * X Button       -- Auto-align to nearest AprilTag
+ * Y Button       -- Auto-align to alliance Wall
+ * A Button       -- Points wheels based on joystick direction
+ * 
+ * d-pad UP       -- lift intake
+ * d-pad DOWN     -- drop intake
+ */
+
 import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.MathUtil;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -10,7 +27,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -19,10 +35,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AutoAlign.AlignToAllianceWall;
-import frc.robot.commands.AutoAlign.AlignWhileShooting;
+import frc.robot.commands.AutoAlign.AlignToHub;
 import frc.robot.constants.Constants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -41,7 +56,8 @@ public class RobotContainer {
     private static final double ROTATION_STICK_DEADBAND = 0.08; // matches DriveInputs' X/Y deadband
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-        .withRotationalDeadband(MaxAngularRate * 0.03) 
+        // .withDeadband(Vars.MaxSpeed * 0.03) -- this has 3 percent deadband
+        .withRotationalDeadband(MaxAngularRate * 0.03) // was 0.003 (0.3%) -- effectively no deadband, fixed the decimal
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
@@ -68,11 +84,18 @@ public class RobotContainer {
     public final TalonFX m_IntakeDrop = new TalonFX(Constants.m_IntakeDrop);
     public final TalonFX m_LowerFeed  = new TalonFX(Constants.m_LowerFeed);
     public final TalonFX m_UpperFeed  = new TalonFX(Constants.m_UpperFeed);
- 
-    public final IntakeSubsystem intakes = new IntakeSubsystem(
-        m_Intake,
 
-        m_Intake, new DigitalInput(0), new DigitalInput(1), easeOfLife, driveInputs
+    
+    
+    public final IntakeSubsystem intakes = new IntakeSubsystem(
+        m_Intake, 
+        m_IntakeDrop,
+
+        new DigitalInput(0),
+        new DigitalInput(1),
+
+        easeOfLife, 
+        driveInputs
     );
     public final ShooterSubsystem shooters = new ShooterSubsystem(
         m_ShooterR, 
@@ -94,8 +117,8 @@ public class RobotContainer {
     );
     // Commands
     public RobotContainer() {
-        NamedCommands.registerCommand("shoot",      new InstantCommand(mechanisms::startShooting));
-        NamedCommands.registerCommand("stop shoot", new InstantCommand(mechanisms::stopShooting));
+        NamedCommands.registerCommand("shoot",      new InstantCommand(() -> mechanisms.FullHopperShoot()));
+        NamedCommands.registerCommand("stop shoot", new InstantCommand(() -> mechanisms.StopShoot()));
         NamedCommands.registerCommand("intake",     new InstantCommand(intakes::start, intakes));
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
         NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
@@ -111,8 +134,8 @@ public class RobotContainer {
 
         drivetrain.setDefaultCommand( // reminder that this chunk of code basically controls the movement of the robot
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(driveInputs.getX())
-                    .withVelocityY(driveInputs.getY())
+                drive.withVelocityX(-driveInputs.getX())
+                    .withVelocityY(-driveInputs.getY())
                     .withRotationalRate(
                         -MathUtil.applyDeadband(joystick.getRightX(), ROTATION_STICK_DEADBAND) * MaxAngularRate)
             )
@@ -133,73 +156,45 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // Left bumper: fixed-speed backup shot. Bypasses vision/distance calc entirely (see
-        // ShooterSubsystem.startFixed() / Variables.FIXED_SHOOTER_SPEED) -- always the same
-        // commanded speed regardless of what the Limelight is or isn't seeing right now. Also
-        // does NOT trigger auto-align-while-shooting (see Mechanisms.isShootingWithVision() and
-        // the Trigger below) -- this is meant to just shoot, nothing else moves.
-        joystick.leftBumper()
-            .onTrue(new InstantCommand(mechanisms::startShootingFixed, mechanisms))
-            .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
+        // Reset field centric heading, odometry points toward alliance wall.
+        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // Y: reset field-centric heading (was the auto-align-while-shooting toggle -- that
-        // toggle binding has been removed, see note below).
-        joystick.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
-        // Right bumper: manual "face our alliance wall" while held, independent of shooting --
-        // reuses the same AlignToAllianceWall command AlignWhileShooting calls internally when
-        // you're out of your own zone, just available on demand instead of only while firing.
-        joystick.rightBumper().whileTrue(new AlignToAllianceWall(
+        // autoalign to nearest AprilTag
+        joystick.x().whileTrue(new AlignToHub(
+            cameraSubsystem,
+            easeOfLife,
+            drivetrain,
+            driveInputs::getX,
+            driveInputs::getY
+        ));
+        // align to alliance wall is the exact same thing btw, just toward your alliance wall ^
+        joystick.y().whileTrue(new AlignToAllianceWall(
             drivetrain,
             easeOfLife,
             driveInputs::getX,
             driveInputs::getY
         ));
-        new Trigger(() -> DriverStation.isTeleopEnabled()
-                && mechanisms.isShootingWithVision()
-                && easeOfLife.isAutoAlignEnabled())
-            .whileTrue(new AlignWhileShooting(
-                cameraSubsystem,
-                easeOfLife,
-                drivetrain,
-                driveInputs::getX,
-                driveInputs::getY
-            ));
         // Intake
         joystick.leftTrigger()
-            .onTrue(new InstantCommand(mechanisms::requestIntake, mechanisms))
-            .onFalse(new InstantCommand(mechanisms::stopIntake, mechanisms));
+            .onTrue(new InstantCommand(mechanisms::Intake, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::StopIntake, mechanisms));
 
-        // Shooter spins for as long as right trigger is held, stops on release. The old
-        // right-bumper feed-mode distinction (full-hopper vs regular) is gone -- right bumper
-        // is now the manual face-alliance-wall binding above, unrelated to feed mode -- so
-        // this is just a plain onTrue/onFalse pair, no compound triggers.
-        joystick.rightTrigger()
-            .onTrue(new InstantCommand(mechanisms::startShooting, mechanisms))
-            .onFalse(new InstantCommand(mechanisms::stopShooting, mechanisms));
+        // Shooter
+       // Shooter spins for as long as right trigger is held, full stop only when it's released.
+       joystick.rightTrigger()
+           .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
+           .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
+
+        // Bumper only selects feed mode while the trigger is held
+        joystick.rightTrigger().and(joystick.rightBumper())
+            .onTrue(new InstantCommand(mechanisms::FullHopperMode, mechanisms));
+        joystick.rightTrigger().and(joystick.rightBumper().negate())
+            .onTrue(new InstantCommand(mechanisms::RegularMode, mechanisms));
+            
         joystick.povDown()
-            .onTrue(new InstantCommand(intakes::requestDown));
+            .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
-            .onTrue(new InstantCommand(intakes::requestUp));
-
-        // D-pad left: shooter + feeds, arm stays put (no bounce). The arm only moves via
-        // d-pad up/down above -- this binding never touches IntakeDropSubsystem. Routes
-        // through Mechanisms.startShooterAndFeeds(), which runs the feed rollers directly
-        // (no arm bounce) and sets a flag so the SPINNING_UP->FIRING auto-feed is skipped.
-        joystick.b()
-            .onTrue(new InstantCommand(intakes::startAgitation, intakes))
-            .onFalse(new InstantCommand(intakes::stopAgitation, intakes));
- 
-
-        joystick.povLeft()
-            .onTrue(new InstantCommand(mechanisms::startShooterAndFeeds, mechanisms))
-            .onFalse(new InstantCommand(mechanisms::stopShooterAndFeeds, mechanisms));
-
-        // D-pad right: feeds only (no shooter, no arm). Just the upper+lower feed rollers,
-        // started/stopped without bouncing or parking the intake-drop arm.
-        joystick.povRight()
-            .onTrue(new InstantCommand(feeds::rollersStart, feeds))
-            .onFalse(new InstantCommand(feeds::stop, feeds));
+            .onTrue(new InstantCommand(intakes::requestUp, intakes));
         drivetrain.registerTelemetry(logger::telemeterize);
         
     }
@@ -207,7 +202,7 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         Command selected = autoChooser.getSelected();
         if (selected == null) return Commands.none();
-        System.out.println("Auto: " + selected.getName());
+        System.out.println("auto: " + selected.getName());
         return selected;
     }
 }

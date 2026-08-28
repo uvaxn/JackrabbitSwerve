@@ -21,16 +21,16 @@ public class FeedSubsystem extends SubsystemBase {
 
     public void start() {
         rollersStart();
-        intake.startAgitation();
+        intake.startBounce();
     }
     public void rollersStart() {
-        easeOfLife.setSpeed(lowerFeed, Variables.FEED_SPEED, true);
-        easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED, false);
+        easeOfLife.setSpeed(lowerFeed, -Variables.FEED_SPEED);
+        easeOfLife.setSpeed(upperFeed, Variables.FEED_SPEED);
     }
     public void stop() {
-        easeOfLife.stop(lowerFeed);;
-        easeOfLife.stop(upperFeed);;
-        intake.stopAgitation();
+        easeOfLife.setSpeed(lowerFeed, 0);
+        easeOfLife.setSpeed(upperFeed, 0);
+        intake.stopBounce();
         if (!intake.isAtBottom()) {
             intake.requestDown();
         }
