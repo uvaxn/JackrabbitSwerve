@@ -186,11 +186,8 @@ public class RobotContainer {
            .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
 
         // Bumper only selects feed mode while the trigger is held
-        joystick.rightTrigger().and(joystick.rightBumper())
+        joystick.rightTrigger()
             .onTrue(new InstantCommand(mechanisms::FullHopperMode, mechanisms));
-        joystick.rightTrigger().and(joystick.rightBumper().negate())
-            .onTrue(new InstantCommand(mechanisms::RegularMode, mechanisms));
-            
         joystick.povDown()
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
