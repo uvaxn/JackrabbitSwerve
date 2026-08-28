@@ -84,6 +84,10 @@ public class IntakeSubsystem extends SubsystemBase {
         MotorMode.setSpeed(intakeMotor, 0);
         bounceTimer.stop();
         bounceTimer.reset();
+        // return the arm to the bottom at the normal drop speed.
+        if (!isAtBottom()) {
+            requestDown();
+        }
     }
     private void updateBounce() {
             if (!bouncing) return;
@@ -112,7 +116,6 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     public void stop() {
         MotorMode.setSpeed(intakeMotor, 0);
-        
     }
  
     /** @return true when the arm is not moving useful for command isFinished() checks */
@@ -136,13 +139,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        double pos = dropMotor.getPosition().getValueAsDouble();
-
         if (isAtTop() && !hasSeededTop) {
-            dropMotor.setPosition(0.0);
             hasSeededTop    = true;
             hasSeededBottom = false;
-            
         }
         if (isAtBottom() && !hasSeededBottom) {
             hasSeededBottom = true;

@@ -17,12 +17,6 @@
           }
         },
         {
-          "type": "path",
-          "data": {
-            "pathName": "3 (R)"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "shoot"
@@ -31,19 +25,13 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 4.0
+            "waitTime": 5.0
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stop shoot"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "4 (R)"
           }
         }
       ]
