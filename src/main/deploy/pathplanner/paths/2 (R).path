@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.265839724704101,
-        "y": 4.537769083130426
+        "x": 6.8121166180522525,
+        "y": 6.383589214969316
       },
       "isLocked": false,
       "linkedName": "2 (R) End"
     },
     {
       "anchor": {
-        "x": 6.006165601806106,
-        "y": 2.9139704090822307
+        "x": 5.778790189112491,
+        "y": 2.840755744318707
       },
       "prevControl": {
-        "x": 6.901715173553899,
-        "y": 4.537769083130426
+        "x": 6.929367189145982,
+        "y": 4.29815327769446
       },
       "nextControl": {
-        "x": 5.689015318458298,
-        "y": 2.338917697517525
+        "x": 5.335936005281164,
+        "y": 2.279807111465693
       },
       "isLocked": false,
       "linkedName": null
@@ -44,7 +44,16 @@
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.6096256684491962,
+      "rotationDegrees": -107.992415196034
+    },
+    {
+      "waypointRelativePos": 0.9090909090909088,
+      "rotationDegrees": -91.74935577926885
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [
     {
@@ -61,7 +70,7 @@
   "eventMarkers": [
     {
       "name": "stop intake",
-      "waypointRelativePos": 0.888135593220339,
+      "waypointRelativePos": 1.505084745762709,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
