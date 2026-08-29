@@ -23,7 +23,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterR;
     private final TalonFX shooterL;
     EaseofLife MotorMode;
-
+    private boolean running = false;
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
         this.shooterL  = shooterL;
@@ -72,16 +72,22 @@ public class ShooterSubsystem extends SubsystemBase {
         }
     }
 
-    public void start() {
+        public void start() {
+        running = true;
         Variables.requestSpeedLimit("intake", 0.15);
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
     }
 
     public void stop() {
+        running = false;
         Variables.clearSpeedLimit("intake");
         MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(shooterL, 0);
+    }
+
+    public boolean isRunning() {
+        return running;
     }
 
     public boolean atSpeed() {
@@ -93,13 +99,18 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void periodic() {
+        NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
+
+        if (!running) {
+            return; 
+        }
+
         if (NetworkTables.isManualShooterOverride()) {
             Variables.SHOOTER_SPEED = NetworkTables.getManualShooterSpeed();
         } else {
             Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         }
         NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
-        NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
     }
