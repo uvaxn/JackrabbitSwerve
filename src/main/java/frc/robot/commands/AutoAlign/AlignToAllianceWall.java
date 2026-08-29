@@ -21,7 +21,8 @@ public class AlignToAllianceWall extends Command {
 
     private final SwerveRequest.FieldCentricFacingAngle request =
         new SwerveRequest.FieldCentricFacingAngle()
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+            .withTargetDirectionPerspective(SwerveRequest.TargetDirectionPerspectiveValue.BlueAlliance);
 
     private final CommandSwerveDrivetrain swerveDrive;
     private final EaseofLife easeOfLife;
