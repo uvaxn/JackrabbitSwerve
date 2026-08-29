@@ -19,8 +19,8 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double DROP_SPEED = 0.15;
     private static final double LIFT_SPEED = 0.15;
 
-    private static final double AGITATE_DROP_SPEED = 0.3;
-    private static final double AGITATE_LIFT_SPEED = 0.3;
+    private static final double AGITATE_DROP_SPEED = 0.15;
+    private static final double AGITATE_LIFT_SPEED = 0.15;
 
     private static final double INTAKE_COLLECT_SPEED = -0.8; // collecting from ground
     private static final double INTAKE_FEED_SPEED = -0.5; // for pushing balls to shooter
