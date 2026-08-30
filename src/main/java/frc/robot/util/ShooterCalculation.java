@@ -18,9 +18,9 @@ public class ShooterCalculation {
         // TODO: Manually set the RPS, and once it looks good, put it in here.
         static {
             shooterTable.put(0.00, 50.0);// 0.00 meters | 55 rps
-            shooterTable.put(1.00, 55.0);
-            shooterTable.put(2.00, 70.0);
-            shooterTable.put(3.00, 85.0);// 3.00 meters | 80 rps
+            shooterTable.put(1.00, 53.0);
+            shooterTable.put(2.00, 65.0);
+            shooterTable.put(3.00, 80.0);// 3.00 meters | 80 rps
             shooterTable.put(4.00, 90.0);
             shooterTable.put(4.50, 93.5);
             shooterTable.put(5.00, 98.0);// 5.00 meters | 90 rps
