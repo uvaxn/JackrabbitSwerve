@@ -35,7 +35,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AutoAlign.AlignToAllianceWall;
 import frc.robot.commands.AutoAlign.AlignToHub;
 import frc.robot.constants.Constants;
@@ -123,6 +122,11 @@ public class RobotContainer {
         NamedCommands.registerCommand("stop intake",  new InstantCommand(intakes::stop,  intakes));
         NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
         NamedCommands.registerCommand("requestDown", new InstantCommand(intakes::requestDown));
+        
+        final AlignToHub alignToHub = new AlignToHub(easeOfLife, drivetrain, () -> 0, () -> 0);
+        NamedCommands.registerCommand("align",
+            alignToHub.until(alignToHub::isAimed).withTimeout(2.0));
+            
         drivetrain.configureAutoBuilder(); 
         configureBindings();
 
@@ -151,15 +155,15 @@ public class RobotContainer {
         ));
 
         // SysId routines
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        //joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        //joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        //joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        //joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // Reset field centric heading, odometry points toward alliance wall.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        joystick.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // autoalign to nearest AprilTag
+        // autoalign to nearest AprilTag (still available standalone, in case you want it separate from shooting)
         joystick.x().whileTrue(new AlignToHub(
             easeOfLife,
             drivetrain,
@@ -173,26 +177,45 @@ public class RobotContainer {
             driveInputs::getX,
             driveInputs::getY
         ));
+
         // Intake
         joystick.leftTrigger()
             .onTrue(new InstantCommand(mechanisms::Intake, mechanisms))
             .onFalse(new InstantCommand(mechanisms::StopIntake, mechanisms));
 
-        // Shooter
-       // Shooter spins for as long as right trigger is held, full stop only when it's released.
-       joystick.rightTrigger()
-           .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
-           .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
-
-        // Bumper only selects feed mode while the trigger is held
+        // Right trigger: shoot AND auto-align to the hub at the same time.
+        joystick.rightTrigger()
+            .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
         joystick.rightTrigger()
             .onTrue(new InstantCommand(mechanisms::FullHopperMode, mechanisms));
+        joystick.rightTrigger().whileTrue(new AlignToHub(
+            easeOfLife,
+            drivetrain,
+            driveInputs::getX,
+            driveInputs::getY
+        ));
+
+
+        joystick.leftBumper()
+            .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
+            .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
+
+
+        // Right bumper: align to alliance wall only, no shooting.
+        joystick.rightBumper().whileTrue(new AlignToAllianceWall(
+            drivetrain,
+            easeOfLife,
+            driveInputs::getX,
+            driveInputs::getY
+        ));
+
         joystick.povDown()
             .onTrue(new InstantCommand(intakes::requestDown, intakes));
         joystick.povUp()
             .onTrue(new InstantCommand(intakes::requestUp, intakes));
         drivetrain.registerTelemetry(logger::telemeterize);
-        
+
     }
 
     public Command getAutonomousCommand() {
