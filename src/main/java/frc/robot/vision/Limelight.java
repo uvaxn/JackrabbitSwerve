@@ -24,10 +24,9 @@ public class Limelight extends SubsystemBase {
             AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
     private static final double FIELD_LENGTH_M = FIELD.getFieldLength();
     private static final double FIELD_WIDTH_M = FIELD.getFieldWidth();
-
-    // MegaTag1's x/y is believed, its rotation never is.
+    // MegaTag1's rotation gets a LITTLE trust -- enough to slowly correct gyro
     private static final double POS_STD_DEV = 0.7;
-    private static final double UNTRUSTED_ROTATION_STD_DEV = 99999;
+    private static final double ROTATION_STD_DEV = 10.0;
 
     private static final double MAX_ESTIMATE_AGE_SECONDS = 0.25;
 
@@ -37,45 +36,44 @@ public class Limelight extends SubsystemBase {
     private Optional<Pose2d> latestEstimate = Optional.empty();
     private double latestEstimateTimestamp = 0.0;
     private double latestHubDist = 0.0;
-
     public Limelight(String name) {
         this.name = name;
         NetworkTable telemetryTable = NetworkTableInstance.getDefault().getTable(name);
         this.posePublisher = telemetryTable.getStructTopic("EstimatedPose", Pose2d.struct).publish();
     }
-
     private static boolean isInField(Translation2d t) {
         return t.getX() >= 0 && t.getX() <= FIELD_LENGTH_M
                 && t.getY() >= 0 && t.getY() <= FIELD_WIDTH_M;
     }
 
     /**
-     * @param currentRobotPose current pose estimate; only its rotation is reused, to pair with
-     *                         MegaTag1's translation. MegaTag1's own solved rotation is never
-     *                         used, and there's no MegaTag2 yaw left to seed either.
+     * @param currentRobotPose current pose estimate.
      */
     public Optional<Measurement> getMeasurement(Pose2d currentRobotPose) {
+        LimelightHelpers.SetRobotOrientation(name, currentRobotPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+
         final PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
-        if (mt1 == null || mt1.tagCount == 0) {
+        final PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
+        if (mt1 == null || mt2 == null || mt1.tagCount == 0 || mt2.tagCount == 0) {
             return Optional.empty();
         }
 
-        final Translation2d mt1Translation = mt1.pose.getTranslation();
-        if (!isInField(mt1Translation)) {
+        final Translation2d mt2Translation = mt2.pose.getTranslation();
+        if (!isInField(mt2Translation)) {
             DriverStation.reportWarning("Limelight pose out of bounds", false);
             return Optional.empty();
         }
 
-        final Pose2d fusedPose = new Pose2d(mt1Translation, currentRobotPose.getRotation());
+        final Pose2d fusedPose = new Pose2d(mt2Translation, mt1.pose.getRotation());
         final Matrix<N3, N1> standardDeviations =
-                VecBuilder.fill(POS_STD_DEV, POS_STD_DEV, UNTRUSTED_ROTATION_STD_DEV);
+                VecBuilder.fill(POS_STD_DEV, POS_STD_DEV, ROTATION_STD_DEV);
 
         posePublisher.set(fusedPose);
         latestEstimate = Optional.of(fusedPose);
-        latestEstimateTimestamp = mt1.timestampSeconds;
-        latestHubDist = mt1Translation.getDistance(Constants.getTeamHubTranslation());
+        latestEstimateTimestamp = mt2.timestampSeconds;
+        latestHubDist = mt2Translation.getDistance(Constants.getTeamHubTranslation());
 
-        return Optional.of(new Measurement(fusedPose, mt1.timestampSeconds, standardDeviations));
+        return Optional.of(new Measurement(fusedPose, mt2.timestampSeconds, standardDeviations));
     }
 
     public double getDistanceToHub() {
