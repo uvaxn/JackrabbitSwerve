@@ -24,9 +24,9 @@ public class Limelight extends SubsystemBase {
             AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
     private static final double FIELD_LENGTH_M = FIELD.getFieldLength();
     private static final double FIELD_WIDTH_M = FIELD.getFieldWidth();
-    // MegaTag1's rotation gets a LITTLE trust -- enough to slowly correct gyro
+    // enough to slowly correct gyro
     private static final double POS_STD_DEV = 0.7;
-    private static final double ROTATION_STD_DEV = 10.0;
+    private static final double ROTATION_STD_DEV = 25.0;
 
     private static final double MAX_ESTIMATE_AGE_SECONDS = 0.25;
 
