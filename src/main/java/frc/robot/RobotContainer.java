@@ -134,8 +134,8 @@ public class RobotContainer {
 
         drivetrain.setDefaultCommand( // reminder that this chunk of code basically controls the movement of the robot
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-driveInputs.getX())
-                    .withVelocityY(-driveInputs.getY())
+                drive.withVelocityX(driveInputs.getX())
+                    .withVelocityY(driveInputs.getY())
                     .withRotationalRate(
                         -MathUtil.applyDeadband(joystick.getRightX(), ROTATION_STICK_DEADBAND) * MaxAngularRate)
             )
@@ -161,7 +161,6 @@ public class RobotContainer {
 
         // autoalign to nearest AprilTag
         joystick.x().whileTrue(new AlignToHub(
-            cameraSubsystem,
             easeOfLife,
             drivetrain,
             driveInputs::getX,

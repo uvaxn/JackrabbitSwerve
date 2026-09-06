@@ -12,11 +12,11 @@ public class Variables {
     
     public static final double AlignToHubP = 7.5;
     public static final double AlignToHubI = 0;
-    public static final double AlignToHubD = 0.2;
+    public static final double AlignToHubD = 0.3;
 
     public static final double AlignToAllianceWallP = 6.5;
     public static final double AlignToAllianceWallI = 0.0;
-    public static final double AlignToAllianceWallD = 0.3;
+    public static final double AlignToAllianceWallD = 0.2;
     // controller stoff
 
     public final static SlewRateLimiter xLimiter = new SlewRateLimiter(2);
@@ -36,8 +36,8 @@ public class Variables {
 
     // Named speed-limit requests. Effective MaxSpeed = BASE_SPEED * (min of all active requests).
     private static final Map<String, Double> speedLimitRequests = new ConcurrentHashMap<>();
-
-    public static void requestSpeedLimit(String source, double multiplier) { // Added in purely for IntakeSubsystem. If another file wants to change the maxspeed, this way is much better than casting changes over files.
+    public static void requestSpeedLimit(String source, double multiplier) {
+        System.out.println("speed limit requested: " + source + " -> " + multiplier);
         speedLimitRequests.put(source, multiplier);
     }
 

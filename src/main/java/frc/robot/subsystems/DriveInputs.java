@@ -37,13 +37,13 @@ public class DriveInputs extends SubsystemBase {
         limitedX = Variables.xLimiter.calculate(-rawX);
         limitedY = Variables.yLimiter.calculate(-rawY);
     }
-
+    // Know that these controls are INVERTED, if you want the real input, remove the negative sign.
     public double getX() {
-        return limitedX * Variables.getMaxSpeed();
+        return -limitedX * Variables.getMaxSpeed();
     }
 
     public double getY() {
-        return limitedY * Variables.getMaxSpeed();
+        return -limitedY * Variables.getMaxSpeed();
     }
     
 

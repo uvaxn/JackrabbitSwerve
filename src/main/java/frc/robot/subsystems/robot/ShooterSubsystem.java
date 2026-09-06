@@ -72,18 +72,18 @@ public class ShooterSubsystem extends SubsystemBase {
         }
     }
 
-        public void start() {
+    public void start() {
         running = true;
-        Variables.requestSpeedLimit("intake", 0.15);
         MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
+        Variables.requestSpeedLimit("shooters", 0.1);
     }
 
     public void stop() {
         running = false;
-        Variables.clearSpeedLimit("intake");
         MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(shooterL, 0);
+        Variables.clearSpeedLimit("shooters");
     }
 
     public boolean isRunning() {

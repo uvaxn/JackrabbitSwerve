@@ -63,8 +63,8 @@ public class AlignToAllianceWall extends Command {
         );
         double targetAngle =
             DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-                ? Math.PI
-                : 0.0;
+                ? 0.0
+                : Math.PI;
 
 
         NetworkTables.putTargetAngle(
