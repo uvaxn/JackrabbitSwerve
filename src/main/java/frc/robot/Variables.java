@@ -10,11 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Variables {
     
     
-    public static final double AlignToHubP = 7.5;
+    public static final double AlignToHubP = 5.5;
     public static final double AlignToHubI = 0;
     public static final double AlignToHubD = 0.3;
 
-    public static final double AlignToAllianceWallP = 6.5;
+    public static final double AlignToAllianceWallP = 5.5;
     public static final double AlignToAllianceWallI = 0.0;
     public static final double AlignToAllianceWallD = 0.2;
     // controller stoff
