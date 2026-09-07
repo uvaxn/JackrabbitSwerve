@@ -7,15 +7,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Variables;
-import frc.robot.constants.Constants;
-import frc.robot.constants.Landmarks;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
 
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
-public class AlignToHub extends Command {
+public class AlignToPoint extends Command {
 
     private static final double AIM_TOLERANCE_DEGREES = 5.0;
 
@@ -26,26 +25,33 @@ public class AlignToHub extends Command {
 
     private final CommandSwerveDrivetrain swerveDrive;
     private final EaseofLife easeOfLife;
+    private final Supplier<Translation2d> targetSupplier;
 
     private final DoubleSupplier forwardSupplier;
     private final DoubleSupplier leftSupplier;
 
     private Rotation2d targetDirection = Rotation2d.kZero;
 
-    // Note: cameraSubsystem is no longer a dependency here -- alignment uses the
+    // Note: cameraSubsystem is not a dependency here -- alignment uses the
     // drivetrain's continuously-fused pose (odometry + vision, via
     // addVisionMeasurement in Robot.java), not the raw camera reading directly.
     // That fused pose is never "unavailable": it keeps dead-reckoning through
     // brief vision dropouts instead of the align command losing its target the
     // moment a tag glares out or gets briefly occluded.
-    public AlignToHub(
+    //
+    // targetSupplier is called fresh every loop in execute(), so a dynamic
+    // target (e.g. Landmarks::hubOrNearestShot bound to the current pose) stays
+    // correct as the robot moves, not just whatever it was at construction time.
+    public AlignToPoint(
             EaseofLife easeOfLife,
             CommandSwerveDrivetrain swerveDrive,
+            Supplier<Translation2d> targetSupplier,
             DoubleSupplier forwardSupplier,
             DoubleSupplier leftSupplier) {
 
         this.easeOfLife = easeOfLife;
         this.swerveDrive = swerveDrive;
+        this.targetSupplier = targetSupplier;
         this.forwardSupplier = forwardSupplier;
         this.leftSupplier = leftSupplier;
 
@@ -58,6 +64,16 @@ public class AlignToHub extends Command {
                 -Math.PI,
                 Math.PI);
         addRequirements(swerveDrive);
+    }
+
+    /** Convenience constructor for a point that never changes. */
+    public AlignToPoint(
+            EaseofLife easeOfLife,
+            CommandSwerveDrivetrain swerveDrive,
+            Translation2d target,
+            DoubleSupplier forwardSupplier,
+            DoubleSupplier leftSupplier) {
+        this(easeOfLife, swerveDrive, () -> target, forwardSupplier, leftSupplier);
     }
 
     /** @return true once the drivetrain's actual heading is within tolerance of the target. */
@@ -78,9 +94,9 @@ public class AlignToHub extends Command {
         final double velocityY = leftSupplier.getAsDouble();
 
         final Pose2d robotPose = swerveDrive.getState().Pose;
-        final Translation2d hub = Landmarks.getTeamHubTranslation();
-        final Translation2d toHub = hub.minus(robotPose.getTranslation());
-        targetDirection = Rotation2d.fromRadians(Math.atan2(toHub.getY(), toHub.getX()));
+        final Translation2d target = targetSupplier.get();
+        final Translation2d toTarget = target.minus(robotPose.getTranslation());
+        targetDirection = Rotation2d.fromRadians(Math.atan2(toTarget.getY(), toTarget.getX()));
 
         NetworkTables.putTargetAngle(targetDirection.getDegrees());
         swerveDrive.setControl(

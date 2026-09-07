@@ -36,8 +36,9 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.commands.AutoAlign.AlignToAllianceWall;
-import frc.robot.commands.AutoAlign.AlignToHub;
+import frc.robot.commands.AutoAlign.AlignToPoint;
 import frc.robot.constants.Constants;
+import frc.robot.constants.Landmarks;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.DriveInputs;
@@ -123,7 +124,10 @@ public class RobotContainer {
         NamedCommands.registerCommand("requestUp", new InstantCommand(intakes::requestUp));
         NamedCommands.registerCommand("requestDown", new InstantCommand(intakes::requestDown));
         
-        final AlignToHub alignToHub = new AlignToHub(easeOfLife, drivetrain, () -> 0, () -> 0);
+        final AlignToPoint alignToHub = new AlignToPoint(
+            easeOfLife, drivetrain,
+            () -> Landmarks.hubOrNearestShot(drivetrain.getState().Pose.getTranslation()),
+            () -> 0, () -> 0);
         NamedCommands.registerCommand("align",
             alignToHub.until(alignToHub::isAimed).withTimeout(2.0));
             
@@ -163,10 +167,11 @@ public class RobotContainer {
         // Reset field centric heading, odometry points toward alliance wall.
         joystick.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // autoalign to nearest AprilTag (still available standalone, in case you want it separate from shooting)
-        joystick.x().whileTrue(new AlignToHub(
+        // auto-align: hub inside the home box, nearest off-hub shot point outside it
+        joystick.x().whileTrue(new AlignToPoint(
             easeOfLife,
             drivetrain,
+            () -> Landmarks.hubOrNearestShot(drivetrain.getState().Pose.getTranslation()),
             driveInputs::getX,
             driveInputs::getY
         ));
@@ -183,15 +188,16 @@ public class RobotContainer {
             .onTrue(new InstantCommand(mechanisms::Intake, mechanisms))
             .onFalse(new InstantCommand(mechanisms::StopIntake, mechanisms));
 
-        // Right trigger: shoot AND auto-align to the hub at the same time.
+        // Right trigger: shoot AND auto-align (hub in the home box, off-hub shot point outside it).
         joystick.rightTrigger()
             .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
             .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
         joystick.rightTrigger()
             .onTrue(new InstantCommand(mechanisms::FullHopperMode, mechanisms));
-        joystick.rightTrigger().whileTrue(new AlignToHub(
+        joystick.rightTrigger().whileTrue(new AlignToPoint(
             easeOfLife,
             drivetrain,
+            () -> Landmarks.hubOrNearestShot(drivetrain.getState().Pose.getTranslation()),
             driveInputs::getX,
             driveInputs::getY
         ));
