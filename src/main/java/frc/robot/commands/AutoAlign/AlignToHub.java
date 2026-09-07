@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Variables;
 import frc.robot.constants.Constants;
+import frc.robot.constants.Landmarks;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.EaseofLife;
 import frc.robot.util.NetworkTables;
@@ -77,7 +78,7 @@ public class AlignToHub extends Command {
         final double velocityY = leftSupplier.getAsDouble();
 
         final Pose2d robotPose = swerveDrive.getState().Pose;
-        final Translation2d hub = Constants.getTeamHubTranslation();
+        final Translation2d hub = Landmarks.getTeamHubTranslation();
         final Translation2d toHub = hub.minus(robotPose.getTranslation());
         targetDirection = Rotation2d.fromRadians(Math.atan2(toHub.getY(), toHub.getX()));
 

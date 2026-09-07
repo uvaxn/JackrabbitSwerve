@@ -16,7 +16,7 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.constants.Constants;
+import frc.robot.constants.Landmarks;
 import frc.robot.vision.LimelightHelpers.PoseEstimate;
 
 public class Limelight extends SubsystemBase {
@@ -71,7 +71,7 @@ public class Limelight extends SubsystemBase {
         posePublisher.set(fusedPose);
         latestEstimate = Optional.of(fusedPose);
         latestEstimateTimestamp = mt2.timestampSeconds;
-        latestHubDist = mt2Translation.getDistance(Constants.getTeamHubTranslation());
+        latestHubDist = mt2Translation.getDistance(Landmarks.getTeamHubTranslation());
 
         return Optional.of(new Measurement(fusedPose, mt2.timestampSeconds, standardDeviations));
     }
