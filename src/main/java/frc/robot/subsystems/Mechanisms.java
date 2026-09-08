@@ -32,17 +32,8 @@ public class Mechanisms extends SubsystemBase {
 
     /** Switches feed behavior to Full-Hopper (continuous intake bounce */
     public void FullHopperMode() {
-        NetworkTables.putRobotState("FH FIRING!");
         isFHOn = true;
         isROn = false;
-        shooterReady = false; // re-arm so periodic() re-fires this mode's entry action
-    }
-
-    /** Switches feed behavior to Regular (single intake lift) without touching the shooter. */
-    public void RegularMode() {
-        NetworkTables.putRobotState("R FIRING!");
-        isROn = true;
-        isFHOn = false;
         shooterReady = false; // re-arm so periodic() re-fires this mode's entry action
     }
 
@@ -51,8 +42,6 @@ public class Mechanisms extends SubsystemBase {
         StartShooting();
         FullHopperMode();
      }
-
-
 
     public void Intake() {
         NetworkTables.putRobotState("INTAKE");

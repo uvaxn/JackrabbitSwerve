@@ -14,7 +14,7 @@ public class ShooterCalculation {
         private static final InterpolatingDoubleTreeMap shooterTable =
                 new InterpolatingDoubleTreeMap();
         // The more values put, the better.
-        // 7 values forr now.
+        // 7 values forr now.d
         // TODO: Manually set the RPS, and once it looks good, put it in here.
         static {
             shooterTable.put(0.00, 50.0);// 0.00 meters | 55 rps

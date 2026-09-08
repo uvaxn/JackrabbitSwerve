@@ -1,5 +1,5 @@
 package frc.robot.subsystems.robot;
-
+//TODO: I wouldn't suggest testing on the robot until you have enough time.
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -313,12 +313,12 @@ public class IntakeSubsystem extends SubsystemBase {
         if (!lowerSensorLearned) {
             lowerSensorAngleDeg = measuredDeg;
             lowerSensorLearned = true;
-            DataLogManager.log(String.format("[Arm] Lower sensor LEARNED angle: %.2f deg", measuredDeg));
+            DataLogManager.log(String.format("lower sensor LEARNED angle: %.2f deg", measuredDeg));
         } else {
             final double driftDeg = measuredDeg - lowerSensorAngleDeg;
             dropMotor.setPosition(Degrees.of(lowerSensorAngleDeg));
             DataLogManager.log(String.format(
-                "[Arm] Lower sensor pass: measured=%.2f deg, reset to learned=%.2f deg (corrected %.2f deg drift)",
+                "lower sensor pass: measured=%.2f deg, reset to learned=%.2f deg (corrected %.2f deg drift)",
                 measuredDeg, lowerSensorAngleDeg, driftDeg));
         }
         logLowerSensorLearnedDeg.append(lowerSensorAngleDeg);
@@ -340,7 +340,7 @@ public class IntakeSubsystem extends SubsystemBase {
             && currentAmps > kStallCurrentThresholdAmps;
 
         boolean stalled = stallDebouncer.calculate(possibleStall);
-
+ 
         if (stalled && !wasStalled) {
             DataLogManager.log(String.format(
                 "[Arm] stalling! Target=%.1f deg, Position=%.1f deg, Velocity=%.2f rps, Current=%.1f A",
