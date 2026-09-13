@@ -78,7 +78,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     private static final double kPivotReduction = 50.0; // 50 motor turns : 1 arm turn
-    private static final AngularVelocity kMotorFreeSpeed = RotationsPerSecond.of(100.0); // Kraken X60 ~6000 RPM — VERIFY
+    private static final AngularVelocity kMotorFreeSpeed = RotationsPerSecond.of(100.0); 
     private static final AngularVelocity kMaxPivotSpeed = kMotorFreeSpeed.div(kPivotReduction);
     private static final Angle kPositionTolerance = Degrees.of(5);
 
