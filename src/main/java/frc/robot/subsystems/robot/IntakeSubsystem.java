@@ -34,32 +34,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import frc.robot.subsystems.DriveInputs;
 import frc.robot.subsystems.EaseofLife;
-
-/**
- * Arm/roller intake subsystem.
- *
- * Pivot control adapted from WCP's Competitive Concept Intake.java pattern:
- * TalonFX + Motion Magic position control to named angles, instead of raw
- * open-loop percent output driven until a sensor trips.
- *
- * --- VERIFY BEFORE MATCH ---
- * - Motor: Kraken X60 assumed for the free-speed calc (100 rot/s at the motor).
- *   Update kMotorFreeSpeed if it's actually a Falcon 500 or something else.
- * - Gear ratio: 50 motor rotations : 1 arm rotation (as given).
- * - Slot0 kP/kV and current limits are starting points carried over from WCP's
- *   Intake pivot — they were never tuned for THIS arm's mass/length. Retune on
- *   the real mechanism before trusting it in a match.
- * - InvertedValue.CounterClockwise_Positive: verify positive output actually
- *   drives the arm DOWN (toward 100 deg). Flip to Clockwise_Positive if the
- *   first test moves it the wrong way.
- * - Sensor wiring assumed active-low (isAtTop()/isAtBottom() return !get()),
- *   matching your original code's convention.
- * - Which physical sensor is "upper" vs "lower" doesn't actually matter for
- *   correctness anymore — each one independently learns its own angle on its
- *   first trigger. The names are just carried over from the original file.
- * - DataLogManager.start() must be called once (usually in Robot.java's
- *   robotInit()) for the log entries below to actually land in a .wpilog file.
- */
 public class IntakeSubsystem extends SubsystemBase {
 
     public enum Position {
