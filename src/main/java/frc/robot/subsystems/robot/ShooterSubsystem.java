@@ -34,9 +34,9 @@ public class ShooterSubsystem extends SubsystemBase {
     private void configureShooter(TalonFX right, TalonFX left) {
         TalonFXConfiguration sharedConfig = new TalonFXConfiguration();
         sharedConfig.Slot0.kS = 0.5;
-        sharedConfig.Slot0.kV = 0.11;
-        sharedConfig.Slot0.kA = 0.01;
-        sharedConfig.Slot0.kP = 0.1;
+        sharedConfig.Slot0.kV = 0.106;
+        sharedConfig.Slot0.kA = 0.003;
+        sharedConfig.Slot0.kP = 0.06;
         sharedConfig.Slot0.kI = 0.0;
         sharedConfig.Slot0.kD = 0.0;
 

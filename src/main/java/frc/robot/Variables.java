@@ -22,7 +22,7 @@ public class Variables {
     public final static SlewRateLimiter xLimiter = new SlewRateLimiter(2);
     public final static SlewRateLimiter yLimiter = new SlewRateLimiter(2);
     // no more controller stuph 
-    public static double FEED_SPEED = 0.75; // in percentage (0.8 == 80%)
+    public static double FEED_SPEED = 0.9; // in percentage (0.8 == 80%)
     public static double SHOOTER_SPEED = 30;
 
     public static final double airTimeScalarSeconds = 1;
