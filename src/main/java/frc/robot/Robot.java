@@ -22,15 +22,7 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
 
-            robotContainer.cameraSubsystem.getMeasurement(
-                robotContainer.drivetrain.getState().Pose
-            ).ifPresent(measurement ->
-                robotContainer.drivetrain.addVisionMeasurement(
-                    measurement.pose,
-                    measurement.timestamp,
-                    measurement.standardDeviations
-                )
-            );
+
         CommandScheduler.getInstance().run();
 
         String mode = DriverStation.isDisabled() ? "Disabled"
@@ -64,7 +56,18 @@ public class Robot extends TimedRobot {
     @Override public void disabledExit() {}
     @Override public void autonomousPeriodic() {}
     @Override public void autonomousExit() {}
-    @Override public void teleopPeriodic() {}
+    @Override public void teleopPeriodic() {
+        // only correct during teleop
+            robotContainer.cameraSubsystem.getMeasurement(
+                robotContainer.drivetrain.getState().Pose
+            ).ifPresent(measurement ->
+                robotContainer.drivetrain.addVisionMeasurement(
+                    measurement.pose,
+                    measurement.timestamp,
+                    measurement.standardDeviations
+                )
+            );
+    }
     @Override public void teleopExit() {}
     @Override public void testInit() { CommandScheduler.getInstance().cancelAll(); }
     @Override public void testPeriodic() {}

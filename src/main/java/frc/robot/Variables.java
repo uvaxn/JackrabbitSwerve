@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Variables {
     
     
-    public static final double AlignToHubP = 5.5;
+    public static final double AlignToHubP = 15.5;
     public static final double AlignToHubI = 0;
     public static final double AlignToHubD = 0.3;
 
@@ -19,14 +19,14 @@ public class Variables {
     public static final double AlignToAllianceWallD = 0.2;
     // controller stoff
 
-    public final static SlewRateLimiter xLimiter = new SlewRateLimiter(2);
-    public final static SlewRateLimiter yLimiter = new SlewRateLimiter(2);
+    public final static SlewRateLimiter xLimiter = new SlewRateLimiter(99);
+    public final static SlewRateLimiter yLimiter = new SlewRateLimiter(99);
     // no more controller stuph 
-    public static double FEED_SPEED = 0.9; // in percentage (0.8 == 80%)
+    public static double FEED_SPEED = 0.7; // in percentage (0.8 == 80%)
     public static double SHOOTER_SPEED = 30;
 
     public static final double airTimeScalarSeconds = 1;
-    public static final double MaxAngularRate = 1.5;
+    public static final double MaxAngularRate = 2.5;
 
     public static final double maxYawRateForVision = 6;
 

@@ -24,6 +24,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX shooterL;
     EaseofLife MotorMode;
     private boolean running = false;
+    private boolean fixedrunning = false;
     public ShooterSubsystem(TalonFX shooterR, TalonFX shooterL, EaseofLife EaseOfLife) {
         this.shooterR  = shooterR;
         this.shooterL  = shooterL;
@@ -34,9 +35,9 @@ public class ShooterSubsystem extends SubsystemBase {
     private void configureShooter(TalonFX right, TalonFX left) {
         TalonFXConfiguration sharedConfig = new TalonFXConfiguration();
         sharedConfig.Slot0.kS = 0.5;
-        sharedConfig.Slot0.kV = 0.106;
+        sharedConfig.Slot0.kV = 0.1035;
         sharedConfig.Slot0.kA = 0.003;
-        sharedConfig.Slot0.kP = 0.06;
+        sharedConfig.Slot0.kP = 0.05;
         sharedConfig.Slot0.kI = 0.0;
         sharedConfig.Slot0.kD = 0.0;
 
@@ -78,9 +79,14 @@ public class ShooterSubsystem extends SubsystemBase {
         MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
         Variables.requestSpeedLimit("shooters", 0.1);
     }
-
+    public void fixstart() {
+        fixedrunning = true;
+        MotorMode.setVelocity(shooterR, -70);
+        MotorMode.setVelocity(shooterL, 70);
+    }
     public void stop() {
         running = false;
+        fixedrunning = false;
         MotorMode.setSpeed(shooterR, 0);
         MotorMode.setSpeed(shooterL, 0);
         Variables.clearSpeedLimit("shooters");
@@ -98,6 +104,7 @@ public class ShooterSubsystem extends SubsystemBase {
         return rightAtSpeed && leftAtSpeed;
     }
 
+
     public void periodic() {
         NetworkTables.putShooterSpeed(shooterR.getVelocity().getValueAsDouble());
 
@@ -111,7 +118,9 @@ public class ShooterSubsystem extends SubsystemBase {
             Variables.SHOOTER_SPEED = ShooterCalculation.calculateShooterSpeed(MotorMode.getDistToHub());
         }
         NetworkTables.putTargetShooterSpeed(Variables.SHOOTER_SPEED);
-        MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
-        MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
+        if (!fixedrunning) {
+            MotorMode.setVelocity(shooterR, -Variables.SHOOTER_SPEED);
+            MotorMode.setVelocity(shooterL, Variables.SHOOTER_SPEED);
+        }
     }
 }

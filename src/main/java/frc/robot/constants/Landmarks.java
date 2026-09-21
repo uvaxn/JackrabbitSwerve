@@ -21,13 +21,10 @@ public final class Landmarks {
     // Off-hub points on our own side to shoot at when outside the home box below.
     public static final Translation2d blueUpperShotPosition = new Translation2d(3.551, 5.536);
     public static final Translation2d blueLowerShotPosition = new Translation2d(3.551, 2.424);
-    // Red side mirrors blue the same way the hub does: X reflects across the
-    // field length (~16.527m, backed out of blueHubPosition/redHubPosition
-    // above), Y unchanged. Double check against the real field if exactness matters.
     public static final Translation2d redUpperShotPosition = new Translation2d(12.976, 5.536);
     public static final Translation2d redLowerShotPosition = new Translation2d(12.976, 2.424);
 
-    // Home box: hub is valid to aim at inside it, corners (5.215, 8.200) and (5.215, 0) on blue.
+
     private static final double HOME_BOX_BLUE_X_MAX = 5.215;
     private static final double HOME_BOX_RED_X_MIN = 11.312;
     private static final double HOME_BOX_Y_MAX = 8.200;

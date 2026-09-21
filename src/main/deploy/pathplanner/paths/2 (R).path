@@ -41,7 +41,7 @@
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "2 (R) End"
     }
   ],
   "rotationTargets": [
@@ -93,7 +93,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 43.61666839130685
+    "rotation": 35.598620937412726
   },
   "reversed": false,
   "folder": "right",

@@ -3,73 +3,73 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.96021557430252,
-        "y": 5.552942427332621
+        "x": 2.414811111111111,
+        "y": 5.655108184599357
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.929266547413307,
-        "y": 5.389821109128664
+        "x": 5.77958442569748,
+        "y": 5.517821312822292
       },
       "isLocked": false,
       "linkedName": "2 (L) End"
     },
     {
       "anchor": {
-        "x": 7.473869500494405,
-        "y": 6.820332037555621
-      },
-      "prevControl": {
-        "x": 6.1256245408301435,
-        "y": 6.8596968538961836
-      },
-      "nextControl": {
-        "x": 7.884918594629956,
-        "y": 6.808330604150203
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
         "x": 7.823726719541073,
-        "y": 4.8208723956423505
+        "y": 6.201722222222222
       },
       "prevControl": {
-        "x": 7.752996579894869,
-        "y": 5.237394329114435
+        "x": 7.15468325789785,
+        "y": 6.52912646940933
       },
       "nextControl": {
-        "x": 7.942133613589353,
-        "y": 4.123587352913603
+        "x": 8.193095226582358,
+        "y": 6.020967420904148
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.164366045836653,
-        "y": 3.010090843976483
+        "x": 8.048288888888889,
+        "y": 4.810988888888889
       },
       "prevControl": {
-        "x": 7.691899082398619,
-        "y": 3.0444951724479137
+        "x": 8.081373280458926,
+        "y": 5.24452760435765
       },
       "nextControl": {
-        "x": 6.802856443200502,
-        "y": 2.986514130761083
+        "x": 7.994472102704789,
+        "y": 4.105772342786768
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 6.469115897081438,
-        "y": 4.415633276081467
+        "x": 7.322688888888889,
+        "y": 2.9062888888888883
       },
       "prevControl": {
-        "x": 6.621649224232295,
-        "y": 3.271633322450043
+        "x": 7.850221925450855,
+        "y": 2.940693217360319
+      },
+      "nextControl": {
+        "x": 6.961179286252738,
+        "y": 2.8827121756734884
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 6.113355555555555,
+        "y": 4.710211111111112
+      },
+      "prevControl": {
+        "x": 6.265888882706411,
+        "y": 3.566211157479688
       },
       "nextControl": null,
       "isLocked": false,
@@ -78,23 +78,23 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.2244094488188975,
-      "rotationDegrees": -43.66764918659831
+      "waypointRelativePos": 0.7807486631016037,
+      "rotationDegrees": -28.795259567522628
     },
     {
-      "waypointRelativePos": 0.7807486631016037,
-      "rotationDegrees": -43.0962058567013
+      "waypointRelativePos": 1.880341880341861,
+      "rotationDegrees": -90.14560931504933
     },
     {
       "waypointRelativePos": 2.3858267716535413,
-      "rotationDegrees": -129.79516250628544
+      "rotationDegrees": -103.86705806807187
     }
   ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0,
-      "maxWaypointRelativePos": 0.5,
+      "minWaypointRelativePos": 0.0218068535825559,
+      "maxWaypointRelativePos": 0.3333333333333419,
       "constraints": {
         "maxVelocity": 3.0,
         "maxAcceleration": 4.5,
@@ -109,7 +109,7 @@
   "eventMarkers": [
     {
       "name": "requestDown",
-      "waypointRelativePos": 0.3355932203389831,
+      "waypointRelativePos": 0.19573796369376878,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
@@ -120,7 +120,7 @@
     },
     {
       "name": "intake",
-      "waypointRelativePos": 0.9864406779661025,
+      "waypointRelativePos": 0.5682715074980272,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",

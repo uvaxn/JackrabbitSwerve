@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.839442438417319,
-        "y": 6.639254837772868
+        "x": 6.903582443653619,
+        "y": 5.632740213523132
       },
       "isLocked": false,
       "linkedName": "1 (L) End"
     },
     {
       "anchor": {
-        "x": 6.11649739867752,
+        "x": 6.010569395017794,
         "y": 5.655108184599357
       },
       "prevControl": {
-        "x": 6.779062947628715,
-        "y": 5.5956995825226405
+        "x": 6.656905277790305,
+        "y": 5.812500736196894
       },
       "nextControl": {
-        "x": 5.825730743796201,
-        "y": 5.681179628435165
+        "x": 5.710677653608174,
+        "y": 5.582080015126517
       },
       "isLocked": false,
       "linkedName": null
@@ -48,12 +48,12 @@
     },
     {
       "anchor": {
-        "x": 2.96021557430252,
-        "y": 5.552942427332621
+        "x": 2.414811111111111,
+        "y": 5.655108184599357
       },
       "prevControl": {
-        "x": 3.210039228914008,
-        "y": 5.562330802940794
+        "x": 2.6646347657225986,
+        "y": 5.664496560207531
       },
       "nextControl": null,
       "isLocked": false,
@@ -63,16 +63,16 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.6850393700787398,
-      "rotationDegrees": -147.72428687439384
+      "rotationDegrees": -124.97301251253151
     }
   ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 1.5314685314685272,
-      "maxWaypointRelativePos": 2.3916083916083934,
+      "minWaypointRelativePos": 1.2278820375335142,
+      "maxWaypointRelativePos": 1.8713136729222528,
       "constraints": {
-        "maxVelocity": 3.0,
+        "maxVelocity": 3.5,
         "maxAcceleration": 5.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 360.0,
@@ -110,8 +110,8 @@
   "reversed": false,
   "folder": "left",
   "idealStartingState": {
-    "velocity": 0.0,
-    "rotation": 134.05406237789248
+    "velocity": 1.5,
+    "rotation": 113.97007866443391
   },
   "useDefaultConstraints": false
 }

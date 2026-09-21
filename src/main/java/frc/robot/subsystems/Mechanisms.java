@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.robot.FeedSubsystem;
 import frc.robot.subsystems.robot.IntakeSubsystem;
@@ -14,7 +15,8 @@ public class Mechanisms extends SubsystemBase {
     private boolean isIntakeOn = false;
     private boolean isFHOn = false;
     private boolean isROn = false;
-
+    private double startTimeafterSpinning = 1.0;
+    private final Timer jamTimer = new Timer();
     private boolean shooterReady = false;
 
     public Mechanisms(ShooterSubsystem ShooterSubsystem, IntakeSubsystem IntakeSubsystem, FeedSubsystem FeedSubsystem) {
@@ -28,8 +30,18 @@ public class Mechanisms extends SubsystemBase {
         NetworkTables.putRobotState("SPINNING UP");
         shooterReady = false;
         shooters.start();
+        jamTimer.restart();
+        jamTimer.start();
     }
-
+    public void StartFixedShooting() {
+        NetworkTables.putRobotState("SPINNING UP");
+        shooterReady = false;
+        shooters.fixstart();
+        feeds.rollersStart();
+        isROn = true;
+        jamTimer.restart();
+        jamTimer.start();
+    }
     /** Switches feed behavior to Full-Hopper (continuous intake bounce */
     public void FullHopperMode() {
         isFHOn = true;
@@ -60,11 +72,8 @@ public class Mechanisms extends SubsystemBase {
         NetworkTables.putRobotState("STOPPED FIRING");
         shooters.stop();
         feeds.stop();
-        intakes.stop();
-
         isFHOn = false;
         isROn = false;
-
         shooterReady = false;
     }
 
@@ -81,12 +90,11 @@ public class Mechanisms extends SubsystemBase {
             intakes.requestUp();
             shooterReady = true;
         }
-
-        if  (isFHOn && shooters.atSpeed() && !shooterReady) {
+        if  (isFHOn && (shooters.atSpeed() || jamTimer.hasElapsed(startTimeafterSpinning)) && !shooterReady) {
             NetworkTables.putRobotState("FH SHOOTER READY");
             feeds.start();
             shooterReady = true;
-
+            intakes.start();
         }
     }
 }

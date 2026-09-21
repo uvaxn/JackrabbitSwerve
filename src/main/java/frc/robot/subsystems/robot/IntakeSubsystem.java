@@ -19,21 +19,23 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double DROP_SPEED = 0.15;
     private static final double LIFT_SPEED = 0.15;
 
-    private static final double AGITATE_DROP_SPEED = 0.15;
-    private static final double AGITATE_LIFT_SPEED = 0.15;
+    private static final double AGITATE_DROP_SPEED = 0.3;
+    private static final double AGITATE_LIFT_SPEED = 0.1;
 
     private static final double INTAKE_COLLECT_SPEED = -0.8; // collecting from ground
-    private static final double INTAKE_FEED_SPEED = -0.5; // for pushing balls to shooter
+    private static final double INTAKE_FEED_SPEED = -0.65; // for pushing balls to shooter
     private final CoastOut    coastOut    = new CoastOut();
     private final StaticBrake staticBrake = new StaticBrake();
 
     private enum DropState { IDLE, MOVING_DOWN, MOVING_UP }
 
+
     private final Timer bounceTimer = new Timer();
 
-    private static final double BOUNCE_UP_TIME = 0.3; // time held at top
+    private static final double BOUNCE_UP_TIME = 1.2; // time held at top
 
     private enum BounceState {
+        
         OFF,
         GOING_UP,
         GOING_DOWN
@@ -58,8 +60,8 @@ public class IntakeSubsystem extends SubsystemBase {
         this.MotorMode = EaseOfLife;     
         dropMotor.setPosition(0.0);
         dropMotor.setControl(staticBrake);
-
     }
+
     public void requestDown() {
         if (isAtBottom() && !edu.wpi.first.wpilibj.RobotBase.isSimulation()) return;
         state = DropState.MOVING_DOWN;

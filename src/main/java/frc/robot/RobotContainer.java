@@ -204,7 +204,7 @@ public class RobotContainer {
 
 
         joystick.leftBumper()
-            .onTrue(new InstantCommand(mechanisms::StartShooting, mechanisms))
+            .onTrue(new InstantCommand(mechanisms::StartFixedShooting, mechanisms))
             .onFalse(new InstantCommand(mechanisms::StopShoot, mechanisms));
 
 
